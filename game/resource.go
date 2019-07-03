@@ -70,15 +70,6 @@ func (r Resources) Sub(rs Resources) Resources {
 	return r
 }
 
-// Money ...
-func (r Resources) Money(tc TradingCosts) Money {
-	var res Money
-	for i := range r {
-		res += tc[i] * Money(r[i])
-	}
-	return res
-}
-
 // TakeOne ...
 func (r Resources) TakeOne(res Resource) Resources {
 	return r.Change(res, -1)
@@ -105,9 +96,6 @@ func (r Resources) effect() {}
 func Res(rt Resource, val int) Resources {
 	return EmptyResources.Change(rt, val)
 }
-
-// TradingCosts ...
-type TradingCosts [numResources]Money
 
 // MaybeRes ...
 type MaybeRes struct {

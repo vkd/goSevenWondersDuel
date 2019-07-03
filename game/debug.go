@@ -15,10 +15,3 @@ func debug(format string, args ...interface{}) {
 		gameLog.Printf(format, args...)
 	}
 }
-
-func testDebug() func() {
-	isDebug = true
-	return func() {
-		isDebug = false
-	}
-}

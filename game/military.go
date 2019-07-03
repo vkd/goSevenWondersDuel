@@ -40,11 +40,11 @@ func AddShields(g *Game, s Shields) {
 	dt, dtI := g.war.dt()
 	if dt >= 3 && g.war.firstGte3[dtI] == false {
 		g.war.firstGte3[dtI] = true
-		g.applyEffectByPlayer(nextPlayerIndex(dtI), DiscardMoney(2))
+		g.applyEffectByPlayer(dtI.Next(), DiscardMoney(2))
 	}
 	if dt >= 6 && g.war.firstGte6[dtI] == false {
 		g.war.firstGte6[dtI] = true
-		g.applyEffectByPlayer(nextPlayerIndex(dtI), DiscardMoney(5))
+		g.applyEffectByPlayer(dtI.Next(), DiscardMoney(5))
 	}
 	if dt >= 9 {
 		g.victory(dtI, MilitarySupremacy)

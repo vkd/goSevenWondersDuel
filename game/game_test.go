@@ -11,8 +11,8 @@ func TestGame_Preparation(t *testing.T) {
 	g := NewGame()
 	assert.Len(t, g.AvailableProgressTokens(), 5)
 
-	assert.Equal(t, Money(7), g.players[0].Money)
-	assert.Equal(t, Money(7), g.players[1].Money)
+	assert.Equal(t, Money(7), g.playerI(0).Money)
+	assert.Equal(t, Money(7), g.playerI(1).Money)
 }
 
 // from rulebook: Wonders Selection Phase
@@ -106,42 +106,42 @@ func TestGameGetCardCostByIndex(t *testing.T) {
 	addCard := func(g *Game, c Card) { g.cards = append(g.cards, &c) }
 
 	g := &Game{}
-	addCard(g, newCard("Test", Red, Cost(Wood, Stone)))
+	addCard(g, newCard("Test", Red, NewCost(Wood, Stone))) // 2 + 2
 
 	money, ok := g.GetCardCostByIndex(0)
 	assert.True(t, ok)
-	assert.Equal(t, Money(4), money)
+	assert.Equal(t, Money(4), money) // = 4
 
 	g = &Game{}
-	addCard(g, newCard("Test", Red, Cost(Wood, Stone)))
-	g.applyEffect(OnePriceMarket{Stone, 1})
+	addCard(g, newCard("Test", Red, NewCost(Wood, Stone))) // 2 + 2
+	g.applyEffect(OnePriceMarket{Stone, 1})                // 2 + 1
 
 	money, ok = g.GetCardCostByIndex(0)
 	assert.True(t, ok)
-	assert.Equal(t, Money(3), money)
+	assert.Equal(t, Money(3), money) // = 3
 
 	g = &Game{}
 	g.applyEffect(Wood)
 	g.nextTurn()
-	addCard(g, newCard("Text", Red, Cost(Wood, Stone))) // Cost: 3 2 2 2 2
+	addCard(g, newCard("Text", Red, NewCost(Wood, Stone))) // 3 + 2
 
 	money, ok = g.GetCardCostByIndex(0)
 	assert.True(t, ok)
-	assert.Equal(t, Money(5), money)
+	assert.Equal(t, Money(5), money) // = 5
 
 	g = &Game{}
 	g.applyEffect(Wood)
-	addCard(g, newCard("Text", Red, Cost(Wood, Stone)))
+	addCard(g, newCard("Text", Red, NewCost(Wood, Stone))) // 2
 
 	money, ok = g.GetCardCostByIndex(0)
 	assert.True(t, ok)
-	assert.Equal(t, Money(2), money)
+	assert.Equal(t, Money(2), money) // = 2
 
 	g = &Game{}
 	g.applyEffect(Wood)
 	g.nextTurn()
 	g.applyEffect(OnePriceMarket{Clay, 1})
-	addCard(g, newCard("Text", Red, Cost(Wood, Stone, Clay))) // costs: 3 2 1
+	addCard(g, newCard("Text", Red, NewCost(Wood, Stone, Clay))) // costs: 3 2 1
 
 	money, ok = g.GetCardCostByIndex(0)
 	assert.True(t, ok)

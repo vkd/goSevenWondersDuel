@@ -4,7 +4,7 @@ const (
 	numPlayers = 2
 )
 
-// Player ...
+// Player - game player
 type Player struct {
 	Money             Money
 	Resources         Resources // Brown and Grey cards
@@ -22,6 +22,11 @@ type Player struct {
 
 // PlayerIndex ...
 type PlayerIndex int
+
+// Next player index
+func (i PlayerIndex) Next() PlayerIndex {
+	return (i + 1) % numPlayers
+}
 
 // AddScience ...
 func AddScience(g *Game, ss ScientificSymbol) {

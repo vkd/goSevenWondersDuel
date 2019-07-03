@@ -53,7 +53,7 @@ func (g *Game) Initialize() {
 	}
 
 	// take shuffled progress tokens
-	ptokens := shuffledPTokenNames()
+	ptokens := NewAllPTokenNames().Shuffle()
 	g.activePTokens, g.discardPTokens = ptokens[:numStartPTokens], ptokens[numStartPTokens:]
 
 	for i := range g.players {
@@ -87,23 +87,13 @@ func (g *Game) AvailableWonders() WonderNames {
 		return nil
 	}
 	var out WonderNames
-	for _, n := range g.activeWonders {
+	for _, n := range g.activeWonders[:4] {
 		if n == choosenWonderName {
 			continue
 		}
 		out = append(out, n)
 	}
-	switch g.wonderSelectionState {
-	case Part1ChooseBy1Player1Wonder:
-		return out[:4]
-	case Part1ChooseBy2Plaeyr2Wonder:
-		return out[:3]
-	case Part2ChooseBy2Player1Wonder:
-		return out[:4]
-	case Part2ChooseBy1Player2Wonder:
-		return out[:3]
-	}
-	return nil
+	return out
 }
 
 const (
@@ -195,7 +185,18 @@ func checkChoosenWonders(ws WonderNames, expect int) bool {
 	return true
 }
 
-// ActivePlayer of current game state
+// ConstructBuilding - construct one building
+func (g *Game) ConstructBuilding(name CardName) {
+	panic("Not implemented")
+	g.nextTurn()
+}
+
+// ConstructWonder by Building card
+func (g *Game) ConstructWonder(wname WonderName, cname CardName) {
+	panic("Not implemented")
+}
+
+// ActiveIndex of current game state
 func (g *Game) ActiveIndex() PlayerIndex {
 	return g.activePlayer
 }
@@ -215,32 +216,12 @@ func (g *Game) Shields() Shields {
 // 	panic("Not implemented")
 // }
 
-func (g *Game) playerI(i PlayerIndex) *Player {
-	return &g.players[i]
-}
-
-func (g *Game) player() *Player {
-	return g.playerI(g.activePlayer)
-}
-
-func (g *Game) opponent() *Player {
-	return g.playerI(nextPlayerIndex(g.activePlayer))
-}
-
-func (g *Game) setNextPlayer() {
-	g.activePlayer = nextPlayerIndex(g.activePlayer)
-}
-
-func nextPlayerIndex(i PlayerIndex) PlayerIndex {
-	return (i + 1) % numPlayers
-}
-
 func (g *Game) applyEffect(ee ...Effect) {
 	g.applyEffectByPlayer(g.activePlayer, ee...)
 }
 
 func (g *Game) applyEffectByPlayer(pIndex PlayerIndex, ee ...Effect) {
-	player := &g.players[pIndex]
+	player := g.playerI(pIndex)
 	for _, e := range ee {
 		switch e := e.(type) {
 		// player
@@ -257,7 +238,7 @@ func (g *Game) applyEffectByPlayer(pIndex PlayerIndex, ee ...Effect) {
 
 		// opponent
 		case opponent:
-			g.applyEffectByPlayer(nextPlayerIndex(pIndex), e.e)
+			g.applyEffectByPlayer(pIndex.Next(), e.e)
 
 		// science
 		case ScientificSymbol:
@@ -283,7 +264,7 @@ func (g *Game) applyEffectByPlayer(pIndex PlayerIndex, ee ...Effect) {
 }
 
 func (g *Game) nextTurn() {
-	g.activePlayer = nextPlayerIndex(g.activePlayer)
+	g.setNextPlayer()
 }
 
 func (g *Game) victory(playerIndex PlayerIndex, vt VictoryType) {
@@ -294,6 +275,26 @@ func (g *Game) victory(playerIndex PlayerIndex, vt VictoryType) {
 
 func (g *Game) canSelectActiveProgressToken() {
 	g.state = SelectActiveProgressTokenState
+}
+
+func (g *Game) playerI(i PlayerIndex) *Player {
+	return &g.players[i]
+}
+
+func (g *Game) player() *Player {
+	return g.playerI(g.activePlayer)
+}
+
+func (g *Game) opponent() *Player {
+	return g.nextPlayerI(g.activePlayer)
+}
+
+func (g *Game) setNextPlayer() {
+	g.activePlayer = g.activePlayer.Next()
+}
+
+func (g *Game) nextPlayerI(i PlayerIndex) *Player {
+	return g.playerI(i.Next())
 }
 
 // --------------------------------------
@@ -423,29 +424,25 @@ func (g *Game) GetCardCostByIndex(index int) (Money, bool) {
 		return 0, false
 	}
 
-	player := g.currentPlayer()
-	return g.costCardOfMoney(c, player), true
+	return g.costCardOfMoney(c, g.activePlayer), true
 }
 
-func (g *Game) costCardOfMoney(c *Card, player *Player) Money {
+func (g *Game) costCardOfMoney(c *Card, pi PlayerIndex) Money {
+	player := g.playerI(pi)
 	if c.FreeCostChainSymbol.Exists && player.ChainSymbols.Exists(c.FreeCostChainSymbol.ChainSymbol) {
 		return 0
 	}
 
-	tradingCosts := g.getTradingCosts()
+	tradingCosts := g.getTradingCosts(pi)
 	debug("Trading costs: %v", tradingCosts)
-	_, checkMoney := trade(tradingCosts, c.Cost, player)
+	checkMoney := CostByMoney(player, c.Cost, tradingCosts)
 	return checkMoney
 }
 
-func (g *Game) name() {
-
-}
-
 func (g *Game) checkAndBuyCard(c *Card) bool {
-	player := g.currentPlayer()
-	checkMoney := g.costCardOfMoney(c, player)
+	checkMoney := g.costCardOfMoney(c, g.activePlayer)
 
+	player := g.currentPlayer()
 	if checkMoney > player.Money {
 		log.Printf("Error on checking of a trading: not enough money")
 		return false
@@ -456,27 +453,8 @@ func (g *Game) checkAndBuyCard(c *Card) bool {
 	return true
 }
 
-func (g *Game) getTradingCosts() (out TradingCosts) {
-	oPlayer := g.oppositePlayer()
-
-	for _, r := range allResources {
-		out[r].SetMin(Money(2 + oPlayer.Resources[r]))
-	}
-
-	for _, m := range g.player().OnePriceMarkets {
-		out[m.Res].SetMin(m.Price)
-	}
-	return
-}
-
-// GetPlayerByIndex ...
-func (g *Game) GetPlayerByIndex(i int) Player {
-	if i < 0 || i > len(g.players) {
-		panic("wrong player index")
-	}
-	return g.players[i]
-}
-
-func (g *Game) getNextPlayerIndex(index int) int {
-	return (index + 1) % numPlayers
+func (g *Game) getTradingCosts(pi PlayerIndex) (out TradingCosts) {
+	opponent := g.nextPlayerI(pi)
+	tc := NewTradingCosts(opponent.Resources)
+	return tc.ApplyMarkets(g.playerI(pi).OnePriceMarkets)
 }

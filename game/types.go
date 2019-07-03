@@ -1,7 +1,5 @@
 package game
 
-import "fmt"
-
 // Money ...
 type Money int
 
@@ -12,11 +10,11 @@ func (m Money) effect() {}
 // func (m Money) pricer() {}
 
 // SetMin ...
-func (m *Money) SetMin(new Money) {
-	if *m == 0 || new < *m {
-		*m = new
-	}
-}
+// func (m *Money) SetMin(new Money) {
+// 	if new < *m {
+// 		*m = new
+// 	}
+// }
 
 // Sub ...
 func (m *Money) Sub(money DiscardMoney) {
@@ -95,6 +93,9 @@ func (c ChainSymbols) Exists(cs ChainSymbol) bool {
 	return false
 }
 
+// FreeChainSymbol - free cost by that chain symbol
+type FreeChainSymbol ChainSymbol
+
 // Effect ...
 type Effect interface {
 	effect()
@@ -114,30 +115,6 @@ func Opponent(e Effect) Effect {
 // Effects ...
 func Effects(args ...Effect) []Effect {
 	return args
-}
-
-// CostOfCard ...
-type CostOfCard struct {
-	Resources Resources
-	Money     Money
-}
-
-// Cost ...
-func Cost(args ...interface{}) (out CostOfCard) {
-	for _, a := range args {
-		switch a := a.(type) {
-		case Money:
-			out.Money += a
-		case Resources:
-			out.Resources = out.Resources.Add(a)
-		case Resource:
-			out.Resources = out.Resources.Change(a, 1)
-		case ChainSymbol:
-		default:
-			panic(fmt.Sprintf("Not implemented: %T", a))
-		}
-	}
-	return
 }
 
 // Cost ...
@@ -214,7 +191,7 @@ const (
 type ItemIndex int
 
 // GameCost ...
-type GameCost CostOfCard
+// type GameCost CostOfCard
 
 // MoneyByCards ...
 type MoneyByCards struct {
@@ -231,6 +208,7 @@ type MoneyByWonders struct {
 
 func (MoneyByWonders) effect() {}
 
+// RepeatTurn ...
 func RepeatTurn() Effect {
 	return repeatTurn{}
 }
