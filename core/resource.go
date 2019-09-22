@@ -39,5 +39,39 @@ func (r Resource) String() string {
 	return nameOfResource[r]
 }
 
+// Apply effect
+func (r Resource) Apply(g *Game, i PlayerIndex) {
+	g.player(i).Resources[r]++
+}
+
 // Resources - stack of resources
 type Resources [numResources]uint
+
+// NewRes - construct a new resources stack
+func NewRes(rs ...Resource) Resources {
+	var out Resources
+	for _, r := range rs {
+		out[r]++
+	}
+	return out
+}
+
+// Reduce by player's resources
+func (rs Resources) Reduce(byRs Resources) Resources {
+	for i := range rs {
+		if rs[i] < byRs[i] {
+			rs[i] = 0
+		} else {
+			rs[i] -= byRs[i]
+		}
+	}
+	return rs
+}
+
+// Add resources
+func (rs Resources) Add(rs2 Resources) Resources {
+	for i := range rs {
+		rs[i] += rs2[i]
+	}
+	return rs
+}
