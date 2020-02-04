@@ -1,17 +1,13 @@
 package game
 
-// Wonder from the Age of Antiquity
-type Wonder struct {
-	Name    WonderName
-	Cost    Cost
-	Effects []Effect
-}
-
-// WonderName - name of a wonder
-type WonderName string
+import "fmt"
 
 func (n WonderName) find() *Wonder {
-	return mapWonders[n]
+	w, ok := mapWonders[n]
+	if !ok {
+		panic(fmt.Sprintf("cannot find %q wonder", n))
+	}
+	return w
 }
 
 // WonderNames - list of name of wonders
@@ -66,52 +62,4 @@ func (w WonderNames) Count(n WonderName) int {
 		}
 	}
 	return count
-}
-
-const (
-	numWonders = 12
-)
-
-var (
-	listWonders = []Wonder{
-		newWonder("Temple of Artemis", Money(12), RepeatTurn(), NewCost(Wood, Stone, Glass, Papyrus)),
-		newWonder("The Great Lighthouse", OneOfAnyMarket(rawMaterials), VP(4), NewCost(Wood, Stone, Papyrus, Papyrus)),
-		newWonder("The Colossus", Shields(2), VP(3), NewCost(Clay, Clay, Clay, Glass)),
-		newWonder("The Pyramids", VP(9), NewCost(Stone, Stone, Stone, Papyrus)),
-		newWonder("The Mausoleum", VP(2), NewCost(Clay, Clay, Glass, Glass, Papyrus)),
-		newWonder("The Statue of Zeus", Shields(1), VP(3)),
-		newWonder("The Appian Way", Money(3), Opponent(DiscardMoney(3)), RepeatTurn(), VP(3), NewCost(Stone, Stone, Clay, Clay, Papyrus)),
-		newWonder("Circus Maximus", Shields(1), VP(3), NewCost(Stone, Stone, Wood, Glass)),
-		newWonder("The Great Library", VP(4), NewCost(Wood, Wood, Wood, Glass, Papyrus)),
-		newWonder("Piraeus", OneOfAnyMarket(manufacturedGoods), RepeatTurn(), VP(2), NewCost(Wood, Wood, Stone, Clay)),
-		newWonder("The Hanging Gardens", Money(6), RepeatTurn(), VP(3), NewCost(Wood, Wood, Glass, Papyrus)),
-		newWonder("The Sphinx", RepeatTurn(), VP(6), NewCost(Stone, Clay, Glass, Glass)),
-	}
-	_ = [1]struct{}{}[numWonders-len(listWonders)]
-
-	mapWonders = makeMapWondersByName()
-	_          = [1]struct{}{}[numWonders-len(mapWonders)]
-)
-
-func newWonder(name WonderName, args ...interface{}) (w Wonder) {
-	w.Name = name
-	for i := range args {
-		switch a := args[i].(type) {
-		case Cost:
-			w.Cost = a
-		case Effect:
-			w.Effects = append(w.Effects, a)
-		default:
-			panic("Not implemented")
-		}
-	}
-	return w
-}
-
-func makeMapWondersByName() map[WonderName]*Wonder {
-	m := map[WonderName]*Wonder{}
-	for i, w := range listWonders {
-		m[w.Name] = &listWonders[i]
-	}
-	return m
 }

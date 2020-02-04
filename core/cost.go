@@ -91,3 +91,43 @@ func OneCoinPrice(r Resource) PriceMarket {
 		Price:    Coins(1),
 	}
 }
+
+// // OneAnyMarket - one of these resources by every round
+// type OneAnyMarket []Resource
+
+// // OneRawMarket by raw materials
+// func OneRawMarket() OneAnyMarket { return OneAnyMarket(rawMaterials) }
+
+// // OneManufacturedMarket by manufactured goods
+// func OneManufacturedMarket() OneAnyMarket { return OneAnyMarket(manufacturedGoods) }
+
+// CostOfCard by coins
+// func CostOfCard(c *Card, tp TradingPrice, p Player) Coins {
+// 	for _, cnd := range c.FreeConstructionConditions {
+// 		if cnd.IsFree(p) {
+// 			return 0
+// 		}
+// 	}
+// 	return c.Cost.ReduceBy(p.Resources).Cost(tp)
+// }
+
+// AnyOneOfCosts with minimum price
+// type AnyOneOfCosts []Cost
+
+// // ByCoins - return minimum price by coins
+// func (c AnyOneOfCosts) ByCoins(g *Game, i PlayerIndex) (Coins, bool) {
+// 	var outCoins Coins
+// 	var outOk bool
+// 	for _, cost := range c {
+// 		cn, ok := cost.ByCoins(g, i)
+// 		if !ok {
+// 			continue
+// 		}
+// 		// first time OR less price
+// 		if !outOk || cn < outCoins {
+// 			outCoins = cn
+// 		}
+// 		outOk = true
+// 	}
+// 	return outCoins, outOk
+// }

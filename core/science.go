@@ -34,3 +34,26 @@ var (
 func (s ScientificSymbol) String() string {
 	return nameOfScientificSymbol[s]
 }
+
+// Apply effect
+func (s ScientificSymbol) Apply(g *Game, i PlayerIndex) {
+	g.players[i].ScientificSymbols[s]++
+	if g.players[i].ScientificSymbols[s]%2 == 0 {
+		panic("TODO")
+	}
+}
+
+// IsFree contruction card if this symbol is presented
+// func (s ScientificSymbol) IsFree(p Player) bool {
+// 	return p.ScientificSymbols[s]
+// }
+
+// func (s ScientificSymbol) Price(g *Game, i PlayerIndex) (Coins, bool) {
+// 	if g.player(i).ScientificSymbols[s] {
+// 		return 0, true
+// 	}
+// 	return 0, false
+// }
+
+// ScientificSymbols - set of scientific symbols
+type ScientificSymbols [numOfScientificSymbols]uint8

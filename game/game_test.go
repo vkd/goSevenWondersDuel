@@ -1,156 +1,150 @@
 package game
 
-import (
-	"testing"
+// // from rulebook: Preparation
+// func TestGame_Preparation(t *testing.T) {
+// 	g := NewGame()
+// 	assert.Len(t, g.AvailableProgressTokens(), 5)
 
-	"github.com/stretchr/testify/assert"
-)
+// 	assert.Equal(t, Money(7), g.playerI(0).Money)
+// 	assert.Equal(t, Money(7), g.playerI(1).Money)
+// }
 
-// from rulebook: Preparation
-func TestGame_Preparation(t *testing.T) {
-	g := NewGame()
-	assert.Len(t, g.AvailableProgressTokens(), 5)
+// // from rulebook: Wonders Selection Phase
+// func TestGame_WondersSelectionPhase(t *testing.T) {
+// 	g := NewGame()
+// 	assert.Equal(t, WondersSelectionPhase, g.state)
+// 	startPlayer := g.ActiveIndex()
 
-	assert.Equal(t, Money(7), g.playerI(0).Money)
-	assert.Equal(t, Money(7), g.playerI(1).Money)
-}
+// 	// part 1 choose by 1 player 1 wonder
+// 	// -----------------------------------
+// 	ws := g.AvailableWonders()
+// 	assert.Len(t, ws, 4)
 
-// from rulebook: Wonders Selection Phase
-func TestGame_WondersSelectionPhase(t *testing.T) {
-	g := NewGame()
-	assert.Equal(t, WondersSelectionPhase, g.state)
-	startPlayer := g.ActiveIndex()
+// 	// control
+// 	var fPlayer WonderNames
+// 	fPlayer.Append(ws[2], ws[1])
 
-	// part 1 choose by 1 player 1 wonder
-	// -----------------------------------
-	ws := g.AvailableWonders()
-	assert.Len(t, ws, 4)
+// 	g.TakeWonders(ws[2])
 
-	// control
-	var fPlayer WonderNames
-	fPlayer.Append(ws[2], ws[1])
+// 	// part 1 choose by 2 player 2 wonders
+// 	// -----------------------------------
+// 	ws3 := g.AvailableWonders()
+// 	assert.Len(t, ws3, 3)
+// 	assert.Equal(t, ws[0], ws3[0])
+// 	assert.Equal(t, ws[1], ws3[1])
+// 	assert.Equal(t, ws[3], ws3[2])
 
-	g.TakeWonders(ws[2])
+// 	// control
+// 	var sPlayer WonderNames
+// 	sPlayer.Append(ws[0], ws[3])
 
-	// part 1 choose by 2 player 2 wonders
-	// -----------------------------------
-	ws3 := g.AvailableWonders()
-	assert.Len(t, ws3, 3)
-	assert.Equal(t, ws[0], ws3[0])
-	assert.Equal(t, ws[1], ws3[1])
-	assert.Equal(t, ws[3], ws3[2])
+// 	g.TakeWonders(ws[0], ws[3])
 
-	// control
-	var sPlayer WonderNames
-	sPlayer.Append(ws[0], ws[3])
+// 	// part 2 choose by 2 player 1 wonder
+// 	// -----------------------------------
+// 	ws = g.AvailableWonders()
+// 	assert.Len(t, ws, 4)
 
-	g.TakeWonders(ws[0], ws[3])
+// 	// control
+// 	sPlayer.Append(ws[1], ws[0])
 
-	// part 2 choose by 2 player 1 wonder
-	// -----------------------------------
-	ws = g.AvailableWonders()
-	assert.Len(t, ws, 4)
+// 	g.TakeWonders(ws[1])
 
-	// control
-	sPlayer.Append(ws[1], ws[0])
+// 	// part 2 choose by 1 player 2 wonders
+// 	// -----------------------------------
+// 	ws3 = g.AvailableWonders()
+// 	assert.Len(t, ws3, 3)
+// 	assert.Equal(t, ws[0], ws3[0])
+// 	assert.Equal(t, ws[2], ws3[1])
+// 	assert.Equal(t, ws[3], ws3[2])
 
-	g.TakeWonders(ws[1])
+// 	// control
+// 	fPlayer.Append(ws[2], ws[3])
 
-	// part 2 choose by 1 player 2 wonders
-	// -----------------------------------
-	ws3 = g.AvailableWonders()
-	assert.Len(t, ws3, 3)
-	assert.Equal(t, ws[0], ws3[0])
-	assert.Equal(t, ws[2], ws3[1])
-	assert.Equal(t, ws[3], ws3[2])
+// 	g.TakeWonders(ws[2], ws[3])
 
-	// control
-	fPlayer.Append(ws[2], ws[3])
+// 	// game state
+// 	// -----------------------------------
+// 	assert.Equal(t, GameState, g.state)
+// 	assert.Equal(t, startPlayer, g.ActiveIndex())
+// 	assert.Len(t, g.activeWonders, 0)
 
-	g.TakeWonders(ws[2], ws[3])
+// 	assert.Equal(t, fPlayer, g.player().Wonders)
+// 	assert.Equal(t, sPlayer, g.opponent().Wonders)
+// }
 
-	// game state
-	// -----------------------------------
-	assert.Equal(t, GameState, g.state)
-	assert.Equal(t, startPlayer, g.ActiveIndex())
-	assert.Len(t, g.activeWonders, 0)
+// func TestGame_Military(t *testing.T) {
+// 	var g Game
+// 	g.applyEffect(Shields(1))
+// 	assert.Equal(t, Shields(1), g.war.Shields[g.activePlayer])
 
-	assert.Equal(t, fPlayer, g.player().Wonders)
-	assert.Equal(t, sPlayer, g.opponent().Wonders)
-}
+// 	g = Game{}
+// 	g.applyEffect(Money(7), Opponent(Money(7)), Shields(3))
+// 	assert.Equal(t, Money(7), g.player().Money)
+// 	assert.Equal(t, Money(5), g.opponent().Money)
+// 	assert.Equal(t, Shields(3), g.war.Shields[g.activePlayer])
 
-func TestGame_Military(t *testing.T) {
-	var g Game
-	g.applyEffect(Shields(1))
-	assert.Equal(t, Shields(1), g.war.Shields[g.activePlayer])
+// 	g = Game{}
+// 	g.applyEffect(Money(7), Opponent(Money(7)), Shields(6))
+// 	assert.Equal(t, Money(7), g.player().Money)
+// 	assert.Equal(t, Money(0), g.opponent().Money)
 
-	g = Game{}
-	g.applyEffect(Money(7), Opponent(Money(7)), Shields(3))
-	assert.Equal(t, Money(7), g.player().Money)
-	assert.Equal(t, Money(5), g.opponent().Money)
-	assert.Equal(t, Shields(3), g.war.Shields[g.activePlayer])
+// 	g = Game{}
+// 	g.applyEffect(Money(7), Opponent(Money(7)), Shields(9))
+// 	assert.Equal(t, Money(7), g.player().Money)
+// 	assert.Equal(t, Money(0), g.opponent().Money)
+// 	assert.Equal(t, VictoryState, g.state)
+// }
 
-	g = Game{}
-	g.applyEffect(Money(7), Opponent(Money(7)), Shields(6))
-	assert.Equal(t, Money(7), g.player().Money)
-	assert.Equal(t, Money(0), g.opponent().Money)
+// func TestGameGetCardCostByIndex(t *testing.T) {
+// 	addCard := func(g *Game, c Card) { g.cards = append(g.cards, &c) }
 
-	g = Game{}
-	g.applyEffect(Money(7), Opponent(Money(7)), Shields(9))
-	assert.Equal(t, Money(7), g.player().Money)
-	assert.Equal(t, Money(0), g.opponent().Money)
-	assert.Equal(t, VictoryState, g.state)
-}
+// 	g := &Game{}
+// 	addCard(g, newCard("Test", Red, NewCost(Wood, Stone))) // 2 + 2
 
-func TestGameGetCardCostByIndex(t *testing.T) {
-	addCard := func(g *Game, c Card) { g.cards = append(g.cards, &c) }
+// 	money, ok := g.GetCardCostByIndex(0)
+// 	assert.True(t, ok)
+// 	assert.Equal(t, Money(4), money) // = 4
 
-	g := &Game{}
-	addCard(g, newCard("Test", Red, NewCost(Wood, Stone))) // 2 + 2
+// 	g = &Game{}
+// 	addCard(g, newCard("Test", Red, NewCost(Wood, Stone))) // 2 + 2
+// 	g.applyEffect(OnePriceMarket{Stone, 1})                // 2 + 1
 
-	money, ok := g.GetCardCostByIndex(0)
-	assert.True(t, ok)
-	assert.Equal(t, Money(4), money) // = 4
+// 	money, ok = g.GetCardCostByIndex(0)
+// 	assert.True(t, ok)
+// 	assert.Equal(t, Money(3), money) // = 3
 
-	g = &Game{}
-	addCard(g, newCard("Test", Red, NewCost(Wood, Stone))) // 2 + 2
-	g.applyEffect(OnePriceMarket{Stone, 1})                // 2 + 1
+// 	g = &Game{}
+// 	g.applyEffect(Wood)
+// 	g.nextTurn()
+// 	addCard(g, newCard("Text", Red, NewCost(Wood, Stone))) // 3 + 2
 
-	money, ok = g.GetCardCostByIndex(0)
-	assert.True(t, ok)
-	assert.Equal(t, Money(3), money) // = 3
+// 	money, ok = g.GetCardCostByIndex(0)
+// 	assert.True(t, ok)
+// 	assert.Equal(t, Money(5), money) // = 5
 
-	g = &Game{}
-	g.applyEffect(Wood)
-	g.nextTurn()
-	addCard(g, newCard("Text", Red, NewCost(Wood, Stone))) // 3 + 2
+// 	g = &Game{}
+// 	g.applyEffect(Wood)
+// 	addCard(g, newCard("Text", Red, NewCost(Wood, Stone))) // 2
 
-	money, ok = g.GetCardCostByIndex(0)
-	assert.True(t, ok)
-	assert.Equal(t, Money(5), money) // = 5
+// 	money, ok = g.GetCardCostByIndex(0)
+// 	assert.True(t, ok)
+// 	assert.Equal(t, Money(2), money) // = 2
 
-	g = &Game{}
-	g.applyEffect(Wood)
-	addCard(g, newCard("Text", Red, NewCost(Wood, Stone))) // 2
+// 	g = &Game{}
+// 	g.applyEffect(Wood)
+// 	g.nextTurn()
+// 	g.applyEffect(OnePriceMarket{Clay, 1})
+// 	addCard(g, newCard("Text", Red, NewCost(Wood, Stone, Clay))) // costs: 3 2 1
 
-	money, ok = g.GetCardCostByIndex(0)
-	assert.True(t, ok)
-	assert.Equal(t, Money(2), money) // = 2
+// 	money, ok = g.GetCardCostByIndex(0)
+// 	assert.True(t, ok)
+// 	assert.Equal(t, Money(6), money)
 
-	g = &Game{}
-	g.applyEffect(Wood)
-	g.nextTurn()
-	g.applyEffect(OnePriceMarket{Clay, 1})
-	addCard(g, newCard("Text", Red, NewCost(Wood, Stone, Clay))) // costs: 3 2 1
+// 	g.applyEffect(OneOfAnyMarket([]Resource{Wood, Stone}))
+// 	g.applyEffect(OneOfAnyMarket([]Resource{Wood, Clay}))
 
-	money, ok = g.GetCardCostByIndex(0)
-	assert.True(t, ok)
-	assert.Equal(t, Money(6), money)
-
-	g.applyEffect(OneOfAnyMarket([]Resource{Wood, Stone}))
-	g.applyEffect(OneOfAnyMarket([]Resource{Wood, Clay}))
-
-	money, ok = g.GetCardCostByIndex(0)
-	assert.True(t, ok)
-	assert.Equal(t, Money(1), money)
-}
+// 	money, ok = g.GetCardCostByIndex(0)
+// 	assert.True(t, ok)
+// 	assert.Equal(t, Money(1), money)
+// }

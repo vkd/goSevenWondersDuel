@@ -27,15 +27,3 @@ type PlayerIndex int
 func (i PlayerIndex) Next() PlayerIndex {
 	return (i + 1) % numPlayers
 }
-
-// AddScience ...
-func AddScience(g *Game, ss ScientificSymbol) {
-	player := g.player()
-	if player.ScientificSymbols == nil {
-		player.ScientificSymbols = make(ScientificSymbols)
-	}
-	player.ScientificSymbols[ss]++
-	if player.ScientificSymbols[ss]%2 == 0 {
-		g.canSelectActiveProgressToken()
-	}
-}

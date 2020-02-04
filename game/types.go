@@ -3,7 +3,9 @@ package game
 // Money ...
 type Money int
 
-func (m Money) effect() {}
+func (m Money) effect(g *Game, i PlayerIndex) {
+	g.player(i).Money += m
+}
 
 // var _ Price = Money(0)
 
@@ -35,50 +37,24 @@ func (m Money) Mul(x int) Money {
 // Score ...
 type Score int
 
-// ScientificSymbol ...
-type ScientificSymbol string
-
-func (ScientificSymbol) effect() {}
+func (s ScientificSymbol) effect(g *Game, i PlayerIndex) {
+	player := g.player(i)
+	if player.ScientificSymbols == nil {
+		player.ScientificSymbols = make(ScientificSymbols)
+	}
+	player.ScientificSymbols[s]++
+	if player.ScientificSymbols[s]%2 == 0 {
+		g.canSelectActiveProgressToken()
+	}
+}
 
 // ScientificSymbols ...
 type ScientificSymbols map[ScientificSymbol]int
 
-// ScientificSymbols
-const (
-	Wheel     ScientificSymbol = "Wheel"
-	Mortar    ScientificSymbol = "Mortar"
-	Clock     ScientificSymbol = "Clock"
-	Tool      ScientificSymbol = "Tool"
-	Pen       ScientificSymbol = "Pen"
-	Astronomy ScientificSymbol = "Astronomy"
-	Scales    ScientificSymbol = "Scales"
-)
-
-// ChainSymbol ...
-type ChainSymbol string
-
-func (ChainSymbol) effect() {}
-
-// ChainSymbols
-const (
-	Horseshoe ChainSymbol = "Horseshoe"
-	Sword     ChainSymbol = "Sword"
-	Wall      ChainSymbol = "Wall"
-	Target    ChainSymbol = "Target"
-	Helm      ChainSymbol = "Helm"
-	Book      ChainSymbol = "Book"
-	Gear      ChainSymbol = "Gear"
-	Harp      ChainSymbol = "Harp"
-	Lamp      ChainSymbol = "Lamp"
-	Mask      ChainSymbol = "Mask"
-	Column    ChainSymbol = "Column"
-	Moon      ChainSymbol = "Moon"
-	Sun       ChainSymbol = "Sun"
-	Water     ChainSymbol = "Water"
-	Pantheon  ChainSymbol = "Pantheon"
-	Bottle    ChainSymbol = "Bottle"
-	Barrel    ChainSymbol = "Barrel"
-)
+func (s ChainSymbol) effect(g *Game, i PlayerIndex) {
+	player := g.player(i)
+	player.ChainSymbols = append(player.ChainSymbols, s)
+}
 
 // ChainSymbols ...
 type ChainSymbols []ChainSymbol
@@ -98,14 +74,16 @@ type FreeChainSymbol ChainSymbol
 
 // Effect ...
 type Effect interface {
-	effect()
+	effect(g *Game, i PlayerIndex)
 }
 
 type opponent struct {
 	e Effect
 }
 
-func (opponent) effect() {}
+func (o opponent) effect(g *Game, i PlayerIndex) {
+	o.e.effect(g, i.Next())
+}
 
 // Opponent ...
 func Opponent(e Effect) Effect {
@@ -123,7 +101,9 @@ func Effects(args ...Effect) []Effect {
 // VP ...
 type VP uint
 
-func (VP) effect() {}
+func (v VP) effect(g *Game, i PlayerIndex) {
+	g.player(i).VP += v
+}
 
 // Market ...
 type Market interface{}
@@ -136,7 +116,10 @@ type Market interface{}
 // OneOfAnyMarket ...
 type OneOfAnyMarket []Resource
 
-func (OneOfAnyMarket) effect() {}
+func (m OneOfAnyMarket) effect(g *Game, i PlayerIndex) {
+	player := g.player(i)
+	player.OneOfAnyMarkets = append(player.OneOfAnyMarkets, m)
+}
 
 // OnePriceMarket ...
 type OnePriceMarket struct {
@@ -144,7 +127,10 @@ type OnePriceMarket struct {
 	Price Money
 }
 
-func (OnePriceMarket) effect() {}
+func (m OnePriceMarket) effect(g *Game, i PlayerIndex) {
+	player := g.player(i)
+	player.OnePriceMarkets = append(player.OnePriceMarkets, m)
+}
 
 // func OnePriceMarket(r Resource, price Money) PriceMarket {
 // 	panic("Not implemented")
@@ -175,7 +161,9 @@ func (m *MaybeChainSym) Set(c ChainSymbol) {
 // DiscardMoney ...
 type DiscardMoney Money
 
-func (DiscardMoney) effect() {}
+func (d DiscardMoney) effect(g *Game, i PlayerIndex) {
+	g.player(i).Money.Sub(d)
+}
 
 // VictoryType ...
 type VictoryType uint8
@@ -199,14 +187,18 @@ type MoneyByCards struct {
 	Value Money
 }
 
-func (MoneyByCards) effect() {}
+func (MoneyByCards) effect(g *Game, i PlayerIndex) {
+	panic("Not implemented")
+}
 
 // MoneyByWonders ...
 type MoneyByWonders struct {
 	Value Money
 }
 
-func (MoneyByWonders) effect() {}
+func (m MoneyByWonders) effect(g *Game, i PlayerIndex) {
+	m.Value.Mul(len(g.player(i).Wonders)).effect(g, i)
+}
 
 // RepeatTurn ...
 func RepeatTurn() Effect {
@@ -215,4 +207,6 @@ func RepeatTurn() Effect {
 
 type repeatTurn struct{}
 
-func (repeatTurn) effect() {}
+func (repeatTurn) effect(g *Game, i PlayerIndex) {
+	panic("Not implemented")
+}

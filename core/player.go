@@ -15,8 +15,22 @@ type Player struct {
 
 	Chains Chains
 
+	ScientificSymbols ScientificSymbols
+
 	AvailableWorneds []WonderName
 	BuildWonders     []WonderName
 
 	PriceMarkets PriceMarkets
+
+	BuiltCards [numOfCardColors][]CardName
+
+	VP VP
+}
+
+// NewPlayer of a game
+func NewPlayer() Player {
+	p := Player{
+		Coins: 7,
+	}
+	return p
 }

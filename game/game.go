@@ -1,10 +1,11 @@
 package game
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -15,14 +16,11 @@ const (
 
 // Game 7 Wonders
 type Game struct {
-	players      [numPlayers]Player
-	activePlayer PlayerIndex
+	players [numPlayers]Player
+	active  PlayerIndex
 
 	state                State
 	wonderSelectionState WonderSelectionState
-
-	activePTokens  []PTokenName
-	discardPTokens []PTokenName
 
 	activeWonders, discardWonders WonderNames
 	// -----------------------
@@ -36,7 +34,7 @@ type Game struct {
 	victoryType VictoryType
 	// victoryPlayer PlayerIndex
 
-	log *log.Logger
+	log logrus.Logger
 }
 
 // NewGame - create new initialized game instance
@@ -61,7 +59,7 @@ func (g *Game) Initialize() {
 	}
 
 	// random first player
-	g.activePlayer = PlayerIndex(rnd.Int() % numPlayers)
+	g.active = PlayerIndex(rnd.Int() % numPlayers)
 
 	// g.startAge(ageI, 20)
 
@@ -88,9 +86,9 @@ func (g *Game) AvailableWonders() WonderNames {
 	}
 	var out WonderNames
 	for _, n := range g.activeWonders[:4] {
-		if n == choosenWonderName {
-			continue
-		}
+		// if n == choosenWonderName {
+		// 	continue
+		// }
 		out = append(out, n)
 	}
 	return out
@@ -115,7 +113,7 @@ func (g *Game) TakeWonders(ww ...WonderName) {
 	}
 
 	switch g.wonderSelectionState {
-	case Part1ChooseBy1Player1Wonder, Part2ChooseBy2Player1Wonder:
+	case Part1Choose1WonderBy1Player, Part2Choose1WonderBy2Player:
 		ws := g.activeWonders[:4]
 		if !checkChoosenWonders(ws, 0) {
 			return
@@ -125,17 +123,17 @@ func (g *Game) TakeWonders(ww ...WonderName) {
 			return
 		}
 
-		g.player().Wonders.Append(ww[0])
+		g.current().Wonders.Append(ww[0])
 		g.activeWonders[i] = choosenWonderName
 
 		g.setNextPlayer()
 		switch g.wonderSelectionState {
-		case Part1ChooseBy1Player1Wonder:
-			g.wonderSelectionState = Part1ChooseBy2Plaeyr2Wonder
-		case Part2ChooseBy2Player1Wonder:
-			g.wonderSelectionState = Part2ChooseBy1Player2Wonder
+		case Part1Choose1WonderBy1Player:
+			g.wonderSelectionState = Part1Choose2WonderBy2Plaeyr
+		case Part2Choose1WonderBy2Player:
+			g.wonderSelectionState = Part2Choose2WonderBy1Player
 		}
-	case Part1ChooseBy2Plaeyr2Wonder, Part2ChooseBy1Player2Wonder:
+	case Part1Choose2WonderBy2Plaeyr, Part2Choose2WonderBy1Player:
 		if len(ww) < 2 {
 			return
 		}
@@ -152,7 +150,7 @@ func (g *Game) TakeWonders(ww ...WonderName) {
 		if j == -1 || i == j {
 			return
 		}
-		g.player().Wonders.Append(ww[:2]...)
+		g.current().Wonders.Append(ww[:2]...)
 		g.activeWonders[i] = choosenWonderName
 		g.activeWonders[j] = choosenWonderName
 
@@ -167,9 +165,9 @@ func (g *Game) TakeWonders(ww ...WonderName) {
 		g.activeWonders = g.activeWonders[4:]
 
 		switch g.wonderSelectionState {
-		case Part1ChooseBy2Plaeyr2Wonder:
-			g.wonderSelectionState = Part2ChooseBy2Player1Wonder
-		case Part2ChooseBy1Player2Wonder:
+		case Part1Choose2WonderBy2Plaeyr:
+			g.wonderSelectionState = Part2Choose1WonderBy2Player
+		case Part2Choose2WonderBy1Player:
 			g.state = GameState
 		}
 	default:
@@ -196,10 +194,10 @@ func (g *Game) ConstructWonder(wname WonderName, cname CardName) {
 	panic("Not implemented")
 }
 
-// ActiveIndex of current game state
-func (g *Game) ActiveIndex() PlayerIndex {
-	return g.activePlayer
-}
+// // ActiveIndex of current game state
+// func (g *Game) ActiveIndex() PlayerIndex {
+// 	return g.activePlayer
+// }
 
 // Shields of current game state
 func (g *Game) Shields() Shields {
@@ -216,52 +214,52 @@ func (g *Game) Shields() Shields {
 // 	panic("Not implemented")
 // }
 
-func (g *Game) applyEffect(ee ...Effect) {
-	g.applyEffectByPlayer(g.activePlayer, ee...)
-}
+// func (g *Game) applyEffect(ee ...Effect) {
+// 	g.applyEffectByPlayer(g.activePlayer, ee...)
+// }
 
-func (g *Game) applyEffectByPlayer(pIndex PlayerIndex, ee ...Effect) {
-	player := g.playerI(pIndex)
-	for _, e := range ee {
-		switch e := e.(type) {
-		// player
-		case Money:
-			player.Money += e
-		case DiscardMoney:
-			player.Money.Sub(e)
-		case Shields:
-			AddShields(g, e)
-		case Resource:
-			player.Resources[e]++
-		case VP:
-			player.VP += e
+// func (g *Game) applyEffectByPlayer(pIndex PlayerIndex, ee ...Effect) {
+// 	player := g.player(pIndex)
+// 	for _, e := range ee {
+// 		switch e := e.(type) {
+// 		// player
+// 		case Money:
+// 			player.Money += e
+// 		case DiscardMoney:
+// 			player.Money.Sub(e)
+// 		case Shields:
+// 			AddShields(g, e)
+// 		case Resource:
+// 			player.Resources[e]++
+// 		case VP:
+// 			player.VP += e
 
-		// opponent
-		case opponent:
-			g.applyEffectByPlayer(pIndex.Next(), e.e)
+// 		// opponent
+// 		case opponent:
+// 			g.applyEffectByPlayer(pIndex.Next(), e.e)
 
-		// science
-		case ScientificSymbol:
-			AddScience(g, e)
+// 		// science
+// 		case ScientificSymbol:
+// 			AddScience(g, pIndex, e)
 
-		// chains
-		case ChainSymbol:
-			player.ChainSymbols = append(player.ChainSymbols, e)
+// 		// chains
+// 		case ChainSymbol:
+// 			player.ChainSymbols = append(player.ChainSymbols, e)
 
-		// markets
-		case OnePriceMarket:
-			player.OnePriceMarkets = append(player.OnePriceMarkets, e)
-		case OneOfAnyMarket:
-			player.OneOfAnyMarkets = append(player.OneOfAnyMarkets, e)
+// 		// markets
+// 		case OnePriceMarket:
+// 			player.OnePriceMarkets = append(player.OnePriceMarkets, e)
+// 		case OneOfAnyMarket:
+// 			player.OneOfAnyMarkets = append(player.OneOfAnyMarkets, e)
 
-		// money by ...
-		case MoneyByWonders:
-			player.Money += e.Value.Mul(len(player.Wonders))
-		default:
-			panic(fmt.Sprintf("Not implemented: %T", e))
-		}
-	}
-}
+// 		// money by ...
+// 		case MoneyByWonders:
+// 			player.Money += e.Value.Mul(len(player.Wonders))
+// 		default:
+// 			panic(fmt.Sprintf("Not implemented: %T", e))
+// 		}
+// 	}
+// }
 
 func (g *Game) nextTurn() {
 	g.setNextPlayer()
@@ -277,25 +275,34 @@ func (g *Game) canSelectActiveProgressToken() {
 	g.state = SelectActiveProgressTokenState
 }
 
-func (g *Game) playerI(i PlayerIndex) *Player {
+// func (g *Game) playerI(i PlayerIndex) *Player {
+// 	return &g.players[i]
+// }
+
+// // Player ...
+// func (g *Game) Player(i PlayerIndex) Player {
+// 	return g.players[i]
+// }
+
+func (g *Game) player(i PlayerIndex) *Player {
 	return &g.players[i]
 }
 
-func (g *Game) player() *Player {
-	return g.playerI(g.activePlayer)
+func (g *Game) current() *Player {
+	return g.player(g.active)
 }
 
 func (g *Game) opponent() *Player {
-	return g.nextPlayerI(g.activePlayer)
+	return g.player(g.active.Next())
 }
 
 func (g *Game) setNextPlayer() {
-	g.activePlayer = g.activePlayer.Next()
+	g.active = g.active.Next()
 }
 
-func (g *Game) nextPlayerI(i PlayerIndex) *Player {
-	return g.playerI(i.Next())
-}
+// func (g *Game) nextPlayerI(i PlayerIndex) *Player {
+// 	return g.playerI(i.Next())
+// }
 
 // --------------------------------------
 
@@ -321,10 +328,10 @@ type WonderSelectionState = uint8
 
 // Wonder selection states
 const (
-	Part1ChooseBy1Player1Wonder WonderSelectionState = iota
-	Part1ChooseBy2Plaeyr2Wonder
-	Part2ChooseBy2Player1Wonder
-	Part2ChooseBy1Player2Wonder
+	Part1Choose1WonderBy1Player WonderSelectionState = iota
+	Part1Choose2WonderBy2Plaeyr
+	Part2Choose1WonderBy2Player
+	Part2Choose2WonderBy1Player
 )
 
 // func (g *Game) startAge(age []Card, num int) {
@@ -408,27 +415,27 @@ func (g *Game) getCardByIndex(index int) *Card {
 // 	return
 // }
 
-func (g *Game) currentPlayer() *Player {
-	return g.player()
-}
+// func (g *Game) currentPlayer() *Player {
+// 	return g.player()
+// }
 
-func (g *Game) oppositePlayer() *Player {
-	return g.opponent()
-}
+// func (g *Game) oppositePlayer() *Player {
+// 	return g.opponent()
+// }
 
 // GetCardCostByIndex ...
-func (g *Game) GetCardCostByIndex(index int) (Money, bool) {
-	c := g.getCardByIndex(index)
-	if c == nil {
-		log.Printf("Get card cost is denied: card not found")
-		return 0, false
-	}
+// func (g *Game) GetCardCostByIndex(index int) (Money, bool) {
+// 	c := g.getCardByIndex(index)
+// 	if c == nil {
+// 		log.Printf("Get card cost is denied: card not found")
+// 		return 0, false
+// 	}
 
-	return g.costCardOfMoney(c, g.activePlayer), true
-}
+// 	return g.costCardOfMoney(c, g.activePlayer), true
+// }
 
 func (g *Game) costCardOfMoney(c *Card, pi PlayerIndex) Money {
-	player := g.playerI(pi)
+	player := g.player(pi)
 	if c.FreeCostChainSymbol.Exists && player.ChainSymbols.Exists(c.FreeCostChainSymbol.ChainSymbol) {
 		return 0
 	}
@@ -440,21 +447,23 @@ func (g *Game) costCardOfMoney(c *Card, pi PlayerIndex) Money {
 }
 
 func (g *Game) checkAndBuyCard(c *Card) bool {
-	checkMoney := g.costCardOfMoney(c, g.activePlayer)
+	checkMoney := g.costCardOfMoney(c, g.active)
 
-	player := g.currentPlayer()
+	player := g.current()
 	if checkMoney > player.Money {
 		log.Printf("Error on checking of a trading: not enough money")
 		return false
 	}
 
 	player.Money -= checkMoney
-	g.applyEffect(c.Effects...)
+	for _, e := range c.Effects {
+		e.effect(g, g.active)
+	}
 	return true
 }
 
 func (g *Game) getTradingCosts(pi PlayerIndex) (out TradingCosts) {
-	opponent := g.nextPlayerI(pi)
+	opponent := g.player(pi.Next())
 	tc := NewTradingCosts(opponent.Resources)
-	return tc.ApplyMarkets(g.playerI(pi).OnePriceMarkets)
+	return tc.ApplyMarkets(g.player(pi).OnePriceMarkets)
 }

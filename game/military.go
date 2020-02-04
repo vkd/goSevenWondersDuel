@@ -1,8 +1,20 @@
 package game
 
-// Shields ...
-type Shields int        // Military tokens, Conflict pawn
-func (Shields) effect() {}
+func (s Shields) effect(g *Game, i PlayerIndex) {
+	g.war.Shields[i] += s
+	dt, dtI := g.war.dt()
+	if dt >= 3 && g.war.firstGte3[dtI] == false {
+		g.war.firstGte3[dtI] = true
+		DiscardMoney(2).effect(g, i.Next())
+	}
+	if dt >= 6 && g.war.firstGte6[dtI] == false {
+		g.war.firstGte6[dtI] = true
+		DiscardMoney(5).effect(g, i.Next())
+	}
+	if dt >= 9 {
+		g.victory(dtI, MilitarySupremacy)
+	}
+}
 
 // Military ...
 type Military struct {
@@ -32,21 +44,4 @@ func (w *Military) finalVP() (VP, PlayerIndex) {
 		res = 10
 	}
 	return res, dtI
-}
-
-// AddShields ...
-func AddShields(g *Game, s Shields) {
-	g.war.Shields[g.activePlayer] += s
-	dt, dtI := g.war.dt()
-	if dt >= 3 && g.war.firstGte3[dtI] == false {
-		g.war.firstGte3[dtI] = true
-		g.applyEffectByPlayer(dtI.Next(), DiscardMoney(2))
-	}
-	if dt >= 6 && g.war.firstGte6[dtI] == false {
-		g.war.firstGte6[dtI] = true
-		g.applyEffectByPlayer(dtI.Next(), DiscardMoney(5))
-	}
-	if dt >= 9 {
-		g.victory(dtI, MilitarySupremacy)
-	}
 }

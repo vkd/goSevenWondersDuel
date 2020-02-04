@@ -1,30 +1,8 @@
 package game
 
-// Resource - type of goods
-type Resource uint8
-
-func (Resource) effect() {}
-
-// Different kind of resources
-const (
-	Wood Resource = iota
-	Stone
-	Clay
-	Papyrus
-	Glass
-	numResources int = iota
-)
-
-// Sets of resources
-var (
-	rawMaterials      = []Resource{Wood, Stone, Clay}
-	manufacturedGoods = []Resource{Papyrus, Glass}
-
-	allResources = []Resource{Wood, Stone, Clay, Papyrus, Glass}
-	// compile time checkers - len(allResources) == numResources
-	_ = [1]struct{}{}[len(allResources)-numResources]
-	_ = [1]struct{}{}[numResources-len(allResources)]
-)
+func (r Resource) effect(g *Game, i PlayerIndex) {
+	g.player(i).Resources.Change(r, 1)
+}
 
 // Presets of Resources
 var (
@@ -90,7 +68,10 @@ func (r Resources) IsZero(res Resource) bool {
 // 	r[res]++
 // }
 
-func (r Resources) effect() {}
+func (r Resources) effect(g *Game, i PlayerIndex) {
+	g.log.Infof("Add resources: %v", r)
+	g.player(i).Resources.Add(r)
+}
 
 // Res ...
 func Res(rt Resource, val int) Resources {
