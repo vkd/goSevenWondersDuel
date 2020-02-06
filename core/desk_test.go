@@ -1,64 +1,41 @@
 package core
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func Test_desk_ageI(t *testing.T) {
-	var d deskAgeI
-	for i := range d {
-		d[i] = CardName(fmt.Sprintf("card-%d", i))
+var (
+	//   0
+	// 1   2
+	//   3
+	testCoveredBy = cardRelations{
+		0: {1, 2},
+		1: {3},
+		2: {3},
 	}
+	testHiddenCards = []cardIndex{1, 2}
+	testStructure   = newAgeStructure(testCoveredBy, testHiddenCards)
 
-	cards := d.Cards()
-	allNotEquals(t, cards[:2], hiddenCardName)
-	allEquals(t, cards[2:5], hiddenCardName)
-	allNotEquals(t, cards[5:9], hiddenCardName)
-	allEquals(t, cards[9:14], hiddenCardName)
-	allNotEquals(t, cards[14:], hiddenCardName)
+	testCards = []CardID{10, 11, 12, 13}
+)
 
-	for i, name := range cards {
-		assert.Equal(t, i >= 14, d.Check(name), "wrong value for %d index", i)
-	}
+func Test_ageDesk_Build(t *testing.T) {
+	var desk, err = newAgeDesk(testStructure, testCards)
+	require.NoError(t, err)
 
-	ok := d.Take(cards[16])
-	assert.True(t, ok)
-	cards = d.Cards()
+	// Precheck
+	assert.False(t, desk.state[1].FaceUp)
+	assert.Zero(t, desk.state[1].ID)
+	assert.Error(t, desk.Build(CardID(12)))
 
-	for i, name := range cards {
-		if name == noCardName {
-			continue
-		}
-		assert.Equal(t, i >= 14, d.Check(name), "wrong value for %d index", i)
-	}
+	// Action
+	assert.NoError(t, desk.Build(CardID(13)))
 
-	assert.Equal(t, hiddenCardName, cards[11])
-
-	ok = d.Take(cards[17])
-	assert.True(t, ok)
-	cards = d.Cards()
-
-	assert.NotEqual(t, hiddenCardName, cards[11])
-
-	for i, name := range cards {
-		if name == noCardName {
-			continue
-		}
-		assert.Equal(t, i == 11 || i >= 14, d.Check(name), "wrong value for %d index", i)
-	}
-}
-
-func allEquals(t *testing.T, cards []CardName, expected CardName) {
-	for _, name := range cards {
-		assert.Equal(t, expected, name)
-	}
-}
-
-func allNotEquals(t *testing.T, cards []CardName, expected CardName) {
-	for _, name := range cards {
-		assert.NotEqual(t, expected, name)
-	}
+	// Postcheck
+	assert.True(t, desk.state[2].FaceUp)
+	assert.Equal(t, CardID(12), desk.state[2].ID)
+	assert.NoError(t, desk.Build(CardID(12)))
 }

@@ -4,10 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestZeroGame(t *testing.T) {
-	game := NewGame(WithSeed(0))
+	game, err := NewGame(WithSeed(0))
+	require.NoError(t, err)
 	assert.Equal(t, game.GetState(), StateInit)
 
 	wonders, ptokens, ok := game.Init()
@@ -17,7 +19,7 @@ func TestZeroGame(t *testing.T) {
 	assert.Len(t, wonders, initialWonders)
 	assert.Len(t, ptokens, initialPTokens)
 
-	err := game.SelectWonders(
+	err = game.SelectWonders(
 		// Temple of Artemis, The Great Library, The Hanging Gardens, The Sphinx
 		[...]WonderName{wonders[3], wonders[2], wonders[4], wonders[7]},
 		// The Appian Way, The Statue of Zeus, The Great Lighthouse, The Mausoleum

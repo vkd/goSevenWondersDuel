@@ -74,7 +74,7 @@ func NewGame(opts ...Option) (*Game, error) {
 		cards[i], cards[j] = cards[j], cards[i]
 	})
 	var err error
-	g.ageDesk, err = newAgeDesk(structureAgeI, cards[:])
+	g.ageDesk, err = newAgeDesk(structureAgeI, cards[:SizeAge])
 	if err != nil {
 		return nil, err
 	}

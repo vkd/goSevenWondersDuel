@@ -198,17 +198,13 @@ type ageDesk struct {
 }
 
 func newAgeDesk(structure *ageStructure, cards []CardID) (desk ageDesk, _ error) {
-	if len(cards) < 20 {
-		return desk, fmt.Errorf("wrong amount of cards (less than 20): %d", len(cards))
-	}
-
 	desk.structure = structure
 	desk.cards = cards
 
-	for i := range desk.state {
+	for i, id := range cards {
 		coveredBy, ok := structure.coveredBy[cardIndex(i)]
 		covered := ok && len(coveredBy) > 0
-		desk.state.set(cardIndex(i), cards[i], covered)
+		desk.state.set(cardIndex(i), id, covered)
 	}
 
 	// hide cards
