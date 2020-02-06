@@ -15,6 +15,8 @@ type Card struct {
 	EndEffects []Finaler
 }
 
+type CardID uint32
+
 // CardName - name of card
 type CardName string
 
@@ -64,6 +66,8 @@ const (
 	numGuilds = 7
 
 	totalNum = numAgeI + numAgeII + numAgeIII + numGuilds
+
+	SizeAge = 20
 )
 
 var (
