@@ -29,7 +29,7 @@ type Game struct {
 	availableWonders []WonderName
 	restWonders      []WonderName
 
-	deskAgeI deskAgeI
+	ageDesk ageDesk
 
 	// log *logrus.Logger
 
@@ -49,7 +49,7 @@ func (s seed) applyGame(g *Game) {
 }
 
 // NewGame - init new game with options
-func NewGame(opts ...Option) *Game {
+func NewGame(opts ...Option) (*Game, error) {
 	var g = Game{}
 
 	for _, opt := range opts {
@@ -73,14 +73,18 @@ func NewGame(opts ...Option) *Game {
 	g.rnd.Shuffle(numAgeI, func(i, j int) {
 		cards[i], cards[j] = cards[j], cards[i]
 	})
-	g.deskAgeI = newDeskAgeI(cards[:])
+	var err error
+	g.ageDesk, err = newAgeDesk(structureAgeI, cards[:])
+	if err != nil {
+		return nil, err
+	}
 
 	for i := 0; i < numPlayers; i++ {
 		g.players[i] = NewPlayer()
 	}
 
 	g.state = g.state.Next()
-	return &g
+	return &g, nil
 }
 
 // GetState of the game
@@ -123,20 +127,13 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [initialWondersPerPlayer]Won
 	return nil
 }
 
-func (g *Game) AgeI() [SizeAge]DeskCard {
-	return g.deskAgeI
+func (g *Game) CardsState() CardsState {
+	return g.ageDesk.state
 }
 
-func (g *Game) Build(id CardID) ([SizeAge]DeskCard, bool) {
-	ok := g.deskAgeI.Build(id)
-	return g.deskAgeI, ok
-}
-
-type DeskCard struct {
-	IsVisible   bool
-	IsSkipped   bool
-	IsAvailable bool
-	ID          CardID
+func (g *Game) Build(id CardID) (CardsState, error) {
+	err := g.ageDesk.Build(id)
+	return g.ageDesk.state, err
 }
 
 // Cost card by coins
