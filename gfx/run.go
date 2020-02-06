@@ -183,11 +183,11 @@ func run() {
 		switch boardState {
 		case Desk:
 			for i, c := range tableCards.Cards {
-				if c.Built {
+				if !c.Exists {
 					continue
 				}
 				drawCard(c, tableCards.Rects[i], win)
-				if c.Accessible && tableCards.Rects[i].Contains(mouse) {
+				if !c.Covered && tableCards.Rects[i].Contains(mouse) {
 					selectedCardIndex = i
 				}
 				idx := text.New(tableCards.Rects[i].Max, atlas)
@@ -363,7 +363,7 @@ var (
 // 	cards[i].Draw(win, im.Moved(v))
 // }
 func drawCard(c core.CardState, r pixel.Rect, win pixel.Target) {
-	if c.Built {
+	if !c.Exists {
 		return
 	}
 
@@ -373,10 +373,10 @@ func drawCard(c core.CardState, r pixel.Rect, win pixel.Target) {
 	} else {
 		im = im.Moved(pixel.V(cardWidth, cardHeight))
 	}
-	if c.Hidden {
-		cardsTxBack[0].Draw(win, im.Moved(r.Min))
-	} else {
+	if c.FaceUp {
 		cardsTx[c.ID].Draw(win, im.Moved(r.Min))
+	} else {
+		cardsTxBack[0].Draw(win, im.Moved(r.Min))
 	}
 	// if r.Contains(mouse) && c.IsOnTop() {
 	// 	drawCardBorder(c, win)

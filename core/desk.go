@@ -4,6 +4,66 @@ import (
 	"fmt"
 )
 
+// CardState on the table
+type CardState struct {
+	// FaceUp - card is displayed face up
+	FaceUp bool
+	// Exists - on this position card is exists
+	Exists bool
+	// Covered - this card could not be built
+	Covered bool
+	// ID - actual card ID
+	ID CardID
+}
+
+// TestBuilt - card could be built
+func (c CardState) TestBuilt() bool {
+	return c.Exists && !c.Covered
+}
+
+// CardsState on the table
+type CardsState [SizeAge]CardState
+
+func (s CardsState) testBuilt(i cardIndex) bool {
+	return s[i].TestBuilt()
+}
+
+func (s *CardsState) set(i cardIndex, id CardID, covered bool) {
+	s[i].FaceUp = true
+	s[i].Exists = true
+	s[i].Covered = covered
+	s[i].ID = id
+}
+
+func (s *CardsState) take(i cardIndex) {
+	s[i].Exists = false
+}
+
+func (s *CardsState) open(i cardIndex, cards []CardID) {
+	s[i].FaceUp = true
+	s[i].ID = cards[i]
+}
+
+func (s *CardsState) free(i cardIndex) {
+	s[i].Covered = false
+}
+
+func (s *CardsState) hide(i cardIndex) {
+	if s[i].Covered {
+		s[i].ID = 0
+		s[i].FaceUp = false
+	}
+}
+
+func (s CardsState) isAnyExists(idxs []cardIndex) bool {
+	for _, idx := range idxs {
+		if s[idx].Exists {
+			return true
+		}
+	}
+	return false
+}
+
 var (
 	//      0  1
 	//     2  3  4
@@ -102,7 +162,7 @@ var (
 	structureAgeIII = newAgeStructure(ageIIICoveredBy, ageIIIHiddenCards)
 )
 
-type cardIndex int
+type cardIndex uint8
 
 type cardRelations map[cardIndex][]cardIndex
 
@@ -131,49 +191,6 @@ func makeRevertCovers(coveredBy map[cardIndex][]cardIndex) map[cardIndex][]cardI
 	return out
 }
 
-type CardState struct {
-	Hidden     bool
-	Built      bool
-	Accessible bool
-	ID         CardID
-}
-
-type CardsState [SizeAge]CardState
-
-func (s *CardsState) build(idx cardIndex, str *ageStructure, cards []CardID) error {
-	if s[idx].Built {
-		return fmt.Errorf("card (index=%d) is already built", idx)
-	}
-	if !s[idx].Accessible {
-		return fmt.Errorf("card (index=%d) is not accessible", idx)
-	}
-
-	s[idx].Built = true
-	s[idx].Accessible = false
-
-	for _, cover := range str.covers[idx] {
-		if s.isAllBuilt(str.coveredBy[cover]) {
-			s.open(cover, cards)
-		}
-	}
-	return nil
-}
-
-func (s *CardsState) open(idx cardIndex, cards []CardID) {
-	s[idx].Accessible = true
-	s[idx].Hidden = false
-	s[idx].ID = cards[idx]
-}
-
-func (s CardsState) isAllBuilt(coveredBy []cardIndex) bool {
-	for _, idx := range coveredBy {
-		if !s[idx].Built {
-			return false
-		}
-	}
-	return true
-}
-
 type ageDesk struct {
 	structure *ageStructure
 	cards     []CardID
@@ -189,32 +206,38 @@ func newAgeDesk(structure *ageStructure, cards []CardID) (desk ageDesk, _ error)
 	desk.cards = cards
 
 	for i := range desk.state {
-		_, covered := structure.coveredBy[cardIndex(i)]
-		desk.state[i].Accessible = !covered
-		desk.state[i].ID = cards[i]
+		coveredBy, ok := structure.coveredBy[cardIndex(i)]
+		covered := ok && len(coveredBy) > 0
+		desk.state.set(cardIndex(i), cards[i], covered)
 	}
 
 	// hide cards
 	for _, i := range structure.hiddenCards {
-		if !desk.state[i].Accessible {
-			desk.state[i].ID = 0
-			desk.state[i].Hidden = true
-		}
+		desk.state.hide(i)
 	}
 	return desk, nil
 }
 
 func (d *ageDesk) Build(id CardID) error {
-	idx, ok := d.getIndex(id)
-	if !ok || !d.state[idx].Accessible || d.state[idx].Built || d.state[idx].Hidden {
-		return fmt.Errorf("wrong card id")
+	idx, ok := indexOfCards(id, d.cards)
+	if !ok || !d.state.testBuilt(idx) {
+		return fmt.Errorf("wrong card id = %d", id)
 	}
 
-	return d.state.build(idx, d.structure, d.cards)
+	d.state.take(idx)
+
+	for _, cover := range d.structure.covers[idx] {
+		isCovered := d.state.isAnyExists(d.structure.coveredBy[cover])
+		if !isCovered {
+			d.state.free(cover)
+			d.state.open(cover, d.cards)
+		}
+	}
+	return nil
 }
 
-func (d *ageDesk) getIndex(id CardID) (cardIndex, bool) {
-	for i, c := range d.cards {
+func indexOfCards(id CardID, cards []CardID) (cardIndex, bool) {
+	for i, c := range cards {
 		if c == id {
 			return cardIndex(i), true
 		}
