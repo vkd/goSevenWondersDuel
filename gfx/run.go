@@ -79,9 +79,10 @@ func run() {
 	var left float64 = leftPaddingCards
 	var bottom float64 = bottomPaddingCards
 
-	var ageI = gg.AgeI()
-	var cards = ageI[:]
-	var tableCards = drawFirstEpoh(win, pixel.V(windowWidth/2, windowHeight-100), cards)
+	var tableCards = TableCards{
+		Cards: gg.AgeI(),
+		Rects: drawFirstEpoh(pixel.V(windowWidth/2, windowHeight-100)),
+	}
 	// log.Printf("%#v", cards[0])
 
 	var fps = time.Tick(time.Second / 15)
@@ -143,11 +144,15 @@ func run() {
 
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			if selectedCardIndex > -1 {
-				ok := true
-				// ok := gg.ConstructByIndex(selectedCardIndex)
+				desk, ok := gg.Build(tableCards.Cards[selectedCardIndex].ID)
 				if ok {
-					tableCards[selectedCardIndex].IsSkipped = true
+					tableCards.Cards = desk
 				}
+				// tableCards, _ =
+				// ok := gg.ConstructByIndex(selectedCardIndex)
+				// if ok {
+				// 	tableCards[selectedCardIndex].IsSkipped = true
+				// }
 			}
 		}
 
@@ -179,15 +184,15 @@ func run() {
 		selectedCardIndex = -1
 		switch boardState {
 		case Desk:
-			for i, c := range tableCards {
+			for i, c := range tableCards.Cards {
 				if c.IsSkipped {
 					continue
 				}
-				drawCard(c, win)
-				if c.IsAvailable && c.Rect.Contains(mouse) {
+				drawCard(c, tableCards.Rects[i], win)
+				if c.IsAvailable && tableCards.Rects[i].Contains(mouse) {
 					selectedCardIndex = i
 				}
-				idx := text.New(c.Rect.Max, atlas)
+				idx := text.New(tableCards.Rects[i].Max, atlas)
 				idx.Color = colornames.Lightgreen
 				idx.Dot.X -= idx.BoundsOf(strconv.Itoa(i)).W()
 				idx.Dot.Y -= 10
@@ -196,7 +201,7 @@ func run() {
 			}
 
 			if selectedCardIndex > -1 {
-				drawCardBorder(tableCards[selectedCardIndex], win)
+				drawCardBorder(tableCards.Rects[selectedCardIndex], win)
 			}
 		case Wonders:
 			// pic, err := loadPicture("../../textures/10.jpg")
@@ -230,14 +235,18 @@ var (
 	selectedCardIndex int = -1
 )
 
-type TableCard struct {
-	pixel.Rect
-	core.DeskCard
+type TableCards struct {
+	Rects []pixel.Rect
+	Cards [core.SizeAge]core.DeskCard
 }
 
-func drawFirstEpoh(win pixel.Target, vi pixel.Vec, in []core.DeskCard) (out []TableCard) {
-	if len(in) < 20 {
-		panic("wrong count of cards for first epoch")
+func drawFirstEpoh(vi pixel.Vec) (out []pixel.Rect) {
+	// if len(in) < 20 {
+	// 	panic("wrong count of cards for first epoch")
+	// }
+
+	var cardRectFn = func(v pixel.Vec) pixel.Rect {
+		return pixel.R(v.X, v.Y, v.X+cardWidth, v.Y+cardHeight)
 	}
 
 	vi.X -= cardWidth + deltaEpoh/2
@@ -249,35 +258,10 @@ func drawFirstEpoh(win pixel.Target, vi pixel.Vec, in []core.DeskCard) (out []Ta
 		v.X -= float64(0+i) / 2 * (cardWidth + deltaEpoh)
 		v.Y -= cardTitleHeight * float64(i)
 		for j := 0; j < i+2; j++ {
-			out = append(out, TableCard{
-				// Vec:    v,
-				Rect:     pixel.R(v.X, v.Y, v.X+cardWidth, v.Y+cardHeight),
-				DeskCard: in[0],
-				// index:  in[0].ID,
-				// isHide: !in[0].IsVisible,
-			})
+			out = append(out, cardRectFn(v))
 			v.X += cardWidth + deltaEpoh
-			in = in[1:]
 		}
 	}
-
-	// out[0].next = [2]*card{out[2], out[3]}
-	// out[1].next = [2]*card{out[3], out[4]}
-
-	// out[2].next = [2]*card{out[5], out[6]}
-	// out[3].next = [2]*card{out[6], out[7]}
-	// out[4].next = [2]*card{out[7], out[8]}
-
-	// out[5].next = [2]*card{out[9], out[10]}
-	// out[6].next = [2]*card{out[10], out[11]}
-	// out[7].next = [2]*card{out[11], out[12]}
-	// out[8].next = [2]*card{out[12], out[13]}
-
-	// out[9].next = [2]*card{out[14], out[15]}
-	// out[10].next = [2]*card{out[15], out[16]}
-	// out[11].next = [2]*card{out[16], out[17]}
-	// out[12].next = [2]*card{out[17], out[18]}
-	// out[13].next = [2]*card{out[18], out[19]}
 
 	return
 }
@@ -315,7 +299,7 @@ var (
 // 	}
 // 	cards[i].Draw(win, im.Moved(v))
 // }
-func drawCard(c TableCard, win pixel.Target) {
+func drawCard(c core.DeskCard, r pixel.Rect, win pixel.Target) {
 	if c.IsSkipped {
 		return
 	}
@@ -327,20 +311,20 @@ func drawCard(c TableCard, win pixel.Target) {
 		im = im.Moved(pixel.V(cardWidth, cardHeight))
 	}
 	if !c.IsVisible {
-		cardsTxBack[0].Draw(win, im.Moved(c.Rect.Min))
+		cardsTxBack[0].Draw(win, im.Moved(r.Min))
 	} else {
-		cardsTx[c.ID].Draw(win, im.Moved(c.Rect.Min))
+		cardsTx[c.ID].Draw(win, im.Moved(r.Min))
 	}
-	// if c.Rect.Contains(mouse) && c.IsOnTop() {
+	// if r.Contains(mouse) && c.IsOnTop() {
 	// 	drawCardBorder(c, win)
 	// }
 
-	txt := text.New(pixel.V(c.Rect.Min.X, c.Rect.Max.Y-10), atlas)
+	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
 	txt.Color = colornames.Lightblue
 	if c.IsSkipped {
 		txt.Color = colornames.Red
 	}
-	// fmt.Fprintf(txt, "Index: %d\nNext: %s,%s", c.index, c.next[0].StringIndex(), c.next[1].StringIndex())
+	fmt.Fprintf(txt, "Index: %d", c.ID)
 	txt.Draw(win, pixel.IM)
 }
 
@@ -348,11 +332,11 @@ func drawWonder(w *wonder, win pixel.Target) {
 	wondersTx[w.Index].Draw(win, pixel.IM.Scaled(pixel.ZV, 0.5).Moved(pixel.V(wonderWidth/2, wonderHeight/2)).Moved(w.Rect.Min))
 }
 
-func drawCardBorder(c TableCard, win pixel.Target) {
+func drawCardBorder(c pixel.Rect, win pixel.Target) {
 	imd := imdraw.New(nil)
 	imd.Color = colornames.Yellow
 	imd.EndShape = imdraw.RoundEndShape
-	imd.Push(c.Rect.Min, c.Rect.Max)
+	imd.Push(c.Min, c.Max)
 	imd.Rectangle(4)
 	imd.Draw(win)
 }

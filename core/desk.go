@@ -7,94 +7,9 @@ type Desk interface {
 	Take(CardName) bool
 }
 
-const (
-	noCardName     CardName = "-"
-	hiddenCardName CardName = "???"
-)
-
-type olddeskAgeI [20]CardName
-
-func (a olddeskAgeI) Cards() []CardName {
-	a2 := a
-	out := a2[:]
-
-	// 2 3 4
-	hideCardIf(out, ageIRelations, 2)
-	hideCardIf(out, ageIRelations, 3)
-	hideCardIf(out, ageIRelations, 4)
-
-	// 9 10 11 12 13
-	hideCardIf(out, ageIRelations, 9)
-	hideCardIf(out, ageIRelations, 10)
-	hideCardIf(out, ageIRelations, 11)
-	hideCardIf(out, ageIRelations, 12)
-	hideCardIf(out, ageIRelations, 13)
-
-	return out
-}
-
-func (a olddeskAgeI) Check(card CardName) bool {
-	if card == hiddenCardName || card == noCardName {
-		return false
-	}
-	desk := a[:]
-	index := indexOf(desk, card)
-	if index < 0 {
-		return false
-	}
-	if index >= 14 && index <= 19 {
-		return true
-	}
-	reqs, ok := ageIRelations[index]
-	if !ok {
-		return false
-	}
-	return isAvailable(desk, reqs.left, reqs.right)
-}
-
-func (a *olddeskAgeI) Take(card CardName) bool {
-	if !a.Check(card) {
-		return false
-	}
-
-	index := indexOf(a[:], card)
-	a[index] = noCardName
-	return true
-}
-
-func hideCardIf(d []CardName, m map[cardIndex]relationNodes, i cardIndex) {
-	r := m[i]
-	if d[r.left] != noCardName || d[r.right] != noCardName {
-		d[i] = hiddenCardName
-	}
-}
-
-func isAvailable(desk []CardName, req1, req2 cardIndex) bool {
-	if req1 != -1 && desk[req1] != noCardName {
-		return false
-	}
-	if req2 != -1 && desk[req2] != noCardName {
-		return false
-	}
-	return true
-}
-
-func indexOf(d []CardName, card CardName) cardIndex {
-	for i, n := range d {
-		if n == card {
-			return cardIndex(i)
-		}
-	}
-	return -1
-}
-
 type cardIndex int
 
-type relationNodes struct {
-	left, right cardIndex
-}
-
-var ageIRelations = map[cardIndex]relationNodes{
+var ageICoveredBy = map[cardIndex][]cardIndex{
 	0: {2, 3},
 	1: {3, 4},
 
@@ -112,6 +27,20 @@ var ageIRelations = map[cardIndex]relationNodes{
 	11: {16, 17},
 	12: {17, 18},
 	13: {18, 19},
+}
+
+// 18: {12, 13},
+// 19: {13},
+var ageICovers = makeRevertCovers(ageICoveredBy)
+
+func makeRevertCovers(coveredBy map[cardIndex][]cardIndex) map[cardIndex][]cardIndex {
+	out := make(map[cardIndex][]cardIndex)
+	for k, v := range coveredBy {
+		for _, idx := range v {
+			out[idx] = append(out[idx], k)
+		}
+	}
+	return out
 }
 
 // Desk of I age
@@ -133,4 +62,48 @@ func newDeskAgeI(cards []CardID) (desk deskAgeI) {
 		desk[i].ID = cards[i]
 	}
 	return
+}
+
+func (d *deskAgeI) Build(id CardID) bool {
+	idx, ok := d.getIndex(id)
+	if !ok {
+		return false
+	}
+
+	d[idx].IsSkipped = true
+
+	for _, cover := range ageICovers[idx] {
+		if d.isFree(cover) {
+			d.open(cover)
+		}
+	}
+
+	return true
+}
+
+func (d *deskAgeI) getIndex(id CardID) (cardIndex, bool) {
+	for i, c := range d {
+		if c.ID == id {
+			return cardIndex(i), true
+		}
+	}
+	return 0, false
+}
+
+func (d *deskAgeI) open(idx cardIndex) {
+	d[idx].IsAvailable = true
+	d[idx].IsVisible = true
+}
+
+func (d *deskAgeI) take(idx cardIndex) {
+	d[idx].IsSkipped = true
+}
+
+func (d *deskAgeI) isFree(idx cardIndex) bool {
+	for _, cover := range ageICoveredBy[idx] {
+		if !d[cover].IsSkipped {
+			return false
+		}
+	}
+	return true
 }

@@ -127,6 +127,11 @@ func (g *Game) AgeI() [SizeAge]DeskCard {
 	return g.deskAgeI
 }
 
+func (g *Game) Build(id CardID) ([SizeAge]DeskCard, bool) {
+	ok := g.deskAgeI.Build(id)
+	return g.deskAgeI, ok
+}
+
 type DeskCard struct {
 	IsVisible   bool
 	IsSkipped   bool
