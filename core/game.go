@@ -29,6 +29,9 @@ type Game struct {
 	availableWonders []WonderName
 	restWonders      []WonderName
 
+	ageI    [SizeAge]CardID
+	ageII   [SizeAge]CardID
+	ageIII  [SizeAge]CardID
 	ageDesk ageDesk
 
 	// log *logrus.Logger
@@ -69,12 +72,8 @@ func NewGame(opts ...Option) (*Game, error) {
 	g.availableWonders = wonders[:initialWonders]
 	g.restWonders = wonders[initialWonders:]
 
-	var cards = IDsAgeI
-	g.rnd.Shuffle(numAgeI, func(i, j int) {
-		cards[i], cards[j] = cards[j], cards[i]
-	})
 	var err error
-	g.ageDesk, err = newAgeDesk(structureAgeI, cards[:SizeAge])
+	g.ageDesk, err = newAgeDesk(structureAgeI, g.shuffleAgeI())
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +84,14 @@ func NewGame(opts ...Option) (*Game, error) {
 
 	g.state = g.state.Next()
 	return &g, nil
+}
+
+func (g *Game) shuffleAgeI() []CardID {
+	var cards = IDsAgeI
+	g.rnd.Shuffle(len(cards), func(i, j int) {
+		cards[i], cards[j] = cards[j], cards[i]
+	})
+	return cards[:SizeAge]
 }
 
 // GetState of the game
