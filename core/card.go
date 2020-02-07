@@ -2,25 +2,23 @@ package core
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 // Card - In 7 Wonders Duel, all of the Age and Guild cards represent Buildings.
 // The Building cards all consist of a name, an effect and a construction cost.
 type Card struct {
-	ID      CardID
-	Name    CardName
-	Color   CardColor
+	Name  CardName
+	Color CardColor
+
 	Effects []Effect
 	Cost    Cost
 
 	EndEffects []Finaler
 }
 
+// CardID - ID of the card
 type CardID uint32
-
-func (c CardID) card() *Card {
-	return &cards[c]
-}
 
 // CardName - name of card
 type CardName string
@@ -70,6 +68,9 @@ const (
 	numAgeIII = 20
 	numGuilds = 7
 
+	dropCardsFromEveryAge = 3
+	takeGuildsToAgeIII    = 3
+
 	totalNum = numAgeI + numAgeII + numAgeIII + numGuilds
 
 	SizeAge = 20
@@ -95,6 +96,46 @@ func init() {
 	for i := 0; i < numGuilds; i++ {
 		IDsGuilds[i] = CardID(numAgeI + numAgeII + numAgeIII + i)
 	}
+}
+
+var (
+	zeroRand = rand.New(rand.NewSource(0))
+
+	// check - every shuffle produce 'SizeAge' amount of cards
+	_ = [1]struct{}{}[len(shuffleAgeI(zeroRand))-SizeAge]
+	_ = [1]struct{}{}[len(shuffleAgeII(zeroRand))-SizeAge]
+	_ = [1]struct{}{}[len(shuffleAgeIII(zeroRand))-SizeAge]
+)
+
+func shuffleAgeI(rnd *rand.Rand) []CardID {
+	var cards = IDsAgeI
+	shuffleCards(rnd, cards[:])
+	return cards[:numAgeI-dropCardsFromEveryAge]
+}
+
+func shuffleAgeII(rnd *rand.Rand) []CardID {
+	var cards = IDsAgeII
+	shuffleCards(rnd, cards[:])
+	return cards[:numAgeII-dropCardsFromEveryAge]
+}
+
+func shuffleAgeIII(rnd *rand.Rand) (out []CardID) {
+	var cards = IDsAgeIII
+	shuffleCards(rnd, cards[:])
+	out = append(out, cards[:numAgeIII-dropCardsFromEveryAge]...)
+
+	var guilds = IDsGuilds
+	shuffleCards(rnd, guilds[:])
+	out = append(out, guilds[:takeGuildsToAgeIII]...)
+
+	shuffleCards(rnd, out)
+	return out
+}
+
+func shuffleCards(rnd *rand.Rand, cards []CardID) {
+	rnd.Shuffle(len(cards), func(i, j int) {
+		cards[i], cards[j] = cards[j], cards[i]
+	})
 }
 
 var (

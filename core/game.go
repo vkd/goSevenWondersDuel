@@ -73,7 +73,7 @@ func NewGame(opts ...Option) (*Game, error) {
 	g.restWonders = wonders[initialWonders:]
 
 	var err error
-	g.ageDesk, err = newAgeDesk(structureAgeI, g.shuffleAgeI())
+	g.ageDesk, err = newAgeDesk(structureAgeI, shuffleAgeI(g.rnd))
 	if err != nil {
 		return nil, err
 	}
@@ -84,14 +84,6 @@ func NewGame(opts ...Option) (*Game, error) {
 
 	g.state = g.state.Next()
 	return &g, nil
-}
-
-func (g *Game) shuffleAgeI() []CardID {
-	var cards = IDsAgeI
-	g.rnd.Shuffle(len(cards), func(i, j int) {
-		cards[i], cards[j] = cards[j], cards[i]
-	})
-	return cards[:SizeAge]
 }
 
 // GetState of the game
