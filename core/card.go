@@ -11,6 +11,8 @@ type Card struct {
 	Name  CardName
 	Color CardColor
 
+	// -----------------
+
 	Effects []Effect
 	Cost    Cost
 
@@ -36,18 +38,18 @@ type CardColor uint8
 
 // Color of card
 const (
-	Brown           CardColor = iota // Raw materials
-	Grey                             // Manufactured goods
-	Blue                             // Civilian Buildings
-	Green                            // Scientific Buildings
-	Yellow                           // Commercial Buildings
-	Red                              // Military Buildings
-	Purple                           // Guilds
-	numOfCardColors = iota
+	Brown         CardColor = iota // Raw materials
+	Grey                           // Manufactured goods
+	Blue                           // Civilian Buildings
+	Green                          // Scientific Buildings
+	Yellow                         // Commercial Buildings
+	Red                            // Military Buildings
+	Purple                         // Guilds
+	numCardColors = iota
 )
 
 var (
-	nameCardColor = map[CardColor]string{
+	namesCardColor = map[CardColor]string{
 		Brown:  "Brown",
 		Grey:   "Grey",
 		Blue:   "Blue",
@@ -56,11 +58,13 @@ var (
 		Red:    "Red",
 		Purple: "Purple",
 	}
-	_ = [1]struct{}{}[len(nameCardColor)-numOfCardColors]
+	_ = [1]struct{}{}[len(namesCardColor)-numCardColors]
 )
 
 // String representation of card color
-func (c CardColor) String() string { return nameCardColor[c] }
+func (c CardColor) String() string { return namesCardColor[c] }
+
+// -----------------------------------
 
 const (
 	numAgeI   = 23

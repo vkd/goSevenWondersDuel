@@ -22,7 +22,7 @@ type Player struct {
 
 	PriceMarkets PriceMarkets
 
-	BuiltCards [numOfCardColors][]CardName
+	BuiltCards [numCardColors][]CardName
 
 	VP VP
 }
