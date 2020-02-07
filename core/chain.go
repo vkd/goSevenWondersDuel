@@ -38,6 +38,8 @@ func (c Chain) Apply(g *Game, i PlayerIndex) {
 }
 
 // Chains - set of chains
+//
+// TODO - use bits
 type Chains [numOfChains]bool
 
 // NewChains with preinstalled values
