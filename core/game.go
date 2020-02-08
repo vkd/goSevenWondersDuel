@@ -195,3 +195,7 @@ func (s State) Next() State {
 // func (gs *gameState) Opponent() *Player {
 // 	return gs.g.player(gs.g.currentPlayer.Next())
 // }
+
+func zeroRand() *rand.Rand {
+	return rand.New(rand.NewSource(0))
+}

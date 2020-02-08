@@ -81,60 +81,57 @@ const (
 )
 
 var (
-	IDsAgeI   [numAgeI]CardID
-	IDsAgeII  [numAgeII]CardID
-	IDsAgeIII [numAgeIII]CardID
-	IDsGuilds [numGuilds]CardID
+	ageICardIDs   [numAgeI]CardID
+	ageIICardIDs  [numAgeII]CardID
+	ageIIICardIDs [numAgeIII]CardID
+	guildsCardIDs [numGuilds]CardID
 )
 
 func init() {
 	for i := 0; i < numAgeI; i++ {
-		IDsAgeI[i] = CardID(i)
+		ageICardIDs[i] = CardID(i)
 	}
 	for i := 0; i < numAgeII; i++ {
-		IDsAgeII[i] = CardID(numAgeI + i)
+		ageIICardIDs[i] = CardID(numAgeI + i)
 	}
 	for i := 0; i < numAgeIII; i++ {
-		IDsAgeIII[i] = CardID(numAgeI + numAgeII + i)
+		ageIIICardIDs[i] = CardID(numAgeI + numAgeII + i)
 	}
 	for i := 0; i < numGuilds; i++ {
-		IDsGuilds[i] = CardID(numAgeI + numAgeII + numAgeIII + i)
+		guildsCardIDs[i] = CardID(numAgeI + numAgeII + numAgeIII + i)
 	}
 }
 
-var (
-	zeroRand = rand.New(rand.NewSource(0))
-
-	// check - every shuffle produce 'SizeAge' amount of cards
-	_ = [1]struct{}{}[len(shuffleAgeI(zeroRand))-SizeAge]
-	_ = [1]struct{}{}[len(shuffleAgeII(zeroRand))-SizeAge]
-	_ = [1]struct{}{}[len(shuffleAgeIII(zeroRand))-SizeAge]
-)
-
 func shuffleAgeI(rnd *rand.Rand) []CardID {
-	var cards = IDsAgeI
+	var cards = ageICardIDs
 	shuffleCards(rnd, cards[:])
 	return cards[:numAgeI-dropCardsFromEveryAge]
 }
 
+var _ = [1]struct{}{}[len(shuffleAgeI(zeroRand()))-SizeAge]
+
 func shuffleAgeII(rnd *rand.Rand) []CardID {
-	var cards = IDsAgeII
+	var cards = ageIICardIDs
 	shuffleCards(rnd, cards[:])
 	return cards[:numAgeII-dropCardsFromEveryAge]
 }
 
+var _ = [1]struct{}{}[len(shuffleAgeII(zeroRand()))-SizeAge]
+
 func shuffleAgeIII(rnd *rand.Rand) (out []CardID) {
-	var cards = IDsAgeIII
+	var cards = ageIIICardIDs
 	shuffleCards(rnd, cards[:])
 	out = append(out, cards[:numAgeIII-dropCardsFromEveryAge]...)
 
-	var guilds = IDsGuilds
+	var guilds = guildsCardIDs
 	shuffleCards(rnd, guilds[:])
 	out = append(out, guilds[:takeGuildsToAgeIII]...)
 
 	shuffleCards(rnd, out)
 	return out
 }
+
+var _ = [1]struct{}{}[len(shuffleAgeIII(zeroRand()))-SizeAge]
 
 func shuffleCards(rnd *rand.Rand, cards []CardID) {
 	rnd.Shuffle(len(cards), func(i, j int) {
