@@ -39,6 +39,14 @@ const (
 	progressHeight float64 = 159
 )
 
+var (
+	currentWonder  int
+	wonderToPlayer = [8]core.PlayerIndex{0, 1, 1, 0, 1, 0, 0, 1}
+	wonderTaken    [8]bool
+
+	wonderChosen [8]core.WonderID
+)
+
 func Run() error {
 	pixelgl.Run(func() {
 		err := run()
@@ -66,6 +74,7 @@ func run() error {
 	if !ok {
 		return fmt.Errorf("cannot init game")
 	}
+	currentWonder = 0
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "7 Wonders",
@@ -192,17 +201,19 @@ func run() error {
 					log.Printf("Error on build: %v", err)
 				}
 			}
+			if selectedWonderIndex > -1 {
+				if !wonderTaken[selectedWonderIndex] {
+					wonderTaken[selectedWonderIndex] = true
+					wonderChosen[currentWonder] = wonders[selectedWonderIndex]
+					currentWonder++
+				}
+			}
 		}
 
 		// showCard = win.Pressed(pixelgl.KeyLeftShift) || win.Pressed(pixelgl.MouseButtonLeft)
 
 		// drawCard(0, pixel.V(510, 10), win)
 		// drawFirstEpoh(win, pixel.V(windowWidth/2, windowHeight-100))
-
-		txt.Clear()
-		txt.Color = colornames.Orange
-		fmt.Fprintf(txt, "Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d", int(left), int(bottom), int(cardTitleHeight), int(deltaEpoh), int(win.MousePosition().X), int(win.MousePosition().Y), 0)
-		txt.Draw(win, pixel.IM)
 
 		war.Clear()
 		war.Color = colornames.Red
@@ -220,6 +231,7 @@ func run() error {
 		war.Draw(win, pixel.IM)
 
 		selectedCardIndex = -1
+		selectedWonderIndex = -1
 		switch boardState {
 		case Desk:
 			for i, c := range tableCards.Cards {
@@ -242,17 +254,55 @@ func run() error {
 				drawCardBorder(tableCards.Rects[selectedCardIndex], win)
 			}
 		case Wonders:
-			var selectedWonderIndex = -1
+			var wonder0Y float64 = 0
+			var wonder1Y float64 = 0
+			for i := 0; i < currentWonder; i++ {
+				switch wonderToPlayer[i] {
+				case 0:
+					drawWonder(win, wonderChosen[i], pixel.R(0, wonder0Y, wonderWidth, wonder0Y+wonderHeight))
+					wonder0Y += wonderHeight
+				case 1:
+					drawWonder(win, wonderChosen[i], pixel.R(windowWidth-wonderWidth, wonder1Y, windowWidth, wonder1Y+wonderHeight))
+					wonder1Y += wonderHeight
+				}
+			}
+
+			// --- draft
+			var second int = 0
+			if currentWonder >= 4 {
+				second = 4
+			}
 			for i, r := range wonderRects {
+				i += second
+				if wonderTaken[i] {
+					continue
+				}
 				drawWonder(win, wonders[i], r)
 				if r.Contains(mouse) {
 					selectedWonderIndex = i
 				}
 			}
 			if selectedWonderIndex >= 0 {
-				drawCardBorder(wonderRects[selectedWonderIndex], win)
+				drawCardBorder(wonderRects[selectedWonderIndex%4], win)
 			}
 		}
+
+		txt.Clear()
+		txt.Color = colornames.Orange
+		fmt.Fprintf(txt,
+			"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\nWonderTaken: %v\nWonderChosen: %v\nCurrent wonder: %d",
+			int(left),
+			int(bottom),
+			int(cardTitleHeight),
+			int(deltaEpoh),
+			int(win.MousePosition().X),
+			int(win.MousePosition().Y),
+			0,
+			wonderTaken,
+			wonderChosen,
+			currentWonder,
+		)
+		txt.Draw(win, pixel.IM)
 
 		statsLPlayer.Clear()
 		fmt.Fprintf(statsLPlayer, debugPlayerInfo(gg.Player(0)))
@@ -274,7 +324,8 @@ func debugPlayerInfo(p core.Player) string {
 }
 
 var (
-	selectedCardIndex int = -1
+	selectedCardIndex   int = -1
+	selectedWonderIndex int = -1
 )
 
 type TableCards struct {

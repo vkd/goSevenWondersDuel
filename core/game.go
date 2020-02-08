@@ -121,8 +121,8 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 	// 	return ErrWrongSelectedWonders
 	// }
 
-	g.players[0].AvailableWorneds = fstWonders[:]
-	g.players[1].AvailableWorneds = sndWonders[:]
+	g.players[0].AvailableWonders = fstWonders[:]
+	g.players[1].AvailableWonders = sndWonders[:]
 	g.state = g.state.Next()
 	return nil
 }

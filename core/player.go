@@ -17,7 +17,7 @@ type Player struct {
 
 	ScientificSymbols ScientificSymbols
 
-	AvailableWorneds []WonderID
+	AvailableWonders []WonderID
 	BuildWonders     []WonderID
 
 	PriceMarkets PriceMarkets
