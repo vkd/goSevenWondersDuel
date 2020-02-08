@@ -1,76 +1,8 @@
 package game
 
 import (
-	"fmt"
 	"math"
 )
-
-// Cost of construction
-type Cost struct {
-	Resources Resources
-	Money     Money
-}
-
-// NewCost - create new cost
-func NewCost(args ...interface{}) (out Cost) {
-	for _, a := range args {
-		switch a := a.(type) {
-		case Money:
-			out.Money += a
-		case Resources:
-			out.Resources = out.Resources.Add(a)
-		case Resource:
-			out.Resources = out.Resources.Change(a, 1)
-		// case ChainSymbol:
-		default:
-			panic(fmt.Sprintf("Not implemented: %T", a))
-		}
-	}
-	return
-}
-
-// CostByMoney - calculate cost for current player
-func CostByMoney(p *Player, c Cost, tc TradingCosts) Money {
-	needToBuyRess := c.Resources.Sub(p.Resources)
-	money := minimizeByMarket(tc, needToBuyRess, p.OneOfAnyMarkets)
-	return money + c.Money
-}
-
-// TradingCosts - costs all resources on market for one player
-type TradingCosts [numResources]Money
-
-// NewTradingCosts by opponent player's resources
-func NewTradingCosts(rs Resources) TradingCosts {
-	var tc TradingCosts
-	for _, r := range allResources {
-		tc[r] = Money(2 + rs[r])
-	}
-	return tc
-}
-
-// NewTradingCostsDefault - all resources cost by 2
-func NewTradingCostsDefault() TradingCosts {
-	return NewTradingCosts(Resources{})
-}
-
-// Buy resources
-func (tc TradingCosts) Buy(rs Resources) Money {
-	var res Money
-	for i := range rs {
-		res += tc[i] * Money(rs[i])
-	}
-	return res
-}
-
-// ApplyMarkets current player's markets
-func (tc TradingCosts) ApplyMarkets(mm []OnePriceMarket) TradingCosts {
-	for _, m := range mm {
-		if m.Price < tc[m.Res] {
-			tc[m.Res] = m.Price
-		}
-	}
-	return tc
-}
 
 func minimizeByMarket(tc TradingCosts, res Resources, markets []OneOfAnyMarket) Money {
 	if len(markets) == 0 {
