@@ -4,17 +4,44 @@ import "math/rand"
 
 // Wonder from the Age of Antiquity
 type Wonder struct {
-	Name    WonderName
+	Name WonderName
+
+	// ----
 	Cost    Cost
 	Effects []Effect
 }
 
+// WonderID - ID of the wonder
+type WonderID uint32
+
 // WonderName - name of a wonder
 type WonderName string
+
+// ----
 
 const (
 	numWonders = 12
 )
+
+var (
+	wonderIDs [numWonders]WonderID
+)
+
+func init() {
+	for i := 0; i < numWonders; i++ {
+		wonderIDs[i] = WonderID(i)
+	}
+}
+
+func shuffleWonders(rnd *rand.Rand) []WonderID {
+	var wonders = wonderIDs
+	rnd.Shuffle(len(wonders), func(i, j int) {
+		wonders[i], wonders[j] = wonders[j], wonders[i]
+	})
+	return wonders[:]
+}
+
+var _ = [1]struct{}{}[len(shuffleWonders(zeroRand()))-numWonders]
 
 var (
 	listWonders = []Wonder{
@@ -58,18 +85,6 @@ func makeMapWondersByName(list []Wonder) map[WonderName]*Wonder {
 		m[w.Name] = &list[i]
 	}
 	return m
-}
-
-// NewWonderNames - return all shuffled Wonder names
-func NewWonderNames(rnd *rand.Rand) [numWonders]WonderName {
-	var out [numWonders]WonderName
-	for i, w := range listWonders {
-		out[i] = w.Name
-	}
-	rnd.Shuffle(numWonders, func(i, j int) {
-		out[i], out[j] = out[j], out[i]
-	})
-	return out
 }
 
 // WonderNames - list on wonder's names

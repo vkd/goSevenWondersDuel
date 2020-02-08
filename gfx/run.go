@@ -62,6 +62,11 @@ func run() error {
 		return err
 	}
 
+	wonders, _, ok := gg.Init()
+	if !ok {
+		return fmt.Errorf("cannot init game")
+	}
+
 	cfg := pixelgl.WindowConfig{
 		Title:  "7 Wonders",
 		Bounds: pixel.R(0, 0, windowWidth, windowHeight),
@@ -107,6 +112,20 @@ func run() error {
 	var tableCards = TableCards{
 		Cards: gg.CardsState(),
 		Rects: genCardRects(ageGrid.genAgeIVecs(topCenter.Sub(pixel.V(0, cardHeight)))),
+	}
+
+	var wonderRects []pixel.Rect
+
+	{
+		var dx float64 = 10
+		var dy float64 = dx
+		var x float64 = windowWidth/2 - wonderWidth - dx/2
+		var y float64 = 100
+		for i := 0; i < 2; i++ {
+			wonderRects = append(wonderRects, pixel.R(x, y, x+wonderWidth, y+wonderHeight))
+			wonderRects = append(wonderRects, pixel.R(x+wonderWidth+dx, y, x+wonderWidth+dx+wonderWidth, y+wonderHeight))
+			y += wonderHeight + dy
+		}
 	}
 
 	var fps = time.Tick(time.Second / 15)
@@ -223,13 +242,16 @@ func run() error {
 				drawCardBorder(tableCards.Rects[selectedCardIndex], win)
 			}
 		case Wonders:
-			// pic, err := loadPicture("../../textures/10.jpg")
-			// if err != nil {
-			// 	panic(err)
-			// }
-			// sp := pixel.NewSprite(pic, rectByWonder9(6))
-			// sp.Draw(win, pixel.IM.Moved(pixel.V(500, 300)).sca)
-			drawWonder(&wonder{Index: 0, Rect: pixel.R(0, 0, wonderWidth, wonderHeight)}, win)
+			var selectedWonderIndex = -1
+			for i, r := range wonderRects {
+				drawWonder(win, wonders[i], r)
+				if r.Contains(mouse) {
+					selectedWonderIndex = i
+				}
+			}
+			if selectedWonderIndex >= 0 {
+				drawCardBorder(wonderRects[selectedWonderIndex], win)
+			}
 		}
 
 		statsLPlayer.Clear()
@@ -288,12 +310,14 @@ func drawCard(c core.CardState, r pixel.Rect, win pixel.Target) {
 
 	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
 	txt.Color = colornames.Lightblue
-	fmt.Fprintf(txt, "Index: %d", c.ID)
+	if c.FaceUp {
+		fmt.Fprintf(txt, "Index: %d", c.ID)
+	}
 	txt.Draw(win, pixel.IM)
 }
 
-func drawWonder(w *wonder, win pixel.Target) {
-	wondersTx[w.Index].Draw(win, pixel.IM.Scaled(pixel.ZV, 0.5).Moved(pixel.V(wonderWidth/2, wonderHeight/2)).Moved(w.Rect.Min))
+func drawWonder(win pixel.Target, id core.WonderID, rect pixel.Rect) {
+	wondersTx[id].Draw(win, pixel.IM.Scaled(pixel.ZV, 0.5).Moved(pixel.V(wonderWidth/2, wonderHeight/2)).Moved(rect.Min))
 }
 
 func drawCardBorder(c pixel.Rect, win pixel.Target) {

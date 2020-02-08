@@ -10,8 +10,8 @@ const (
 	numPlayers     = 2
 	initialPTokens = 5
 
-	initialWondersPerPlayer = 4
-	initialWonders          = initialWondersPerPlayer * numPlayers
+	numWondersPerPlayer = 4
+	initialWonders      = numWondersPerPlayer * numPlayers
 )
 
 // Game - game state
@@ -26,8 +26,8 @@ type Game struct {
 	availablePTokens []PTokenName
 	restPTokens      []PTokenName
 
-	availableWonders []WonderName
-	restWonders      []WonderName
+	availableWonders [initialWonders]WonderID
+	restWonders      []WonderID
 
 	ageI    [SizeAge]CardID
 	ageII   [SizeAge]CardID
@@ -68,8 +68,8 @@ func NewGame(opts ...Option) (*Game, error) {
 	g.availablePTokens = ptokens[:initialPTokens]
 	g.restPTokens = ptokens[initialPTokens:]
 
-	wonders := NewWonderNames(g.rnd)
-	g.availableWonders = wonders[:initialWonders]
+	wonders := shuffleWonders(g.rnd)
+	copy(g.availableWonders[:], wonders[:initialWonders])
 	g.restWonders = wonders[initialWonders:]
 
 	var err error
@@ -98,27 +98,28 @@ var (
 )
 
 // Init of a game
-func (g *Game) Init() (wonders [initialWonders]WonderName, ptokens [initialPTokens]PTokenName, ok bool) {
+func (g *Game) Init() (wonders [initialWonders]WonderID, ptokens [initialPTokens]PTokenName, ok bool) {
 	if !g.state.Is(StateInit) {
 		return
 	}
-	copy(wonders[:], g.availableWonders[:initialWonders])
+	wonders = g.availableWonders
 	ok = true
 	g.state = g.state.Next()
 	return
 }
 
 // SelectWonders as part of an initialize of a game
-func (g *Game) SelectWonders(fstWonders, sndWonders [initialWondersPerPlayer]WonderName) error {
+func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderID) error {
 	if !g.state.Is(StateSelectWonders) {
 		return ErrWrongState
 	}
-	if !WonderNames(g.availableWonders[:4]).IsExistsAll(WonderNames{fstWonders[0], fstWonders[1], sndWonders[0], sndWonders[1]}) {
-		return ErrWrongSelectedWonders
-	}
-	if !WonderNames(g.availableWonders[4:8]).IsExistsAll(WonderNames{fstWonders[2], fstWonders[3], sndWonders[2], sndWonders[3]}) {
-		return ErrWrongSelectedWonders
-	}
+	return ErrWrongState
+	// if !WonderNames(g.availableWonders[:4]).IsExistsAll(WonderNames{fstWonders[0], fstWonders[1], sndWonders[0], sndWonders[1]}) {
+	// 	return ErrWrongSelectedWonders
+	// }
+	// if !WonderNames(g.availableWonders[4:8]).IsExistsAll(WonderNames{fstWonders[2], fstWonders[3], sndWonders[2], sndWonders[3]}) {
+	// 	return ErrWrongSelectedWonders
+	// }
 
 	g.players[0].AvailableWorneds = fstWonders[:]
 	g.players[1].AvailableWorneds = sndWonders[:]
