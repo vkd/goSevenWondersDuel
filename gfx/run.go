@@ -40,7 +40,12 @@ const (
 )
 
 func Run() error {
-	pixelgl.Run(run)
+	pixelgl.Run(func() {
+		err := run()
+		if err != nil {
+			panic(err)
+		}
+	})
 	return nil
 }
 
@@ -51,10 +56,10 @@ const (
 	Wonders
 )
 
-func run() {
+func run() error {
 	gg, err := core.NewGame(core.WithSeed(0))
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	cfg := pixelgl.WindowConfig{
@@ -223,6 +228,7 @@ func run() {
 
 		<-fps
 	}
+	return nil
 }
 
 func debugPlayerInfo(p core.Player) string {
