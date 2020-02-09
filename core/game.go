@@ -21,6 +21,7 @@ type Game struct {
 	players            [numPlayers]Player
 	currentPlayerIndex PlayerIndex
 
+	// TODO: make private
 	AvailableWonders [numPlayers][]WonderID
 	BuildWonders     [numPlayers][]WonderID
 	PriceMarkets     [numPlayers]PriceMarkets
