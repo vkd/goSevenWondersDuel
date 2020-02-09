@@ -21,6 +21,12 @@ type Game struct {
 	players            [numPlayers]Player
 	currentPlayerIndex PlayerIndex
 
+	AvailableWonders [numPlayers][]WonderID
+	BuildWonders     [numPlayers][]WonderID
+	PriceMarkets     [numPlayers]PriceMarkets
+	OneAnyMarkets    [numPlayers]OneAnyMarkets
+	BuiltCards       [numPlayers][numCardColors][]CardName
+
 	military Military
 
 	availablePTokens []PTokenName
@@ -123,8 +129,8 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 	// 	return ErrWrongSelectedWonders
 	// }
 
-	g.players[0].AvailableWonders = fstWonders[:]
-	g.players[1].AvailableWonders = sndWonders[:]
+	g.AvailableWonders[0] = fstWonders[:]
+	g.AvailableWonders[1] = sndWonders[:]
 	g.state = g.state.Next()
 	return nil
 }
@@ -136,22 +142,6 @@ func (g *Game) CardsState() CardsState {
 func (g *Game) Build(id CardID) (CardsState, error) {
 	err := g.ageDesk.Build(id)
 	return g.ageDesk.state, err
-}
-
-// Cost card by coins
-func (g *Game) Cost(cardID CardID) Coins {
-	// TODO: make nil interface is valuable
-	if cardID.card().Cost == nil {
-		return 0
-	}
-	var p = g.currentPlayer()
-	tp := NewTradingPrice(*g.opponent(), p.PriceMarkets)
-	return CostByCoins(cardID.card().Cost, *p, tp)
-}
-
-// Cost card by coins
-func (g *Game) CostName(name CardName) Coins {
-	return g.Cost(name.card().ID)
 }
 
 func (g *Game) Player(i PlayerIndex) Player {

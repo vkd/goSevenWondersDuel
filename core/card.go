@@ -11,11 +11,11 @@ type Card struct {
 	ID    CardID
 	Name  CardName
 	Color CardColor
+	Cost  Cost
 
 	// -----------------
 
 	Effects []Effect
-	Cost    Cost
 
 	EndEffects []Finaler
 }

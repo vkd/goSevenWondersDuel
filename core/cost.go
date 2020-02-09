@@ -1,15 +1,19 @@
 package core
 
-func CostByCoins(cost Cost, p Player, tp TradingPrice) Coins {
+func CostByCoins(cost Cost, p Player, tp TradingPrice, rr ...ResourceReducer) Coins {
 	// TODO: make nil interface is valuable
 	if cost == nil {
 		return 0
 	}
-	return cost.cost(p, tp)
+	return cost.cost(p, tp, rr...)
+}
+
+type ResourceReducer interface {
+	reduceResources(Resources, TradingPrice) Resources
 }
 
 type Cost interface {
-	cost(Player, TradingPrice) Coins
+	cost(Player, TradingPrice, ...ResourceReducer) Coins
 }
 
 type Pricer interface {
@@ -29,19 +33,21 @@ type Price struct {
 	Resources Resources
 }
 
-func (p Price) cost(player Player, tp TradingPrice) Coins {
+func (p Price) cost(player Player, tp TradingPrice, rr ...ResourceReducer) Coins {
 	var toBuy = p.Resources.Reduce(player.Resources)
-	toBuy = player.OneAnyMarkets.Reduce(toBuy, tp)
+	for _, reducer := range rr {
+		toBuy = reducer.reduceResources(toBuy, tp)
+	}
 	var cost = tp.CostOf(toBuy) + p.Coins
 	return cost
 }
 
 type orCost []Cost
 
-func (cs orCost) cost(p Player, tp TradingPrice) Coins {
+func (cs orCost) cost(p Player, tp TradingPrice, rr ...ResourceReducer) Coins {
 	var min Coins = maxCoins
 	for _, c := range cs {
-		coins := c.cost(p, tp)
+		coins := c.cost(p, tp, rr...)
 		if coins < min {
 			min = coins
 		}
@@ -51,7 +57,7 @@ func (cs orCost) cost(p Player, tp TradingPrice) Coins {
 
 type FreeChain Chain
 
-func (c FreeChain) cost(p Player, _ TradingPrice) Coins {
+func (c FreeChain) cost(p Player, _ TradingPrice, _ ...ResourceReducer) Coins {
 	if p.Chains.Contain(Chain(c)) {
 		return 0
 	}
@@ -62,7 +68,7 @@ func (c FreeChain) cost(p Player, _ TradingPrice) Coins {
 type TradingPrice [numResources]Coins
 
 // NewTradingPrice of resources for one player
-func NewTradingPrice(opponent Player, markets []PriceMarket) TradingPrice {
+func NewTradingPrice(opponent Player, markets ...PriceMarket) TradingPrice {
 	var out TradingPrice
 	for i, count := range opponent.Resources {
 		out[i] = Coins(2 + count)
@@ -98,7 +104,7 @@ type PriceMarket struct {
 
 // Apply ...
 func (p PriceMarket) Apply(g *Game, i PlayerIndex) {
-	g.players[i].PriceMarkets.Append(p)
+	g.PriceMarkets[i].Append(p)
 }
 
 // PriceMarkets ...
@@ -128,7 +134,7 @@ func OneManufacturedMarket() OneAnyMarket { return OneAnyMarket(manufacturedGood
 
 type OneAnyMarkets []OneAnyMarket
 
-func (ms OneAnyMarkets) Reduce(rs Resources, tp TradingPrice) Resources {
+func (ms OneAnyMarkets) reduceResources(rs Resources, tp TradingPrice) Resources {
 	_, out := reduceCosts(ms, rs, tp)
 	return out
 }

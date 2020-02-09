@@ -52,7 +52,7 @@ type VPPerWonder uint8
 
 // FinalVP - extra VP at the end of game
 func (v VPPerWonder) FinalVP(g *Game, i PlayerIndex) VP {
-	return VP(len(g.player(i).BuildWonders)) * VP(v)
+	return VP(len(g.BuildWonders[i])) * VP(v)
 }
 
 // MaxFinalVPOfPlayers - finaler return max value of VP of every players

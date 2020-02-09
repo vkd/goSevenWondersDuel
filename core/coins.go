@@ -40,7 +40,7 @@ type CoinsPerWonder Coins
 
 // Apply effect
 func (c CoinsPerWonder) Apply(g *Game, i PlayerIndex) {
-	worth := Coins(c).Mul(uint(len(g.player(i).BuildWonders)))
+	worth := Coins(c).Mul(uint(len(g.BuildWonders[i])))
 	g.player(i).Coins += worth
 }
 
@@ -53,12 +53,12 @@ type CoinsPerCardColor struct {
 // Apply effect
 func (c CoinsPerCardColor) Apply(g *Game, i PlayerIndex) {
 	for _, color := range c.Colors {
-		g.player(i).Coins += coinsPerColor(c.Coins, color, *g.player(i))
+		g.player(i).Coins += coinsPerColor(c.Coins, color, g, i)
 	}
 }
 
-func coinsPerColor(coins Coins, color CardColor, p Player) Coins {
-	return coins.Mul(uint(len(p.BuiltCards[color])))
+func coinsPerColor(coins Coins, color CardColor, g *Game, i PlayerIndex) Coins {
+	return coins.Mul(uint(len(g.BuiltCards[i][color])))
 }
 
 // MaxCoinsPerCardColor - At the time it is constructed, this card grants you 1 coin for each color card in the city which has the most there colors cards.
@@ -67,10 +67,10 @@ type MaxCoinsPerCardColor CoinsPerCardColor
 // Apply effect
 func (m MaxCoinsPerCardColor) Apply(g *Game, i PlayerIndex) {
 	var max Coins
-	for _, p := range g.players {
+	for pi := range g.players {
 		var c Coins
 		for _, color := range m.Colors {
-			c += coinsPerColor(m.Coins, color, p)
+			c += coinsPerColor(m.Coins, color, g, PlayerIndex(pi))
 		}
 		if c > max {
 			max = c

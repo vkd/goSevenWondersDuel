@@ -20,16 +20,6 @@ type Player struct {
 	Chains Chains
 
 	ScientificSymbols ScientificSymbols
-
-	AvailableWonders []WonderID
-	BuildWonders     []WonderID
-
-	PriceMarkets  PriceMarkets
-	OneAnyMarkets OneAnyMarkets
-
-	BuiltCards [numCardColors][]CardName
-
-	VP VP
 }
 
 // NewPlayer of a game
