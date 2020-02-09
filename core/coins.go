@@ -38,8 +38,9 @@ func (c Coins) Apply(g *Game, i PlayerIndex) {
 // CoinsPerWonder - The card is worth x coins per Wonder constructed in your city at the time it is constructed.
 type CoinsPerWonder Coins
 
-// Apply effect
-func (c CoinsPerWonder) Apply(g *Game, i PlayerIndex) {
+var _ Effect = CoinsPerWonder(0)
+
+func (c CoinsPerWonder) applyEffect(g *Game, i PlayerIndex) {
 	worth := Coins(c).Mul(uint(len(g.BuildWonders[i])))
 	g.player(i).Coins += worth
 }

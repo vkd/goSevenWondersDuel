@@ -162,7 +162,7 @@ func (g *Game) opponent() *Player {
 
 func (g *Game) apply(card CardName) {
 	for _, e := range card.card().Effects {
-		e.Apply(g, g.currentPlayerIndex)
+		e.applyEffect(g, g.currentPlayerIndex)
 	}
 }
 

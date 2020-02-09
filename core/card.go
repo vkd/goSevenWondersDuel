@@ -14,8 +14,7 @@ type Card struct {
 
 	// -----------------
 
-	Effects []Effect
-
+	Effects    []Effect
 	EndEffects []Finaler
 }
 

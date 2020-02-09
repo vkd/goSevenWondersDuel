@@ -1,6 +1,5 @@
 package core
 
-// Chain ...
 type Chain uint8
 
 var _ Effect = Chain(0)
@@ -32,8 +31,7 @@ func (c Chain) String() string {
 	return nameOfChain[c]
 }
 
-// Apply effect of chain symbol
-func (c Chain) Apply(g *Game, i PlayerIndex) {
+func (c Chain) applyEffect(g *Game, i PlayerIndex) {
 	g.player(i).Chains[c] = true
 }
 

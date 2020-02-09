@@ -3,6 +3,8 @@ package core
 // Resource - type of goods
 type Resource uint8
 
+var _ Effect = Resource(0)
+
 // Different kind of resources
 const (
 	Wood Resource = iota
@@ -39,9 +41,8 @@ func (r Resource) String() string {
 	return nameOfResource[r]
 }
 
-// Apply effect
-func (r Resource) Apply(g *Game, i PlayerIndex) {
-	g.player(i).Resources[r]++
+func (r Resource) applyEffect(g *Game, i PlayerIndex) {
+	g.player(i).Resources.addOne(r)
 }
 
 func (r Resource) applyPrice(p *Price) {

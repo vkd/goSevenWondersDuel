@@ -13,6 +13,8 @@ type Military struct {
 // Shields - military power
 type Shields uint8
 
-func (s Shields) Apply(g *Game, i PlayerIndex) {
+var _ Effect = Shields(0)
+
+func (s Shields) applyEffect(g *Game, i PlayerIndex) {
 	g.military.shields[i] += s
 }
