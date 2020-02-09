@@ -141,6 +141,12 @@ func run() error {
 
 	var boardState BoardState
 
+	for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
+		wonderTaken[i] = true
+		wonderChosen[i] = wonders[idx]
+		currentWonder++
+	}
+
 	// var minX, minY, minW, minH float64
 	// minW, minH = wonderWidth*2, wonderHeight*2
 	// minX, minY = wonderLefts[1], wonderBottoms[1]
