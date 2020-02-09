@@ -8,7 +8,6 @@ import (
 // Card - In 7 Wonders Duel, all of the Age and Guild cards represent Buildings.
 // The Building cards all consist of a name, an effect and a construction cost.
 type Card struct {
-	ID    CardID
 	Name  CardName
 	Color CardColor
 	Cost  Cost
@@ -253,12 +252,6 @@ var (
 	mapCards = makeMapCardsByName(cards)
 	_        = [1]struct{}{}[len(mapCards)-totalNum]
 )
-
-func init() {
-	for i := range cards {
-		cards[i].ID = CardID(i)
-	}
-}
 
 func newCard(name CardName, ct CardColor, args ...interface{}) (c Card) {
 	c.Name = name
