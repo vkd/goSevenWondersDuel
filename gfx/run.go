@@ -323,7 +323,7 @@ func run() error {
 }
 
 func debugPlayerInfo(p core.Player) string {
-	return fmt.Sprintf("Money: %d\nResources: %v\nVP: %d\nChains: %v\nScience: %v", p.Coins, p.Resources, p.VP, p.Chains.Strings(), p.ScientificSymbols)
+	return fmt.Sprintf("Money: %d\nResources: %v\nVP: %d\nChains: %v\nScience: %v", p.Coins, p.Resources, 0, p.Chains.Strings(), p.ScientificSymbols)
 }
 
 var (
