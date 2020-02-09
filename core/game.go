@@ -139,20 +139,18 @@ func (g *Game) Build(id CardID) (CardsState, error) {
 }
 
 // Cost card by coins
-func (g *Game) Cost(cardID CardID) (Coins, bool) {
+func (g *Game) Cost(cardID CardID) Coins {
 	// TODO: make nil interface is valuable
 	if cardID.card().Cost == nil {
-		return 0, true
+		return 0
 	}
-	coins, ok := cardID.card().Cost.cost(g, g.currentPlayerIndex)
-	if !ok {
-		return 0, false
-	}
-	return coins, true
+	var p = g.currentPlayer()
+	tp := NewTradingPrice(*g.opponent(), p.PriceMarkets)
+	return CostByCoins(cardID.card().Cost, *p, tp)
 }
 
 // Cost card by coins
-func (g *Game) CostName(name CardName) (Coins, bool) {
+func (g *Game) CostName(name CardName) Coins {
 	return g.Cost(name.card().ID)
 }
 
@@ -162,6 +160,14 @@ func (g *Game) Player(i PlayerIndex) Player {
 
 func (g *Game) player(i PlayerIndex) *Player {
 	return &g.players[i]
+}
+
+func (g *Game) currentPlayer() *Player {
+	return &g.players[g.currentPlayerIndex]
+}
+
+func (g *Game) opponent() *Player {
+	return &g.players[g.currentPlayerIndex.Next()]
 }
 
 func (g *Game) apply(card CardName) {

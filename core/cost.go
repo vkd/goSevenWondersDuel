@@ -1,12 +1,15 @@
 package core
 
-type Cost interface {
-	cost(*Game, PlayerIndex) (Coins, bool)
+func CostByCoins(cost Cost, p Player, tp TradingPrice) Coins {
+	// TODO: make nil interface is valuable
+	if cost == nil {
+		return 0
+	}
+	return cost.cost(p, tp)
 }
 
-type Price struct {
-	Coins     Coins
-	Resources Resources
+type Cost interface {
+	cost(Player, TradingPrice) Coins
 }
 
 type Pricer interface {
@@ -21,45 +24,39 @@ func NewCost(ps ...Pricer) Cost {
 	return price
 }
 
-func (p Price) cost(g *Game, i PlayerIndex) (Coins, bool) {
-	var player = g.player(i)
+type Price struct {
+	Coins     Coins
+	Resources Resources
+}
+
+func (p Price) cost(player Player, tp TradingPrice) Coins {
 	var toBuy = p.Resources.Reduce(player.Resources)
-	var tradingPrice = NewTradingPrice(*i.Next().player(g), player.PriceMarkets)
-	var cost = tradingPrice.CostOf(toBuy) + p.Coins
-	return cost, true
+	toBuy = player.OneAnyMarkets.Reduce(toBuy, tp)
+	var cost = tp.CostOf(toBuy) + p.Coins
+	return cost
 }
 
 type orCost []Cost
 
-func (cs orCost) cost(g *Game, i PlayerIndex) (Coins, bool) {
-	var min Coins
-	var foundOne bool
+func (cs orCost) cost(p Player, tp TradingPrice) Coins {
+	var min Coins = maxCoins
 	for _, c := range cs {
-		coins, ok := c.cost(g, i)
-		if !ok {
-			continue
-		}
-		if !foundOne || coins < min {
+		coins := c.cost(p, tp)
+		if coins < min {
 			min = coins
 		}
-		foundOne = true
 	}
-	if !foundOne {
-		return 0, false
-	}
-	return min, true
+	return min
 }
 
 type FreeChain Chain
 
-func (c FreeChain) cost(g *Game, i PlayerIndex) (Coins, bool) {
-	if g.player(i).Chains.Contain(Chain(c)) {
-		return 0, true
+func (c FreeChain) cost(p Player, _ TradingPrice) Coins {
+	if p.Chains.Contain(Chain(c)) {
+		return 0
 	}
-	return 0, false
+	return maxCoins
 }
-
-// ------------------------------
 
 // TradingPrice of resources for one player
 type TradingPrice [numResources]Coins
@@ -86,6 +83,12 @@ func (tp TradingPrice) CostOf(rs Resources) Coins {
 	}
 	return out
 }
+
+func (tp TradingPrice) CostOne(r Resource) Coins {
+	return tp[r]
+}
+
+// ------------------------------
 
 // PriceMarket - a market that allows you to buy a resource at one price, independent of the opponent’s resources
 type PriceMarket struct {
@@ -114,42 +117,39 @@ func OneCoinPrice(r Resource) PriceMarket {
 	}
 }
 
-// // OneAnyMarket - one of these resources by every round
-// type OneAnyMarket []Resource
+// OneAnyMarket - one of these resources by every round
+type OneAnyMarket []Resource
 
-// // OneRawMarket by raw materials
-// func OneRawMarket() OneAnyMarket { return OneAnyMarket(rawMaterials) }
+// OneRawMarket by raw materials
+func OneRawMarket() OneAnyMarket { return OneAnyMarket(rawMaterials) }
 
-// // OneManufacturedMarket by manufactured goods
-// func OneManufacturedMarket() OneAnyMarket { return OneAnyMarket(manufacturedGoods) }
+// OneManufacturedMarket by manufactured goods
+func OneManufacturedMarket() OneAnyMarket { return OneAnyMarket(manufacturedGoods) }
 
-// CostOfCard by coins
-// func CostOfCard(c *Card, tp TradingPrice, p Player) Coins {
-// 	for _, cnd := range c.FreeConstructionConditions {
-// 		if cnd.IsFree(p) {
-// 			return 0
-// 		}
-// 	}
-// 	return c.Cost.ReduceBy(p.Resources).Cost(tp)
-// }
+type OneAnyMarkets []OneAnyMarket
 
-// AnyOneOfCosts with minimum price
-// type AnyOneOfCosts []Cost
+func (ms OneAnyMarkets) Reduce(rs Resources, tp TradingPrice) Resources {
+	_, out := reduceCosts(ms, rs, tp)
+	return out
+}
 
-// // ByCoins - return minimum price by coins
-// func (c AnyOneOfCosts) ByCoins(g *Game, i PlayerIndex) (Coins, bool) {
-// 	var outCoins Coins
-// 	var outOk bool
-// 	for _, cost := range c {
-// 		cn, ok := cost.ByCoins(g, i)
-// 		if !ok {
-// 			continue
-// 		}
-// 		// first time OR less price
-// 		if !outOk || cn < outCoins {
-// 			outCoins = cn
-// 		}
-// 		outOk = true
-// 	}
-// 	return outCoins, outOk
-// }
+func reduceCosts(ms OneAnyMarkets, rs Resources, tp TradingPrice) (Coins, Resources) {
+	if len(ms) == 0 {
+		return 0, rs
+	}
+
+	var max Coins
+	var maxRs Resources = rs
+	for _, r := range ms[0] {
+		if rs[r] == 0 {
+			continue
+		}
+		costOne := tp.CostOne(r)
+		reduceCoins, reduceRs := reduceCosts(ms[1:], rs.ReduceOne(r), tp)
+		if reduceCoins+costOne > max {
+			max = reduceCoins + costOne
+			maxRs = reduceRs
+		}
+	}
+	return max, maxRs
+}

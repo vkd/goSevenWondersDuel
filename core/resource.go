@@ -60,6 +60,13 @@ func NewRes(rs ...Resource) Resources {
 	return out
 }
 
+func (rs Resources) ReduceOne(r Resource) Resources {
+	if rs[r] > 0 {
+		rs[r]--
+	}
+	return rs
+}
+
 // Reduce by player's resources
 func (rs Resources) Reduce(byRs Resources) Resources {
 	for i := range rs {

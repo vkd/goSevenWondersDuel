@@ -24,7 +24,8 @@ type Player struct {
 	AvailableWonders []WonderID
 	BuildWonders     []WonderID
 
-	PriceMarkets PriceMarkets
+	PriceMarkets  PriceMarkets
+	OneAnyMarkets OneAnyMarkets
 
 	BuiltCards [numCardColors][]CardName
 

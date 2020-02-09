@@ -151,10 +151,10 @@ var (
 		newCard("Palisade", Red),    //, Shields(1), Wall, NewCost(Coins(2))),
 		newCard("Guard tower", Red), //, Shields(1)),
 
-		newCard("Workshop", Green),    //, Tool, VP(1), NewCost(Papyrus)),
-		newCard("Scriptorium", Green), //, Pen, Book, NewCost(Coins(2))),
-		newCard("Apothecary", Green),  //, Wheel, VP(1), NewCost(Glass)),
-		newCard("Pharmacist", Green),  //, Mortar, Gear, NewCost(Coins(2))),
+		newCard("Workshop", Green),                   //, Tool, VP(1), NewCost(Papyrus)),
+		newCard("Scriptorium", Green),                //, Pen, Book, NewCost(Coins(2))),
+		newCard("Apothecary", Green, NewCost(Glass)), //, Wheel, VP(1)),
+		newCard("Pharmacist", Green),                 //, Mortar, Gear, NewCost(Coins(2))),
 
 		newCard("Tavern", Yellow),        //, Coins(4), Bottle),
 		newCard("Clay reserve", Yellow),  //, OneCoinPrice(Clay), NewCost(Coins(3))),
@@ -194,9 +194,9 @@ var (
 		newCard("Forum", Yellow),         //, OneOfAnyMarket(manufacturedGoods), NewCost(Coint(3), Clay)),
 		newCard("Caravansery", Yellow),   //, OneOfAnyMarket(rawMaterials), NewCost(Coint(2), Glass, Papyrus)),
 
-		newCard("Temple", Blue),   //, VP(4), Sun, NewCost(Wood, Papyrus, Moon)),
-		newCard("Postrum", Blue),  //, VP(4), Pantheon, NewCost(Stone, Wood)),
-		newCard("Aqueduct", Blue), //, VP(5), NewCost(Stone, Stone, Stone, Water)),
+		newCard("Temple", Blue),  //, VP(4), Sun, NewCost(Wood, Papyrus, Moon)),
+		newCard("Postrum", Blue), //, VP(4), Pantheon, NewCost(Stone, Wood)),
+		newCard("Aqueduct", Blue, NewCost(Stone, Stone, Stone), FreeChain(Water)), //, VP(5), ),
 		newCard("Tribunal", Blue), //, VP(5), NewCost(Wood, Wood, Glass)),
 		newCard("Statue", Blue),   //, VP(4), Column, NewCost(Clay, Clay, Mask)),
 
@@ -211,10 +211,10 @@ var (
 
 	listAgeIII = []Card{
 		newCard("Siege workshop", Red), //, Shields(2), NewCost(Wood, Wood, Wood, Glass, Target)),
-		newCard("Fortifications", Red), //, Shields(2), NewCost(Stone, Stone, Clay, Papyrus, Wall)),
-		newCard("Circus", Red),         //, Shields(2), NewCost(Clay, Clay, Stone, Stone, Helm)),
-		newCard("Arsenal", Red),        //, Shields(3), NewCost(Clay, Clay, Clay, Wood, Wood)),
-		newCard("Courthouse", Red),     //, Shields(3), NewCost(Coint(3))),
+		newCard("Fortifications", Red, NewCost(Stone, Stone, Clay, Papyrus), FreeChain(Wall)), //, Shields(2), ),
+		newCard("Circus", Red),     //, Shields(2), NewCost(Clay, Clay, Stone, Stone, Helm)),
+		newCard("Arsenal", Red),    //, Shields(3), NewCost(Clay, Clay, Clay, Wood, Wood)),
+		newCard("Courthouse", Red), //, Shields(3), NewCost(Coint(3))),
 
 		newCard("University", Green),  //, Astronomy, VP(2), NewCost(Clay, Glass, Papyrus, Harp)),
 		newCard("Observatory", Green), //, Astronomy, VP(2), NewCost(Stone, Papyrus, Papyrus, Lamp)),
