@@ -14,7 +14,7 @@ var (
 	cardsTx     [16*4 + 9]*pixel.Sprite
 	cardsTxBack [4]*pixel.Sprite
 
-	wondersTx     [12]*pixel.Sprite
+	wondersTx     [13]*pixel.Sprite
 	wondersTxBack *pixel.Sprite
 
 	progressTx [10]*pixel.Sprite
@@ -63,7 +63,7 @@ func loadTextures() error {
 	if err != nil {
 		return fmt.Errorf("Error on load texture: %v", err)
 	}
-	// wondersTx[13] = pixel.NewSprite(pic, rectByWonder9(5))
+	wondersTx[12] = pixel.NewSprite(pic, rectByWonder9(5))
 	wondersTx[0] = pixel.NewSprite(pic, rectByWonder9(6))
 	wondersTx[1] = pixel.NewSprite(pic, rectByWonder9(7))
 
@@ -72,7 +72,7 @@ func loadTextures() error {
 		return fmt.Errorf("Erroron load texture: %v", err)
 	}
 	for i := 2; i < 10; i++ {
-		wondersTx[i] = pixel.NewSprite(pic, rectByWonder(i))
+		wondersTx[i] = pixel.NewSprite(pic, rectByWonder(i-2))
 	}
 
 	pic, err = loadPicture("../../textures/13.jpg")
@@ -80,7 +80,7 @@ func loadTextures() error {
 		return fmt.Errorf("Error on load texture: %v", err)
 	}
 	for i := 10; i < 12; i++ {
-		wondersTx[i] = pixel.NewSprite(pic, rectByWonder(i))
+		wondersTx[i] = pixel.NewSprite(pic, rectByWonder(i-10))
 	}
 
 	pic, err = loadPicture("../../textures/progress_tokens.png")
