@@ -23,7 +23,7 @@ func TestRectByCard(t *testing.T) {
 		{15, pixel.V(887, 75)},
 	}
 	for _, tt := range tests {
-		want := pixel.R(tt.want.X, tt.want.Y, tt.want.X+cardWidth, tt.want.Y+cardHeight)
+		want := pixel.R(tt.want.X, tt.want.Y, tt.want.X+cardWidth*2, tt.want.Y+cardHeight*2)
 		if got := rectByCard(tt.i); !reflect.DeepEqual(got, want) {
 			t.Errorf("%d. rectByCard() = %v, want %v", tt.i, got, want)
 		}

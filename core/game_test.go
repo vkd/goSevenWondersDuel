@@ -21,9 +21,9 @@ func TestZeroGame(t *testing.T) {
 
 	err = game.SelectWonders(
 		// Temple of Artemis, The Great Library, The Hanging Gardens, The Sphinx
-		[...]WonderName{wonders[3], wonders[2], wonders[4], wonders[7]},
+		[...]WonderID{wonders[3], wonders[2], wonders[4], wonders[7]},
 		// The Appian Way, The Statue of Zeus, The Great Lighthouse, The Mausoleum
-		[...]WonderName{wonders[0], wonders[1], wonders[5], wonders[6]},
+		[...]WonderID{wonders[0], wonders[1], wonders[5], wonders[6]},
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, game.GetState(), StateAgeI)

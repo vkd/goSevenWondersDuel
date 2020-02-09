@@ -44,6 +44,10 @@ func (r Resource) Apply(g *Game, i PlayerIndex) {
 	g.player(i).Resources[r]++
 }
 
+func (r Resource) applyPrice(p *Price) {
+	p.Resources.addOne(r)
+}
+
 // Resources - stack of resources
 type Resources [numResources]uint
 
@@ -74,4 +78,18 @@ func (rs Resources) Add(rs2 Resources) Resources {
 		rs[i] += rs2[i]
 	}
 	return rs
+}
+
+func (rs *Resources) add(rs2 Resources) {
+	for i := range rs {
+		rs[i] += rs2[i]
+	}
+}
+
+func (rs *Resources) addOne(r Resource) {
+	rs[r]++
+}
+
+func (rs Resources) applyPrice(p *Price) {
+	p.Resources.add(rs)
 }

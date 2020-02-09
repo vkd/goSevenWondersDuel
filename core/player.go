@@ -8,6 +8,10 @@ func (i PlayerIndex) Next() PlayerIndex {
 	return (i + 1) % numPlayers
 }
 
+func (i PlayerIndex) player(g *Game) *Player {
+	return g.player(i)
+}
+
 // Player of a game
 type Player struct {
 	Coins     Coins

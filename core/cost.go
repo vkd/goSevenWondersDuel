@@ -1,45 +1,65 @@
 package core
 
-import "fmt"
+type Cost interface {
+	cost(*Game, PlayerIndex) (Coins, bool)
+}
 
-// Cost of a card or a wonder
-type Cost struct {
+type Price struct {
 	Coins     Coins
 	Resources Resources
-	FreeChain MaybeChain
 }
 
-// ByCoins - cost of a card by coins
-func (c Cost) ByCoins(g *Game, i PlayerIndex) Coins {
-	if c.FreeChain.OK && g.players[i].Chains.Contain(c.FreeChain.Chain) {
-		return 0
+type Pricer interface {
+	applyPrice(p *Price)
+}
+
+func NewCost(ps ...Pricer) Cost {
+	var price Price
+	for _, p := range ps {
+		p.applyPrice(&price)
 	}
-
-	missingRes := c.Resources.Reduce(g.players[i].Resources)
-	tp := NewTradingPrice(g.players[i.Next()], g.players[i].PriceMarkets)
-	return c.Coins + tp.CostOf(missingRes)
+	return price
 }
 
-// NewCost by different goods
-func NewCost(args ...interface{}) Cost {
-	var c Cost
+func (p Price) cost(g *Game, i PlayerIndex) (Coins, bool) {
+	var player = g.player(i)
+	var toBuy = p.Resources.Reduce(player.Resources)
+	var tradingPrice = NewTradingPrice(*i.Next().player(g), player.PriceMarkets)
+	var cost = tradingPrice.CostOf(toBuy) + p.Coins
+	return cost, true
+}
 
-	for _, arg := range args {
-		switch arg := arg.(type) {
-		case Coins:
-			c.Coins += arg
-		case Resource:
-			c.Resources[arg]++
-		case Resources:
-			c.Resources = c.Resources.Add(arg)
-		case Chain:
-			c.FreeChain.Set(arg)
-		default:
-			panic(fmt.Sprintf("unknown type %T for cost", arg))
+type orCost []Cost
+
+func (cs orCost) cost(g *Game, i PlayerIndex) (Coins, bool) {
+	var min Coins
+	var foundOne bool
+	for _, c := range cs {
+		coins, ok := c.cost(g, i)
+		if !ok {
+			continue
 		}
+		if !foundOne || coins < min {
+			min = coins
+		}
+		foundOne = true
 	}
-	return c
+	if !foundOne {
+		return 0, false
+	}
+	return min, true
 }
+
+type FreeChain Chain
+
+func (c FreeChain) cost(g *Game, i PlayerIndex) (Coins, bool) {
+	if g.player(i).Chains.Contain(Chain(c)) {
+		return 0, true
+	}
+	return 0, false
+}
+
+// ------------------------------
 
 // TradingPrice of resources for one player
 type TradingPrice [numResources]Coins
@@ -51,7 +71,9 @@ func NewTradingPrice(opponent Player, markets []PriceMarket) TradingPrice {
 		out[i] = Coins(2 + count)
 	}
 	for _, m := range markets {
-		out[m.Resource] = m.Price
+		if m.Price < out[m.Resource] {
+			out[m.Resource] = m.Price
+		}
 	}
 	return out
 }

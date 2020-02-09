@@ -296,7 +296,7 @@ func run() error {
 		txt.Clear()
 		txt.Color = colornames.Orange
 		fmt.Fprintf(txt,
-			"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\nWonderTaken: %v\nWonderChosen: %v\nCurrent wonder: %d",
+			"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\n",
 			int(left),
 			int(bottom),
 			int(cardTitleHeight),
@@ -304,9 +304,6 @@ func run() error {
 			int(win.MousePosition().X),
 			int(win.MousePosition().Y),
 			0,
-			wonderTaken,
-			wonderChosen,
-			currentWonder,
 		)
 		txt.Draw(win, pixel.IM)
 

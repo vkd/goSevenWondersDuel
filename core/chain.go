@@ -68,6 +68,10 @@ func (cs Chains) Contain(c Chain) bool {
 	return cs[c]
 }
 
+func (cs *Chains) Set(c Chain) {
+	cs[c] = true
+}
+
 var (
 	nameOfChain = map[Chain]string{
 		Horseshoe: "Horseshoe",
@@ -90,15 +94,3 @@ var (
 	}
 	_ = [1]struct{}{}[numOfChains-len(nameOfChain)]
 )
-
-// MaybeChain - optional field of a chain
-type MaybeChain struct {
-	OK bool
-	Chain
-}
-
-// Set a value
-func (m *MaybeChain) Set(c Chain) {
-	m.OK = true
-	m.Chain = c
-}

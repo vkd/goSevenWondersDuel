@@ -18,8 +18,8 @@ const (
 type Game struct {
 	state State
 
-	players       [numPlayers]Player
-	currentPlayer PlayerIndex
+	players            [numPlayers]Player
+	currentPlayerIndex PlayerIndex
 
 	military Military
 
@@ -113,7 +113,9 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 	if !g.state.Is(StateSelectWonders) {
 		return ErrWrongState
 	}
-	return ErrWrongState
+
+	// TODO: check input arguments
+
 	// if !WonderNames(g.availableWonders[:4]).IsExistsAll(WonderNames{fstWonders[0], fstWonders[1], sndWonders[0], sndWonders[1]}) {
 	// 	return ErrWrongSelectedWonders
 	// }
@@ -137,8 +139,21 @@ func (g *Game) Build(id CardID) (CardsState, error) {
 }
 
 // Cost card by coins
-func (g *Game) Cost(card CardName) Coins {
-	return card.card().Cost.ByCoins(g, g.currentPlayer)
+func (g *Game) Cost(cardID CardID) (Coins, bool) {
+	// TODO: make nil interface is valuable
+	if cardID.card().Cost == nil {
+		return 0, true
+	}
+	coins, ok := cardID.card().Cost.cost(g, g.currentPlayerIndex)
+	if !ok {
+		return 0, false
+	}
+	return coins, true
+}
+
+// Cost card by coins
+func (g *Game) CostName(name CardName) (Coins, bool) {
+	return g.Cost(name.card().ID)
 }
 
 func (g *Game) Player(i PlayerIndex) Player {
@@ -151,7 +166,7 @@ func (g *Game) player(i PlayerIndex) *Player {
 
 func (g *Game) apply(card CardName) {
 	for _, e := range card.card().Effects {
-		e.Apply(g, g.currentPlayer)
+		e.Apply(g, g.currentPlayerIndex)
 	}
 }
 

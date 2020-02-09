@@ -8,6 +8,7 @@ import (
 // Card - In 7 Wonders Duel, all of the Age and Guild cards represent Buildings.
 // The Building cards all consist of a name, an effect and a construction cost.
 type Card struct {
+	ID    CardID
 	Name  CardName
 	Color CardColor
 
@@ -21,6 +22,10 @@ type Card struct {
 
 // CardID - ID of the card
 type CardID uint32
+
+func (c CardID) card() *Card {
+	return &cards[c]
+}
 
 // CardName - name of card
 type CardName string
@@ -174,7 +179,7 @@ var (
 
 	listAgeII = []Card{
 		newCard("Barracks", Red), //, Shields(1), NewCost(Coint(3), Sword)),
-		newCard("Horse breeders", Red, Shields(1), NewCost(Clay, Wood, Horseshoe)),
+		newCard("Horse breeders", Red, Shields(1), NewCost(Clay, Wood), FreeChain(Horseshoe)),
 		newCard("Walls", Red),         //, Shields(2), NewCost(Stone, Stone)),
 		newCard("Parade ground", Red), //, Shields(2), Helm, NewCost(Clay, Clay, Glass)),
 		newCard("Archery range", Red), //, Shields(2), Target, NewCost(Stone, Wood, Papyrus)),
@@ -217,7 +222,7 @@ var (
 		newCard("Study", Green),       //, Clock, VP(3), NewCost(Wood, Wood, Glass, Papyrus)),
 
 		newCard("Chamber of commerce", Yellow), //, MoneyByCards{Grey, 3}, VP(3), NewCost(Papyrus, Papyrus)),
-		newCard("Arena", Yellow, CoinsPerWonder(2), VP(3), NewCost(Clay, Stone, Wood, Barrel)),
+		newCard("Arena", Yellow, CoinsPerWonder(2), VP(3), NewCost(Clay, Stone, Wood), FreeChain(Barrel)),
 		newCard("Port", Yellow),       //, MoneyByCards{Brown, 2}, VP(3), NewCost(Wood, Glass, Papyrus)),
 		newCard("Armory", Yellow),     //, MoneyByCards{Red, 1}, VP(3), NewCost(Stone, Stone, Glass)),
 		newCard("Lighthouse", Yellow), //, MoneyByCards{Yellow, 1}, VP(3), NewCost(Clay, Clay, Glass, Bottle)),
@@ -245,9 +250,15 @@ var (
 	cards = appendAll(listAgeI, listAgeII, listAgeIII, listGuilds)
 	_     = [1]struct{}{}[len(cards)-totalNum]
 
-	mapCards = makeMapCardsByName(listAgeI, listAgeII, listAgeIII, listGuilds)
+	mapCards = makeMapCardsByName(cards)
 	_        = [1]struct{}{}[len(mapCards)-totalNum]
 )
+
+func init() {
+	for i := range cards {
+		cards[i].ID = CardID(i)
+	}
+}
 
 func newCard(name CardName, ct CardColor, args ...interface{}) (c Card) {
 	c.Name = name
@@ -256,7 +267,11 @@ func newCard(name CardName, ct CardColor, args ...interface{}) (c Card) {
 	for _, arg := range args {
 		switch arg := arg.(type) {
 		case Cost:
-			c.Cost = arg
+			if c.Cost != nil {
+				c.Cost = orCost{c.Cost, arg}
+			} else {
+				c.Cost = arg
+			}
 		case Effect:
 			c.Effects = append(c.Effects, arg)
 		case Finaler:

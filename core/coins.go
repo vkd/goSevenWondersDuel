@@ -5,6 +5,10 @@ package core
 // points at the end of the game.
 type Coins uint
 
+func (c Coins) applyPrice(p *Price) {
+	p.Coins += c
+}
+
 // Mul - multiply
 func (c Coins) Mul(i uint) Coins {
 	return Coins(uint(c) * i)
