@@ -14,8 +14,7 @@ type Card struct {
 
 	// -----------------
 
-	Effects    []Effect
-	EndEffects []Finaler
+	Effects []Effect
 }
 
 // CardID - ID of the card
@@ -266,8 +265,6 @@ func newCard(name CardName, ct CardColor, args ...interface{}) (c Card) {
 			}
 		case Effect:
 			c.Effects = append(c.Effects, arg)
-		case Finaler:
-			c.EndEffects = append(c.EndEffects, arg)
 		default:
 			panic(fmt.Sprintf("Not allow for card builder: %T", arg))
 		}

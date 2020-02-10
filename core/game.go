@@ -27,6 +27,7 @@ type Game struct {
 	PriceMarkets     [numPlayers]PriceMarkets
 	OneAnyMarkets    [numPlayers]OneAnyMarkets
 	BuiltCards       [numPlayers][numCardColors][]CardName
+	endEffects       [numPlayers][]Effect
 
 	military Military
 
