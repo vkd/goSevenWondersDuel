@@ -202,7 +202,7 @@ func run() error {
 
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			if selectedCardIndex > -1 {
-				tableCards.Cards, err = gg.Build(tableCards.Cards[selectedCardIndex].ID)
+				tableCards.Cards, err = gg.BuildCard(tableCards.Cards[selectedCardIndex].ID)
 				if err != nil {
 					log.Printf("Error on build: %v", err)
 				}

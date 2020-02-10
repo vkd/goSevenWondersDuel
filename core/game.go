@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -24,12 +25,16 @@ type Game struct {
 	// TODO: make private
 	AvailableWonders [numPlayers][]WonderID
 	BuildWonders     [numPlayers][]WonderID
-	PriceMarkets     [numPlayers]PriceMarkets
-	OneAnyMarkets    [numPlayers]OneAnyMarkets
-	BuiltCards       [numPlayers][numCardColors][]CardName
-	endEffects       [numPlayers][]Finaler
+	BuiltCards       [numPlayers][numCardColors][]CardID
+
+	// TODO: make private
+	PriceMarkets  [numPlayers]PriceMarkets
+	OneAnyMarkets [numPlayers]OneAnyMarkets
+	endEffects    [numPlayers][]Finaler
 
 	military Military
+
+	vps [numPlayers][numVPTypes]VP
 
 	availablePTokens []PTokenName
 	restPTokens      []PTokenName
@@ -141,9 +146,33 @@ func (g *Game) CardsState() CardsState {
 	return g.ageDesk.state
 }
 
-func (g *Game) Build(id CardID) (CardsState, error) {
-	err := g.ageDesk.Build(id)
-	return g.ageDesk.state, err
+func (g *Game) BuildCard(id CardID) (state CardsState, err error) {
+	ok := g.ageDesk.testBuild(id)
+	state = g.ageDesk.state
+	if !ok {
+		return state, fmt.Errorf("card (id = %d) cannot be built", id)
+	}
+
+	card := id.card()
+	pay := CostByCoins(card.Cost, *g.currentPlayer(), NewTradingPrice(*g.opponent(), g.PriceMarkets[g.currentPlayerIndex]...), g.OneAnyMarkets[g.currentPlayerIndex])
+	if g.currentPlayer().Coins < pay {
+		return state, fmt.Errorf("not enough coins")
+	}
+
+	err = g.ageDesk.Build(id)
+	state = g.ageDesk.state
+	if err != nil {
+		return state, err
+	}
+	g.currentPlayer().Coins -= pay
+	for _, eff := range card.Effects {
+		eff.applyEffect(g, g.currentPlayerIndex)
+	}
+	g.BuiltCards[g.currentPlayerIndex][card.Color] = append(g.BuiltCards[g.currentPlayerIndex][card.Color], id)
+
+	g.currentPlayerIndex = g.currentPlayerIndex.Next()
+
+	return state, nil
 }
 
 func (g *Game) Player(i PlayerIndex) Player {

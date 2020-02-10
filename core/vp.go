@@ -19,7 +19,7 @@ type typedVP struct {
 var _ Effect = typedVP{}
 
 func (v typedVP) applyEffect(g *Game, i PlayerIndex) {
-	panic("Not implemented")
+	g.vps[i][v.t] += v.v
 }
 
 // VPType - type of victory points

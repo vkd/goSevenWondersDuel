@@ -232,6 +232,11 @@ func (d *ageDesk) Build(id CardID) error {
 	return nil
 }
 
+func (d *ageDesk) testBuild(id CardID) bool {
+	idx, ok := indexOfCards(id, d.cards)
+	return ok && d.state.testBuilt(idx)
+}
+
 func indexOfCards(id CardID, cards []CardID) (cardIndex, bool) {
 	for i, c := range cards {
 		if c == id {
