@@ -205,6 +205,10 @@ func (g *Game) GettingPToken(i PlayerIndex) {
 	panic("Not implemented")
 }
 
+func (g *Game) Military() Military {
+	return g.military
+}
+
 // State of a game
 type State uint8
 

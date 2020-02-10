@@ -221,11 +221,14 @@ func run() error {
 		// drawCard(0, pixel.V(510, 10), win)
 		// drawFirstEpoh(win, pixel.V(windowWidth/2, windowHeight-100))
 
+		m := gg.Military()
+		warPoint := m.Shields[0] - m.Shields[1]
+
 		war.Clear()
 		war.Color = colornames.Red
 		warText := []string{
 			"9 . . 6 . . 3 . . 0 . . 3 . . 6 . . 9\n",
-			strings.Repeat(" ", int(0)*2+18) + "*\n", // 18 = 0
+			strings.Repeat(" ", int(warPoint)*2+18) + "*\n", // 18 = 0
 			"X    -5    -2           -2    -5    X\n",
 			"  10     5     2     2     5     10  \n",
 		}
