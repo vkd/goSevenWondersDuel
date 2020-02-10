@@ -15,6 +15,14 @@ func (c Coins) applyPrice(p *Price) {
 	p.Coins += c
 }
 
+func (c *Coins) sub(v Coins) {
+	if *c > v {
+		*c = *c - v
+	} else {
+		*c = 0
+	}
+}
+
 // Mul - multiply
 func (c Coins) Mul(i uint) Coins {
 	return Coins(uint(c) * i)
@@ -23,16 +31,6 @@ func (c Coins) Mul(i uint) Coins {
 // Div - division
 func (c Coins) Div(i uint) uint {
 	return uint(c) / i
-}
-
-// Cost based on coins
-// func (c Coins) Cost() Cost {
-// 	return Cost{Coins: c}
-// }
-
-// Apply effect
-func (c Coins) Apply(g *Game, i PlayerIndex) {
-	g.players[i].Coins += c
 }
 
 // CoinsPerWonder - The card is worth x coins per Wonder constructed in your city at the time it is constructed.

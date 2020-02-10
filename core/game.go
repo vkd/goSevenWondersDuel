@@ -168,6 +168,10 @@ func (g *Game) apply(card CardName) {
 	}
 }
 
+func (g *Game) Victory() {
+	panic("Not implemented")
+}
+
 // State of a game
 type State uint8
 
