@@ -5,6 +5,8 @@ package core
 // board. That token will be kept in your city until the end of the game.
 type ScientificSymbol uint8
 
+var _ Effect = ScientificSymbol(0)
+
 //ScientificSymbols
 const (
 	Wheel ScientificSymbol = iota
@@ -33,4 +35,30 @@ var (
 // String - return name of the scientific symbol
 func (s ScientificSymbol) String() string {
 	return nameOfScientificSymbol[s]
+}
+
+func (s ScientificSymbol) applyEffect(g *Game, i PlayerIndex) {
+	g.players[i].ScientificSymbols.set(s)
+	if g.players[i].ScientificSymbols[s]%2 == 0 {
+		g.GettingPToken(i)
+	}
+}
+
+// IsFree contruction card if this symbol is presented
+// func (s ScientificSymbol) IsFree(p Player) bool {
+// 	return p.ScientificSymbols[s]
+// }
+
+// func (s ScientificSymbol) Price(g *Game, i PlayerIndex) (Coins, bool) {
+// 	if g.player(i).ScientificSymbols[s] {
+// 		return 0, true
+// 	}
+// 	return 0, false
+// }
+
+// ScientificSymbols - set of scientific symbols
+type ScientificSymbols [numOfScientificSymbols]uint8
+
+func (ss *ScientificSymbols) set(s ScientificSymbol) {
+	ss[s]++
 }

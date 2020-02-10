@@ -1,6 +1,5 @@
 package core
 
-// Chain ...
 type Chain uint8
 
 var _ Effect = Chain(0)
@@ -32,12 +31,13 @@ func (c Chain) String() string {
 	return nameOfChain[c]
 }
 
-// Apply effect of chain symbol
-func (c Chain) Apply(g *Game, i PlayerIndex) {
-	g.player(i).Chains[c] = true
+func (c Chain) applyEffect(g *Game, i PlayerIndex) {
+	g.player(i).Chains.Set(c)
 }
 
 // Chains - set of chains
+//
+// TODO - use bits
 type Chains [numOfChains]bool
 
 // NewChains with preinstalled values
@@ -66,6 +66,10 @@ func (cs Chains) Contain(c Chain) bool {
 	return cs[c]
 }
 
+func (cs *Chains) Set(c Chain) {
+	cs[c] = true
+}
+
 var (
 	nameOfChain = map[Chain]string{
 		Horseshoe: "Horseshoe",
@@ -88,15 +92,3 @@ var (
 	}
 	_ = [1]struct{}{}[numOfChains-len(nameOfChain)]
 )
-
-// MaybeChain - optional field of a chain
-type MaybeChain struct {
-	OK bool
-	Chain
-}
-
-// Set a value
-func (m *MaybeChain) Set(c Chain) {
-	m.OK = true
-	m.Chain = c
-}
