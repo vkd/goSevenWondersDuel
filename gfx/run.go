@@ -2,6 +2,7 @@ package gfx
 
 import (
 	"fmt"
+	"image/color"
 	"log"
 	"strconv"
 	"strings"
@@ -247,9 +248,24 @@ func run() error {
 				if !c.Exists {
 					continue
 				}
-				drawCard(c, tableCards.Rects[i], win)
 				if !c.Covered && tableCards.Rects[i].Contains(mouse) {
 					selectedCardIndex = i
+				}
+			}
+			for i, c := range tableCards.Cards {
+				if !c.Exists {
+					continue
+				}
+				drawCard(c, tableCards.Rects[i], win)
+				if i == selectedCardIndex {
+					drawCardBorder(tableCards.Rects[i], win)
+				}
+				if !c.Covered {
+					var color = colornames.Red
+					if gg.CurrentPlayer().Coins >= gg.CardCost(tableCards.Cards[i].ID) {
+						color = colornames.Green
+					}
+					drawBorder(tableCards.Rects[i], win, color, 1)
 				}
 				idx := text.New(tableCards.Rects[i].Max, atlas)
 				idx.Color = colornames.Lightgreen
@@ -259,9 +275,6 @@ func run() error {
 				idx.Draw(win, pixel.IM)
 			}
 
-			if selectedCardIndex > -1 {
-				drawCardBorder(tableCards.Rects[selectedCardIndex], win)
-			}
 		case Wonders:
 			var wonder0Y float64 = 0
 			var wonder1Y float64 = 0
@@ -378,11 +391,15 @@ func drawWonder(win pixel.Target, id core.WonderID, rect pixel.Rect) {
 }
 
 func drawCardBorder(c pixel.Rect, win pixel.Target) {
+	drawBorder(c, win, colornames.Yellow, 4)
+}
+
+func drawBorder(c pixel.Rect, win pixel.Target, color color.RGBA, thickness float64) {
 	imd := imdraw.New(nil)
-	imd.Color = colornames.Yellow
+	imd.Color = color
 	imd.EndShape = imdraw.RoundEndShape
 	imd.Push(c.Min, c.Max)
-	imd.Rectangle(4)
+	imd.Rectangle(thickness)
 	imd.Draw(win)
 }
 

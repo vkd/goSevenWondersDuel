@@ -146,6 +146,18 @@ func (g *Game) CardsState() CardsState {
 	return g.ageDesk.state
 }
 
+func (g *Game) CardCost(id CardID) Coins {
+	return CostByCoins(
+		id.card().Cost,
+		*g.currentPlayer(),
+		NewTradingPrice(
+			*g.opponent(),
+			g.PriceMarkets[g.currentPlayerIndex]...,
+		),
+		g.OneAnyMarkets[g.currentPlayerIndex],
+	)
+}
+
 func (g *Game) BuildCard(id CardID) (state CardsState, err error) {
 	ok := g.ageDesk.testBuild(id)
 	state = g.ageDesk.state
@@ -153,8 +165,7 @@ func (g *Game) BuildCard(id CardID) (state CardsState, err error) {
 		return state, fmt.Errorf("card (id = %d) cannot be built", id)
 	}
 
-	card := id.card()
-	pay := CostByCoins(card.Cost, *g.currentPlayer(), NewTradingPrice(*g.opponent(), g.PriceMarkets[g.currentPlayerIndex]...), g.OneAnyMarkets[g.currentPlayerIndex])
+	pay := g.CardCost(id)
 	if g.currentPlayer().Coins < pay {
 		return state, fmt.Errorf("not enough coins")
 	}
@@ -165,6 +176,8 @@ func (g *Game) BuildCard(id CardID) (state CardsState, err error) {
 		return state, err
 	}
 	g.currentPlayer().Coins -= pay
+
+	card := id.card()
 	for _, eff := range card.Effects {
 		eff.applyEffect(g, g.currentPlayerIndex)
 	}
@@ -177,6 +190,10 @@ func (g *Game) BuildCard(id CardID) (state CardsState, err error) {
 
 func (g *Game) Player(i PlayerIndex) Player {
 	return g.players[i]
+}
+
+func (g *Game) CurrentPlayer() Player {
+	return g.Player(g.currentPlayerIndex)
 }
 
 func (g *Game) player(i PlayerIndex) *Player {
