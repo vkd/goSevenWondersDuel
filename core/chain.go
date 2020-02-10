@@ -32,7 +32,7 @@ func (c Chain) String() string {
 }
 
 func (c Chain) applyEffect(g *Game, i PlayerIndex) {
-	g.player(i).Chains[c] = true
+	g.player(i).Chains.Set(c)
 }
 
 // Chains - set of chains

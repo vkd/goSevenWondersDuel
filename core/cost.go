@@ -102,8 +102,9 @@ type PriceMarket struct {
 	Price    Coins
 }
 
-// Apply ...
-func (p PriceMarket) Apply(g *Game, i PlayerIndex) {
+var _ Effect = PriceMarket{}
+
+func (p PriceMarket) applyEffect(g *Game, i PlayerIndex) {
 	g.PriceMarkets[i].Append(p)
 }
 
@@ -126,11 +127,17 @@ func OneCoinPrice(r Resource) PriceMarket {
 // OneAnyMarket - one of these resources by every round
 type OneAnyMarket []Resource
 
+var _ Effect = OneAnyMarket{}
+
 // OneRawMarket by raw materials
 func OneRawMarket() OneAnyMarket { return OneAnyMarket(rawMaterials) }
 
 // OneManufacturedMarket by manufactured goods
 func OneManufacturedMarket() OneAnyMarket { return OneAnyMarket(manufacturedGoods) }
+
+func (m OneAnyMarket) applyEffect(g *Game, i PlayerIndex) {
+	g.OneAnyMarkets[i] = append(g.OneAnyMarkets[i], m)
+}
 
 type OneAnyMarkets []OneAnyMarket
 

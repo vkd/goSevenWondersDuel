@@ -144,103 +144,104 @@ func shuffleCards(rnd *rand.Rand, cards []CardID) {
 var (
 	listAgeI = []Card{
 		newCard("Stable", Red, Shields(1), Horseshoe, NewCost(Wood)),
-		newCard("Garrison", Red),    //, Shields(1), Sword, NewCost(Clay)),
-		newCard("Palisade", Red),    //, Shields(1), Wall, NewCost(Coins(2))),
-		newCard("Guard tower", Red), //, Shields(1)),
+		newCard("Garrison", Red, Shields(1), Sword, NewCost(Clay)),
+		newCard("Palisade", Red, Shields(1), Wall, NewCost(Coins(2))),
+		newCard("Guard tower", Red, Shields(1)),
 
-		newCard("Workshop", Green),                   //, Tool, VP(1), NewCost(Papyrus)),
-		newCard("Scriptorium", Green),                //, Pen, Book, NewCost(Coins(2))),
-		newCard("Apothecary", Green, NewCost(Glass)), //, Wheel, VP(1)),
-		newCard("Pharmacist", Green),                 //, Mortar, Gear, NewCost(Coins(2))),
+		newCard("Workshop", Green, Tool, VP(1), NewCost(Papyrus)),
+		newCard("Scriptorium", Green, Pen, Book, NewCost(Coins(2))),
+		newCard("Apothecary", Green, Wheel, VP(1), NewCost(Glass)),
+		newCard("Pharmacist", Green, Mortar, Gear, NewCost(Coins(2))),
 
-		newCard("Tavern", Yellow),        //, Coins(4), Bottle),
-		newCard("Clay reserve", Yellow),  //, OneCoinPrice(Clay), NewCost(Coins(3))),
-		newCard("Stone reserve", Yellow), //, OneCoinPrice(Stone), NewCost(Coins(3))),
-		newCard("Wood reserve", Yellow),  //, OneCoinPrice(Wood), NewCost(Coins(3))),
+		newCard("Tavern", Yellow, Coins(4), Bottle),
+		newCard("Clay reserve", Yellow, OneCoinPrice(Clay), NewCost(Coins(3))),
+		newCard("Stone reserve", Yellow, OneCoinPrice(Stone), NewCost(Coins(3))),
+		newCard("Wood reserve", Yellow, OneCoinPrice(Wood), NewCost(Coins(3))),
 
 		newCard("Baths", Blue, VP(3), Water, NewCost(Stone)),
-		newCard("Altar", Blue),   //, VP(3), Moon),
-		newCard("Theater", Blue), //, VP(3), Mask),
+		newCard("Altar", Blue, VP(3), Moon),
+		newCard("Theater", Blue, VP(3), Mask),
 		newCard("Lumber yard", Brown, Wood),
 
 		newCard("Stone pit", Brown, Stone, NewCost(Coins(1))),
-		newCard("Clay pool", Brown), //, Clay),
-		newCard("Clay pit", Brown),  //, Clay, NewCost(Coint(1))),
-		newCard("Quarry", Brown),    //, Stone),
+		newCard("Clay pool", Brown, Clay),
+		newCard("Clay pit", Brown, Clay, NewCost(Coins(1))),
+		newCard("Quarry", Brown, Stone),
 
-		newCard("Logging camp", Brown), //, Wood, NewCost(Coint(1))),
-		newCard("Press", Grey),         //, Papyrus, NewCost(Coint(1))),
-		newCard("Glassworks", Grey),    //, Glass, NewCost(Coint(1))),
+		newCard("Logging camp", Brown, Wood, NewCost(Coins(1))),
+		newCard("Press", Grey, Papyrus, NewCost(Coins(1))),
+		newCard("Glassworks", Grey, Glass, NewCost(Coins(1))),
 	}
 	_ = [1]struct{}{}[len(listAgeI)-numAgeI]
 
 	listAgeII = []Card{
-		newCard("Barracks", Red), //, Shields(1), NewCost(Coint(3), Sword)),
+		newCard("Barracks", Red, Shields(1), NewCost(Coins(3)), FreeChain(Sword)),
+
 		newCard("Horse breeders", Red, Shields(1), NewCost(Clay, Wood), FreeChain(Horseshoe)),
-		newCard("Walls", Red),         //, Shields(2), NewCost(Stone, Stone)),
-		newCard("Parade ground", Red), //, Shields(2), Helm, NewCost(Clay, Clay, Glass)),
-		newCard("Archery range", Red), //, Shields(2), Target, NewCost(Stone, Wood, Papyrus)),
+		newCard("Walls", Red, Shields(2), NewCost(Stone, Stone)),
+		newCard("Parade ground", Red, Shields(2), Helm, NewCost(Clay, Clay, Glass)),
+		newCard("Archery range", Red, Shields(2), Target, NewCost(Stone, Wood, Papyrus)),
 
-		newCard("Laboratory", Green), //, Tool, VP(1), Lamp, NewCost(Wood, Glass, Glass)),
-		newCard("Dispensary", Green), //, Mortar, VP(2), NewCost(Clay, Clay, Stone, Gear)),
-		newCard("School", Green),     //, Wheel, VP(1), Harp, NewCost(Wood, Papyrus, Papyrus)),
-		newCard("Library", Green),    //, Pen, VP(2), NewCost(Stone, Wood, Glass, Book)),
+		newCard("Laboratory", Green, Tool, VP(1), Lamp, NewCost(Wood, Glass, Glass)),
+		newCard("Dispensary", Green, Mortar, VP(2), NewCost(Clay, Clay, Stone), FreeChain(Gear)),
+		newCard("School", Green, Wheel, VP(1), Harp, NewCost(Wood, Papyrus, Papyrus)),
+		newCard("Library", Green, Pen, VP(2), NewCost(Stone, Wood, Glass), FreeChain(Book)),
 
-		newCard("Customs house", Yellow), //, OnePriceMarket{Papyrus, 1}, OnePriceMarket{Glass, 1}, NewCost(Coint(4))),
-		newCard("Brewery", Yellow),       //, Coint(6), Barrel),
-		newCard("Forum", Yellow),         //, OneOfAnyMarket(manufacturedGoods), NewCost(Coint(3), Clay)),
-		newCard("Caravansery", Yellow),   //, OneOfAnyMarket(rawMaterials), NewCost(Coint(2), Glass, Papyrus)),
+		newCard("Customs house", Yellow, OneCoinPrice(Papyrus), OneCoinPrice(Glass), NewCost(Coins(4))),
+		newCard("Brewery", Yellow, Coins(6), Barrel),
+		newCard("Forum", Yellow, OneManufacturedMarket(), NewCost(Coins(3), Clay)),
+		newCard("Caravansery", Yellow, OneRawMarket(), NewCost(Coins(2), Glass, Papyrus)),
 
-		newCard("Temple", Blue),  //, VP(4), Sun, NewCost(Wood, Papyrus, Moon)),
-		newCard("Postrum", Blue), //, VP(4), Pantheon, NewCost(Stone, Wood)),
-		newCard("Aqueduct", Blue, NewCost(Stone, Stone, Stone), FreeChain(Water)), //, VP(5), ),
-		newCard("Tribunal", Blue), //, VP(5), NewCost(Wood, Wood, Glass)),
-		newCard("Statue", Blue),   //, VP(4), Column, NewCost(Clay, Clay, Mask)),
+		newCard("Temple", Blue, VP(4), Sun, NewCost(Wood, Papyrus), FreeChain(Moon)),
+		newCard("Postrum", Blue, VP(4), Pantheon, NewCost(Stone, Wood)),
+		newCard("Aqueduct", Blue, VP(5), NewCost(Stone, Stone, Stone), FreeChain(Water)),
+		newCard("Tribunal", Blue, VP(5), NewCost(Wood, Wood, Glass)),
+		newCard("Statue", Blue, VP(4), Column, NewCost(Clay, Clay), FreeChain(Mask)),
 
-		newCard("Sawmill", Brown),      //, Wood, Wood, NewCost(Coint(2))),
-		newCard("Shelf quarry", Brown), //, Stone, Stone, NewCost(Coint(2))),
-		newCard("Brick yard", Brown),   //, Clay, Clay, NewCost(Coint(2))),
+		newCard("Sawmill", Brown, Wood, Wood, NewCost(Coins(2))),
+		newCard("Shelf quarry", Brown, Stone, Stone, NewCost(Coins(2))),
+		newCard("Brick yard", Brown, Clay, Clay, NewCost(Coins(2))),
 
-		newCard("Drying room", Grey),  //, Papyrus),
-		newCard("Glass blower", Grey), //, Glass),
+		newCard("Drying room", Grey, Papyrus),
+		newCard("Glass blower", Grey, Glass),
 	}
 	_ = [1]struct{}{}[len(listAgeII)-numAgeII]
 
 	listAgeIII = []Card{
-		newCard("Siege workshop", Red), //, Shields(2), NewCost(Wood, Wood, Wood, Glass, Target)),
-		newCard("Fortifications", Red, NewCost(Stone, Stone, Clay, Papyrus), FreeChain(Wall)), //, Shields(2), ),
-		newCard("Circus", Red),     //, Shields(2), NewCost(Clay, Clay, Stone, Stone, Helm)),
-		newCard("Arsenal", Red),    //, Shields(3), NewCost(Clay, Clay, Clay, Wood, Wood)),
-		newCard("Courthouse", Red), //, Shields(3), NewCost(Coint(3))),
+		newCard("Siege workshop", Red, Shields(2), NewCost(Wood, Wood, Wood, Glass), FreeChain(Target)),
+		newCard("Fortifications", Red, Shields(2), NewCost(Stone, Stone, Clay, Papyrus), FreeChain(Wall)),
+		newCard("Circus", Red, Shields(2), NewCost(Clay, Clay, Stone, Stone), FreeChain(Helm)),
+		newCard("Arsenal", Red, Shields(3), NewCost(Clay, Clay, Clay, Wood, Wood)),
+		newCard("Courthouse", Red, Shields(3), NewCost(Coins(8))),
 
-		newCard("University", Green),  //, Astronomy, VP(2), NewCost(Clay, Glass, Papyrus, Harp)),
-		newCard("Observatory", Green), //, Astronomy, VP(2), NewCost(Stone, Papyrus, Papyrus, Lamp)),
-		newCard("Academy", Green),     //, Clock, VP(3), NewCost(Stone, Wood, Glass, Glass)),
-		newCard("Study", Green),       //, Clock, VP(3), NewCost(Wood, Wood, Glass, Papyrus)),
+		newCard("University", Green, Astronomy, VP(2), NewCost(Clay, Glass, Papyrus), FreeChain(Harp)),
+		newCard("Observatory", Green, Astronomy, VP(2), NewCost(Stone, Papyrus, Papyrus), FreeChain(Lamp)),
+		newCard("Academy", Green, Clock, VP(3), NewCost(Stone, Wood, Glass, Glass)),
+		newCard("Study", Green, Clock, VP(3), NewCost(Wood, Wood, Glass, Papyrus)),
 
-		newCard("Chamber of commerce", Yellow), //, MoneyByCards{Grey, 3}, VP(3), NewCost(Papyrus, Papyrus)),
+		newCard("Chamber of commerce", Yellow, CoinsPerCard(Grey, 3), VP(3), NewCost(Papyrus, Papyrus)),
 		newCard("Arena", Yellow, CoinsPerWonder(2), VP(3), NewCost(Clay, Stone, Wood), FreeChain(Barrel)),
-		newCard("Port", Yellow),       //, MoneyByCards{Brown, 2}, VP(3), NewCost(Wood, Glass, Papyrus)),
-		newCard("Armory", Yellow),     //, MoneyByCards{Red, 1}, VP(3), NewCost(Stone, Stone, Glass)),
-		newCard("Lighthouse", Yellow), //, MoneyByCards{Yellow, 1}, VP(3), NewCost(Clay, Clay, Glass, Bottle)),
+		newCard("Port", Yellow, CoinsPerCard(Brown, 2), VP(3), NewCost(Wood, Glass, Papyrus)),
+		newCard("Armory", Yellow, CoinsPerCard(Red, 1), VP(3), NewCost(Stone, Stone, Glass)),
+		newCard("Lighthouse", Yellow, CoinsPerCard(Yellow, 1), VP(3), NewCost(Clay, Clay, Glass), FreeChain(Bottle)),
 
-		newCard("Pantheon", Blue),  //, VP(6), NewCost(Clay, Wood, Papyrus, Papyrus, Sun)),
-		newCard("Palace", Blue),    //, VP(7), NewCost(Clay, Stone, Wood, Glass, Glass)),
-		newCard("Gardens", Blue),   //, VP(6), NewCost(Clay, Clay, Wood, Wood, Column)),
-		newCard("Obelisk", Blue),   //, VP(5), NewCost(Stone, Stone, Glass)),
-		newCard("Senate", Blue),    //, VP(5), NewCost(Clay, Clay, Stone, Papyrus, Pantheon)),
-		newCard("Town hall", Blue), //, VP(7), NewCost(Stone, Stone, Stone, Wood, Wood)),
+		newCard("Pantheon", Blue, VP(6), NewCost(Clay, Wood, Papyrus, Papyrus), FreeChain(Sun)),
+		newCard("Palace", Blue, VP(7), NewCost(Clay, Stone, Wood, Glass, Glass)),
+		newCard("Gardens", Blue, VP(6), NewCost(Clay, Clay, Wood, Wood), FreeChain(Column)),
+		newCard("Obelisk", Blue, VP(5), NewCost(Stone, Stone, Glass)),
+		newCard("Senate", Blue, VP(5), NewCost(Clay, Clay, Stone, Papyrus), FreeChain(Pantheon)),
+		newCard("Town hall", Blue, VP(7), NewCost(Stone, Stone, Stone, Wood, Wood)),
 	}
 	_ = [1]struct{}{}[len(listAgeIII)-numAgeIII]
 
 	listGuilds = []Card{
-		newCard("Merchants guild", Purple),  // , ...),
-		newCard("Shipowners guild", Purple), // , ...),
+		newCard("Merchants guild", Purple, MaxOneCoinPerCards(Yellow), MaxOneVPPerCards(Yellow), NewCost(Clay, Wood, Glass, Papyrus)),
+		newCard("Shipowners guild", Purple, MaxOneCoinPerCards(Brown, Grey), MaxOneVPPerCards(Brown, Grey), NewCost(Clay, Stone, Glass, Papyrus)),
 		newCard("Builders guild", Purple, BuildersGuild(), NewCost(Stone, Stone, Clay, Wood, Glass)),
-		newCard("Magistrates guild", Purple),  // , ...),
-		newCard("Scientists guild", Purple),   // , ...),
-		newCard("Moneylenders guild", Purple), // , ...),
-		newCard("Tacticians guild", Purple),   // , ...),
+		newCard("Tacticians guild", Purple, MaxOneCoinPerCards(Red), MaxOneVPPerCards(Red), NewCost(Stone, Stone, Clay, Papyrus)),
+		newCard("Moneylenders guild", Purple, MoneylendersGuild(), NewCost(Stone, Stone, Wood, Wood)),
+		newCard("Scientists guild", Purple, MaxOneCoinPerCards(Green), MaxOneVPPerCards(Green), NewCost(Clay, Clay, Wood, Wood)),
+		newCard("Magistrates guild", Purple, MaxOneCoinPerCards(Blue), MaxOneVPPerCards(Blue), NewCost(Wood, Wood, Clay, Papyrus)),
 	}
 	_ = [1]struct{}{}[len(listGuilds)-numGuilds]
 
@@ -263,6 +264,17 @@ func newCard(name CardName, ct CardColor, args ...interface{}) (c Card) {
 			} else {
 				c.Cost = arg
 			}
+		case VP:
+			c.Effects = append(c.Effects, typedVP{arg, VPTypeByColor(ct)})
+		case maxVPsPerCards:
+			arg.Type = VPTypeByColor(ct)
+			c.Effects = append(c.Effects, arg)
+		case vPsPerWonder:
+			arg.Type = VPTypeByColor(ct)
+			c.Effects = append(c.Effects, arg)
+		case vPPerCoins:
+			arg.Type = VPTypeByColor(ct)
+			c.Effects = append(c.Effects, arg)
 		case Effect:
 			c.Effects = append(c.Effects, arg)
 		default:

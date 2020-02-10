@@ -5,6 +5,8 @@ package core
 // board. That token will be kept in your city until the end of the game.
 type ScientificSymbol uint8
 
+var _ Effect = ScientificSymbol(0)
+
 //ScientificSymbols
 const (
 	Wheel ScientificSymbol = iota
@@ -35,11 +37,10 @@ func (s ScientificSymbol) String() string {
 	return nameOfScientificSymbol[s]
 }
 
-// Apply effect
-func (s ScientificSymbol) Apply(g *Game, i PlayerIndex) {
-	g.players[i].ScientificSymbols[s]++
+func (s ScientificSymbol) applyEffect(g *Game, i PlayerIndex) {
+	g.players[i].ScientificSymbols.set(s)
 	if g.players[i].ScientificSymbols[s]%2 == 0 {
-		panic("TODO")
+		g.GettingPToken(i)
 	}
 }
 
@@ -57,3 +58,7 @@ func (s ScientificSymbol) Apply(g *Game, i PlayerIndex) {
 
 // ScientificSymbols - set of scientific symbols
 type ScientificSymbols [numOfScientificSymbols]uint8
+
+func (ss *ScientificSymbols) set(s ScientificSymbol) {
+	ss[s]++
+}

@@ -7,12 +7,19 @@ import "math"
 // points at the end of the game.
 type Coins uint16
 
+var _ Pricer = Coins(0)
+var _ Effect = Coins(0)
+
 const (
 	maxCoins Coins = math.MaxUint16
 )
 
 func (c Coins) applyPrice(p *Price) {
 	p.Coins += c
+}
+
+func (c Coins) applyEffect(g *Game, i PlayerIndex) {
+	g.player(i).Coins += c
 }
 
 func (c *Coins) sub(v Coins) {
@@ -49,8 +56,16 @@ type CoinsPerCardColor struct {
 	Coins  Coins
 }
 
-// Apply effect
-func (c CoinsPerCardColor) Apply(g *Game, i PlayerIndex) {
+func CoinsPerCard(color CardColor, c Coins) CoinsPerCardColor {
+	return CoinsPerCardColor{
+		Colors: []CardColor{color},
+		Coins:  c,
+	}
+}
+
+var _ Effect = CoinsPerCardColor{}
+
+func (c CoinsPerCardColor) applyEffect(g *Game, i PlayerIndex) {
 	for _, color := range c.Colors {
 		g.player(i).Coins += coinsPerColor(c.Coins, color, g, i)
 	}
@@ -63,8 +78,9 @@ func coinsPerColor(coins Coins, color CardColor, g *Game, i PlayerIndex) Coins {
 // MaxCoinsPerCardColor - At the time it is constructed, this card grants you 1 coin for each color card in the city which has the most there colors cards.
 type MaxCoinsPerCardColor CoinsPerCardColor
 
-// Apply effect
-func (m MaxCoinsPerCardColor) Apply(g *Game, i PlayerIndex) {
+var _ Effect = MaxCoinsPerCardColor{}
+
+func (m MaxCoinsPerCardColor) applyEffect(g *Game, i PlayerIndex) {
 	var max Coins
 	for pi := range g.players {
 		var c Coins
@@ -77,4 +93,11 @@ func (m MaxCoinsPerCardColor) Apply(g *Game, i PlayerIndex) {
 	}
 
 	g.player(i).Coins += max
+}
+
+func MaxOneCoinPerCards(colors ...CardColor) CoinsPerCardColor {
+	return CoinsPerCardColor{
+		Colors: colors,
+		Coins:  1,
+	}
 }

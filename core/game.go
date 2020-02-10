@@ -27,7 +27,7 @@ type Game struct {
 	PriceMarkets     [numPlayers]PriceMarkets
 	OneAnyMarkets    [numPlayers]OneAnyMarkets
 	BuiltCards       [numPlayers][numCardColors][]CardName
-	endEffects       [numPlayers][]Effect
+	endEffects       [numPlayers][]Finaler
 
 	military Military
 
@@ -169,6 +169,10 @@ func (g *Game) apply(card CardName) {
 }
 
 func (g *Game) Victory() {
+	panic("Not implemented")
+}
+
+func (g *Game) GettingPToken(i PlayerIndex) {
 	panic("Not implemented")
 }
 

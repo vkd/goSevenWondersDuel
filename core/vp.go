@@ -1,20 +1,26 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // VP - victory points
 type VP uint8
 
-var _ Effect = VP(0)
-
-func (vp VP) applyEffect(g *Game, i PlayerIndex) {
-	panic("Not implemented")
+func (v VP) Mul(i int) VP {
+	return v * VP(i)
 }
 
-// Apply effect
-// func (vp VictoryPoint) Apply(g *Game, i PlayerIndex) {
-// 	g.player(i).VP[vp.Type].Value += vp.Value
-// }
+type typedVP struct {
+	v VP
+	t VPType
+}
+
+var _ Effect = typedVP{}
+
+func (v typedVP) applyEffect(g *Game, i PlayerIndex) {
+	panic("Not implemented")
+}
 
 // VPType - type of victory points
 type VPType uint8
@@ -48,47 +54,98 @@ func VPTypeByColor(c CardColor) VPType {
 	}
 }
 
-// VPPerWonder - extra VP per every built wonder
-type VPPerWonder uint8
-
-// FinalVP - extra VP at the end of game
-func (v VPPerWonder) FinalVP(g *Game, i PlayerIndex) VP {
-	return VP(len(g.BuildWonders[i])) * VP(v)
+type maxVPsPerCards struct {
+	VP     VP
+	Type   VPType
+	Colors []CardColor
 }
 
-// MaxFinalVPOfPlayers - finaler return max value of VP of every players
-type MaxFinalVPOfPlayers struct {
-	Finaler interface{}
+var _ Effect = maxVPsPerCards{}
+var _ Finaler = maxVPsPerCards{}
+
+func MaxOneVPPerCards(colors ...CardColor) Effect {
+	return maxVPsPerCards{
+		VP:     VP(1),
+		Colors: colors,
+	}
 }
 
-var _ Effect = MaxFinalVPOfPlayers{}
+func (m maxVPsPerCards) applyEffect(g *Game, i PlayerIndex) {
+	g.endEffects[i] = append(g.endEffects[i], m)
+}
 
-func (m MaxFinalVPOfPlayers) applyEffect(g *Game, _ PlayerIndex) {
-	panic("Not implemented")
-	// var out VP
-	// for i := range g.players {
-	// 	vp := m.FinalVP(g, PlayerIndex(i))
-	// 	if vp > out {
-	// 		out = vp
-	// 	}
-	// }
-	// return out
+func (m maxVPsPerCards) finalVP(g *Game, i PlayerIndex) typedVP {
+	var max VP
+	for pi := range g.players {
+		var vp VP
+		for _, color := range m.Colors {
+			vp += m.VP.Mul(len(g.BuiltCards[pi][color]))
+		}
+		if vp > max {
+			max = vp
+		}
+	}
+
+	return typedVP{max, m.Type}
+}
+
+type vPsPerWonder struct {
+	VP   VP
+	Type VPType
+}
+
+var _ Effect = vPsPerWonder{}
+var _ Finaler = vPsPerWonder{}
+
+func (v vPsPerWonder) applyEffect(g *Game, i PlayerIndex) {
+	g.endEffects[i] = append(g.endEffects[i], v)
+}
+
+func (v vPsPerWonder) finalVP(g *Game, i PlayerIndex) typedVP {
+	var max VP
+	for pi := range g.players {
+		vp := v.VP.Mul(len(g.BuildWonders[pi]))
+		if vp > max {
+			max = vp
+		}
+	}
+	return typedVP{max, v.Type}
 }
 
 // BuildersGuild - At the end of the game, this card is worth 2 victory points for each Wonder constructed in the city which has the most wonders.
 func BuildersGuild() Effect {
-	return MaxFinalVPOfPlayers{VPPerWonder(2)}
+	return vPsPerWonder{VP: 2}
 }
 
-// VPPerCoins - worth 1 victory point for each set of 3 coins in the city.
-type VPPerCoins uint8
+// VPPerCoins - worth 1 victory point for each set of n coins in the city.
+type vPPerCoins struct {
+	Coins Coins
+	Type  VPType
+}
 
-// FinalVP - extra VP at the end of game
-func (v VPPerCoins) FinalVP(g *Game, i PlayerIndex) VP {
-	return VP(g.player(i).Coins.Div(uint(v)))
+var _ Effect = vPPerCoins{}
+var _ Finaler = vPPerCoins{}
+
+func (v vPPerCoins) applyEffect(g *Game, i PlayerIndex) {
+	g.endEffects[i] = append(g.endEffects[i], v)
+}
+
+func (v vPPerCoins) finalVP(g *Game, i PlayerIndex) typedVP {
+	var max VP
+	for pi := range g.players {
+		vp := VP(1).Mul(int(g.players[pi].Coins.Div(3)))
+		if vp > max {
+			max = vp
+		}
+	}
+	return typedVP{max, v.Type}
 }
 
 // MoneylendersGuild - At the end of the game, this card is worth 1 victory point for each set of 3 coins in the city.
 func MoneylendersGuild() Effect {
-	return MaxFinalVPOfPlayers{VPPerCoins(3)}
+	return vPPerCoins{Coins: 3}
+}
+
+type Finaler interface {
+	finalVP(*Game, PlayerIndex) typedVP
 }
