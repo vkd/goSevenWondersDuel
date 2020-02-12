@@ -188,6 +188,18 @@ func run() error {
 			// }
 		}
 
+		if win.Pressed(pixelgl.KeyR) {
+			gg, err = core.NewGame(core.WithSeed(0))
+			if err != nil {
+				return err
+			}
+			wonders, _, ok = gg.Init()
+			if !ok {
+				return fmt.Errorf("cannot init game")
+			}
+			tableCards.Cards = gg.CardsState()
+		}
+
 		if win.Pressed(pixelgl.KeyW) {
 			boardState = Wonders
 		}
