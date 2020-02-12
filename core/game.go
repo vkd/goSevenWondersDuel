@@ -158,7 +158,7 @@ func (g *Game) CardCost(id CardID) Coins {
 	)
 }
 
-func (g *Game) BuildCard(id CardID) (state CardsState, err error) {
+func (g *Game) ConstructBuilding(id CardID) (state CardsState, err error) {
 	ok := g.ageDesk.testBuild(id)
 	state = g.ageDesk.state
 	if !ok {
@@ -183,9 +183,26 @@ func (g *Game) BuildCard(id CardID) (state CardsState, err error) {
 	}
 	g.BuiltCards[g.currentPlayerIndex][card.Color] = append(g.BuiltCards[g.currentPlayerIndex][card.Color], id)
 
-	g.currentPlayerIndex = g.currentPlayerIndex.Next()
+	g.nextState()
 
 	return state, nil
+}
+
+func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
+	err := g.ageDesk.Build(id)
+	state = g.ageDesk.state
+	if err != nil {
+		return state, false
+	}
+
+	g.currentPlayer().Coins += Coins(2) + Coins(len(g.BuiltCards[g.currentPlayerIndex][Yellow]))
+
+	g.nextState()
+	return state, true
+}
+
+func (g *Game) nextState() {
+	g.currentPlayerIndex = g.currentPlayerIndex.Next()
 }
 
 func (g *Game) Player(i PlayerIndex) Player {

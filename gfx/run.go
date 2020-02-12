@@ -203,7 +203,7 @@ func run() error {
 
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			if selectedCardIndex > -1 {
-				tableCards.Cards, err = gg.BuildCard(tableCards.Cards[selectedCardIndex].ID)
+				tableCards.Cards, err = gg.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
 				if err != nil {
 					log.Printf("Error on build: %v", err)
 				}
@@ -215,6 +215,15 @@ func run() error {
 					currentWonder++
 				}
 			}
+		} else if win.JustPressed(pixelgl.MouseButtonRight) {
+			if selectedCardIndex > -1 {
+				var ok bool
+				var id = tableCards.Cards[selectedCardIndex].ID
+				tableCards.Cards, ok = gg.DiscardCard(id)
+				if !ok {
+					log.Printf("Card %d is not discarded", id)
+				}
+			}
 		}
 
 		// showCard = win.Pressed(pixelgl.KeyLeftShift) || win.Pressed(pixelgl.MouseButtonLeft)
@@ -223,7 +232,7 @@ func run() error {
 		// drawFirstEpoh(win, pixel.V(windowWidth/2, windowHeight-100))
 
 		m := gg.Military()
-		warPoint := m.Shields[0] - m.Shields[1]
+		warPoint := int(m.Shields[0]) - int(m.Shields[1])
 
 		war.Clear()
 		war.Color = colornames.Red
