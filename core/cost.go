@@ -105,7 +105,7 @@ type PriceMarket struct {
 var _ Effect = PriceMarket{}
 
 func (p PriceMarket) applyEffect(g *Game, i PlayerIndex) {
-	g.PriceMarkets[i].Append(p)
+	g.priceMarkets[i].Append(p)
 }
 
 // PriceMarkets ...
@@ -136,7 +136,7 @@ func OneRawMarket() OneAnyMarket { return OneAnyMarket(rawMaterials) }
 func OneManufacturedMarket() OneAnyMarket { return OneAnyMarket(manufacturedGoods) }
 
 func (m OneAnyMarket) applyEffect(g *Game, i PlayerIndex) {
-	g.OneAnyMarkets[i] = append(g.OneAnyMarkets[i], m)
+	g.oneAnyMarkets[i] = append(g.oneAnyMarkets[i], m)
 }
 
 type OneAnyMarkets []OneAnyMarket

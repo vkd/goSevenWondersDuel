@@ -23,15 +23,13 @@ type Game struct {
 	currentPlayerIndex PlayerIndex
 	repeatTurn         bool
 
-	// TODO: make private
-	AvailableWonders [numPlayers][]WonderID
-	BuildWonders     [numPlayers][]WonderID
-	BuiltCards       [numPlayers][numCardColors][]CardID
+	wondersPerPlayer [numPlayers][]WonderID
+	buildWonders     [numPlayers][]WonderID
+	builtCards       [numPlayers][numCardColors][]CardID
 	discardedCards   []CardID
 
-	// TODO: make private
-	PriceMarkets  [numPlayers]PriceMarkets
-	OneAnyMarkets [numPlayers]OneAnyMarkets
+	priceMarkets  [numPlayers]PriceMarkets
+	oneAnyMarkets [numPlayers]OneAnyMarkets
 	endEffects    [numPlayers][]Finaler
 
 	military Military
@@ -136,8 +134,8 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 	// 	return ErrWrongSelectedWonders
 	// }
 
-	g.AvailableWonders[0] = fstWonders[:]
-	g.AvailableWonders[1] = sndWonders[:]
+	g.wondersPerPlayer[0] = fstWonders[:]
+	g.wondersPerPlayer[1] = sndWonders[:]
 	g.state = g.state.Next()
 	return nil
 }
@@ -152,9 +150,9 @@ func (g *Game) CardCost(id CardID) Coins {
 		*g.currentPlayer(),
 		NewTradingPrice(
 			*g.opponent(),
-			g.PriceMarkets[g.currentPlayerIndex]...,
+			g.priceMarkets[g.currentPlayerIndex]...,
 		),
-		g.OneAnyMarkets[g.currentPlayerIndex],
+		g.oneAnyMarkets[g.currentPlayerIndex],
 	)
 }
 
@@ -164,9 +162,9 @@ func (g *Game) WonderCost(id WonderID) Coins {
 		*g.currentPlayer(),
 		NewTradingPrice(
 			*g.opponent(),
-			g.PriceMarkets[g.currentPlayerIndex]...,
+			g.priceMarkets[g.currentPlayerIndex]...,
 		),
-		g.OneAnyMarkets[g.currentPlayerIndex],
+		g.oneAnyMarkets[g.currentPlayerIndex],
 	)
 }
 
@@ -200,7 +198,7 @@ func (g *Game) buildCard(id CardID) {
 	for _, eff := range card.Effects {
 		eff.applyEffect(g, g.currentPlayerIndex)
 	}
-	g.BuiltCards[g.currentPlayerIndex][card.Color] = append(g.BuiltCards[g.currentPlayerIndex][card.Color], id)
+	g.builtCards[g.currentPlayerIndex][card.Color] = append(g.builtCards[g.currentPlayerIndex][card.Color], id)
 }
 
 func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
@@ -212,7 +210,7 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
 
 	g.discardedCards = append(g.discardedCards, id)
 
-	g.currentPlayer().Coins += Coins(2) + Coins(len(g.BuiltCards[g.currentPlayerIndex][Yellow]))
+	g.currentPlayer().Coins += Coins(2) + Coins(len(g.builtCards[g.currentPlayerIndex][Yellow]))
 
 	g.nextState()
 	return state, true
@@ -220,7 +218,7 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
 
 func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err error) {
 	state = g.ageDesk.state
-	if len(g.BuildWonders[0])+len(g.BuildWonders[1]) >= 7 {
+	if len(g.buildWonders[0])+len(g.buildWonders[1]) >= 7 {
 		return state, fmt.Errorf("wonder (id = %d) cannot be built: max 7 wonders are allowed", wid)
 	}
 
@@ -247,7 +245,7 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 		eff.applyEffect(g, g.currentPlayerIndex)
 	}
 
-	g.BuildWonders[g.currentPlayerIndex] = append(g.BuildWonders[g.currentPlayerIndex], wid)
+	g.buildWonders[g.currentPlayerIndex] = append(g.buildWonders[g.currentPlayerIndex], wid)
 	g.nextState()
 
 	return state, nil

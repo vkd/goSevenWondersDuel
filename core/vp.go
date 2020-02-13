@@ -79,7 +79,7 @@ func (m maxVPsPerCards) finalVP(g *Game, i PlayerIndex) typedVP {
 	for pi := range g.players {
 		var vp VP
 		for _, color := range m.Colors {
-			vp += m.VP.Mul(len(g.BuiltCards[pi][color]))
+			vp += m.VP.Mul(len(g.builtCards[pi][color]))
 		}
 		if vp > max {
 			max = vp
@@ -104,7 +104,7 @@ func (v vPsPerWonder) applyEffect(g *Game, i PlayerIndex) {
 func (v vPsPerWonder) finalVP(g *Game, i PlayerIndex) typedVP {
 	var max VP
 	for pi := range g.players {
-		vp := v.VP.Mul(len(g.BuildWonders[pi]))
+		vp := v.VP.Mul(len(g.buildWonders[pi]))
 		if vp > max {
 			max = vp
 		}
