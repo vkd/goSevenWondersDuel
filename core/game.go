@@ -137,14 +137,30 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 		return ErrWrongState
 	}
 
-	// TODO: check input arguments
+	var available [numWonders]uint8
+	for _, w := range g.availableWonders {
+		available[w]++
+	}
+	for _, fst := range fstWonders {
+		if available[fst] > 0 {
+			available[fst]--
+		} else {
+			return ErrWrongSelectedWonders
+		}
+	}
+	for _, snd := range sndWonders {
+		if available[snd] > 0 {
+			available[snd]--
+		} else {
+			return ErrWrongSelectedWonders
+		}
+	}
 
-	// if !WonderNames(g.availableWonders[:4]).IsExistsAll(WonderNames{fstWonders[0], fstWonders[1], sndWonders[0], sndWonders[1]}) {
-	// 	return ErrWrongSelectedWonders
-	// }
-	// if !WonderNames(g.availableWonders[4:8]).IsExistsAll(WonderNames{fstWonders[2], fstWonders[3], sndWonders[2], sndWonders[3]}) {
-	// 	return ErrWrongSelectedWonders
-	// }
+	for _, a := range available {
+		if a != 0 {
+			return ErrWrongSelectedWonders
+		}
+	}
 
 	g.wondersPerPlayer[0] = fstWonders[:]
 	g.wondersPerPlayer[1] = sndWonders[:]
@@ -220,6 +236,7 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
 	}
 
 	err := g.ageDesk.Build(id)
+	state = g.ageDesk.state
 	if err != nil {
 		return state, err
 	}

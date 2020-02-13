@@ -165,6 +165,26 @@ func run() error {
 		currentWonder++
 	}
 
+	{
+		var fst, snd [4]core.WonderID
+		var i, j int
+		for idx, wc := range wonderChosen {
+			switch wonderToPlayer[idx] {
+			case 0:
+				fst[i] = wc
+				i++
+			case 1:
+				snd[j] = wc
+				j++
+			}
+		}
+
+		err = g.SelectWonders(fst, snd)
+		if err != nil {
+			return err
+		}
+	}
+
 	// var minX, minY, minW, minH float64
 	// minW, minH = wonderWidth*2, wonderHeight*2
 	// minX, minY = wonderLefts[1], wonderBottoms[1]
@@ -257,11 +277,11 @@ func run() error {
 			}
 		} else if win.JustPressed(pixelgl.MouseButtonRight) {
 			if selectedCardIndex > -1 {
-				var ok bool
+				var err error
 				var id = tableCards.Cards[selectedCardIndex].ID
-				tableCards.Cards, ok = gg.DiscardCard(id)
-				if !ok {
-					log.Printf("Card %d is not discarded", id)
+				tableCards.Cards, err = gg.DiscardCard(id)
+				if err != nil {
+					log.Printf("Card %d is not discarded: %v", id, err)
 				} else {
 					discardedCards = append(discardedCards, id)
 				}
@@ -378,7 +398,7 @@ func run() error {
 		txt.Clear()
 		txt.Color = colornames.Orange
 		fmt.Fprintf(txt,
-			"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\n",
+			"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\nState: %s",
 			int(left),
 			int(bottom),
 			int(cardTitleHeight),
@@ -386,6 +406,7 @@ func run() error {
 			int(win.MousePosition().X),
 			int(win.MousePosition().Y),
 			currectPlayer,
+			g.GetState().String(),
 		)
 		txt.Draw(win, pixel.IM)
 
