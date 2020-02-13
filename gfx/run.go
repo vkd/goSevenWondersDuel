@@ -372,6 +372,8 @@ func run() error {
 			}
 		}
 
+		var currectPlayer = g.CurrentPlayerIndex()
+
 		// debug info
 		txt.Clear()
 		txt.Color = colornames.Orange
@@ -383,16 +385,16 @@ func run() error {
 			int(deltaEpoh),
 			int(win.MousePosition().X),
 			int(win.MousePosition().Y),
-			gg.CurrentPlayerIndex(),
+			currectPlayer,
 		)
 		txt.Draw(win, pixel.IM)
 
 		statsLPlayer.Clear()
-		fmt.Fprintf(statsLPlayer, debugPlayerInfo(gg.Player(0)))
+		fmt.Fprintf(statsLPlayer, debugPlayerInfo(gg.Player(0), currectPlayer == 0))
 		statsLPlayer.Draw(win, pixel.IM)
 
 		statsRPlayer.Clear()
-		fmt.Fprintf(statsRPlayer, debugPlayerInfo(gg.Player(1)))
+		fmt.Fprintf(statsRPlayer, debugPlayerInfo(gg.Player(1), currectPlayer == 1))
 		statsRPlayer.Draw(win, pixel.IM)
 
 		win.Update()
@@ -402,8 +404,12 @@ func run() error {
 	return nil
 }
 
-func debugPlayerInfo(p core.Player) string {
-	return fmt.Sprintf("Money: %d\n         : [W S C P G]\nResources: %v\nVP: %d\nChains: %v\n       : [W M C T P A S]\nScience: %v", p.Coins, p.Resources, 0, p.Chains.Strings(), p.ScientificSymbols)
+func debugPlayerInfo(p core.Player, isActive bool) string {
+	var active string
+	if isActive {
+		active = "*"
+	}
+	return fmt.Sprintf("IsActive: %s\nMoney: %d\n         : [W S C P G]\nResources: %v\nChains: %v\n       : [W M C T P A S]\nScience: %v", active, p.Coins, p.Resources, p.Chains.Strings(), p.ScientificSymbols)
 }
 
 var (
