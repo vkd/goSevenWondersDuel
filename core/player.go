@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 // PlayerIndex - index of player
 type PlayerIndex int
 
@@ -10,6 +12,17 @@ func (i PlayerIndex) Next() PlayerIndex {
 
 func (i PlayerIndex) player(g *Game) *Player {
 	return g.player(i)
+}
+
+func (i PlayerIndex) winner() Winner {
+	switch i {
+	case 0:
+		return Winner1Player
+	case 1:
+		return Winner2Player
+	default:
+		panic(fmt.Sprintf("unknown player index %d", i))
+	}
 }
 
 // Player of a game

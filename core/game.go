@@ -17,7 +17,10 @@ const (
 
 // Game - game state
 type Game struct {
-	state State
+	state      State
+	currentAge uint8
+	winner     Winner
+	winReason  WinReason
 
 	players            [numPlayers]Player
 	currentPlayerIndex PlayerIndex
@@ -36,16 +39,18 @@ type Game struct {
 
 	vps [numPlayers][numVPTypes]VP
 
-	availablePTokens []PTokenName
-	restPTokens      []PTokenName
+	availablePTokens []PTokenID
+	restPTokens      []PTokenID
 
 	availableWonders [initialWonders]WonderID
 	restWonders      []WonderID
 
-	ageI    [SizeAge]CardID
-	ageII   [SizeAge]CardID
-	ageIII  [SizeAge]CardID
-	ageDesk ageDesk
+	ageI     [SizeAge]CardID
+	ageII    [SizeAge]CardID
+	ageIII   [SizeAge]CardID
+	ageDesk  ageDesk
+	ageDesk2 ageDesk
+	ageDesk3 ageDesk
 
 	rnd *rand.Rand
 }
@@ -75,7 +80,7 @@ func NewGame(opts ...Option) (*Game, error) {
 	}
 
 	// init PTokens
-	ptokens := NewPTokenNames(g.rnd)
+	ptokens := shufflePTokens(g.rnd)
 	g.availablePTokens = ptokens[:initialPTokens]
 	g.restPTokens = ptokens[initialPTokens:]
 
@@ -88,12 +93,19 @@ func NewGame(opts ...Option) (*Game, error) {
 	if err != nil {
 		return nil, err
 	}
+	g.ageDesk2, err = newAgeDesk(structureAgeII, shuffleAgeII(g.rnd))
+	if err != nil {
+		return nil, err
+	}
+	g.ageDesk3, err = newAgeDesk(structureAgeIII, shuffleAgeIII(g.rnd))
+	if err != nil {
+		return nil, err
+	}
 
 	for i := 0; i < numPlayers; i++ {
 		g.players[i] = NewPlayer()
 	}
 
-	g.state = g.state.Next()
 	return &g, nil
 }
 
@@ -110,7 +122,7 @@ var (
 
 // Init of a game
 func (g *Game) Init() (wonders [initialWonders]WonderID, ptokens [initialPTokens]PTokenName, ok bool) {
-	if !g.state.Is(StateInit) {
+	if !g.state.Is(StateNone) {
 		return
 	}
 	wonders = g.availableWonders
@@ -145,20 +157,16 @@ func (g *Game) CardsState() CardsState {
 }
 
 func (g *Game) CardCost(id CardID) Coins {
-	return CostByCoins(
-		id.card().Cost,
-		*g.currentPlayer(),
-		NewTradingPrice(
-			*g.opponent(),
-			g.priceMarkets[g.currentPlayerIndex]...,
-		),
-		g.oneAnyMarkets[g.currentPlayerIndex],
-	)
+	return g.costForCurrentPlayer(id.card().Cost)
 }
 
 func (g *Game) WonderCost(id WonderID) Coins {
+	return g.costForCurrentPlayer(id.wonder().Cost)
+}
+
+func (g *Game) costForCurrentPlayer(cost Cost) Coins {
 	return CostByCoins(
-		id.wonder().Cost,
+		cost,
 		*g.currentPlayer(),
 		NewTradingPrice(
 			*g.opponent(),
@@ -169,8 +177,12 @@ func (g *Game) WonderCost(id WonderID) Coins {
 }
 
 func (g *Game) ConstructBuilding(id CardID) (state CardsState, err error) {
-	ok := g.ageDesk.testBuild(id)
 	state = g.ageDesk.state
+	if !g.state.Is(StateGameTurn) {
+		return state, ErrWrongState
+	}
+
+	ok := g.ageDesk.testBuild(id)
 	if !ok {
 		return state, fmt.Errorf("card (id = %d) cannot be built", id)
 	}
@@ -188,7 +200,7 @@ func (g *Game) ConstructBuilding(id CardID) (state CardsState, err error) {
 	g.currentPlayer().Coins -= pay
 
 	g.buildCard(id)
-	g.nextState()
+	g.nextTurn()
 
 	return state, nil
 }
@@ -201,23 +213,31 @@ func (g *Game) buildCard(id CardID) {
 	g.builtCards[g.currentPlayerIndex][card.Color] = append(g.builtCards[g.currentPlayerIndex][card.Color], id)
 }
 
-func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
-	err := g.ageDesk.Build(id)
+func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
 	state = g.ageDesk.state
+	if !g.state.Is(StateGameTurn) {
+		return state, ErrWrongState
+	}
+
+	err := g.ageDesk.Build(id)
 	if err != nil {
-		return state, false
+		return state, err
 	}
 
 	g.discardedCards = append(g.discardedCards, id)
 
 	g.currentPlayer().Coins += Coins(2) + Coins(len(g.builtCards[g.currentPlayerIndex][Yellow]))
 
-	g.nextState()
-	return state, true
+	g.nextTurn()
+	return state, nil
 }
 
 func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err error) {
 	state = g.ageDesk.state
+	if !g.state.Is(StateGameTurn) {
+		return state, ErrWrongState
+	}
+
 	if len(g.buildWonders[0])+len(g.buildWonders[1]) >= 7 {
 		return state, fmt.Errorf("wonder (id = %d) cannot be built: max 7 wonders are allowed", wid)
 	}
@@ -246,12 +266,16 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 	}
 
 	g.buildWonders[g.currentPlayerIndex] = append(g.buildWonders[g.currentPlayerIndex], wid)
-	g.nextState()
+	g.nextTurn()
 
 	return state, nil
 }
 
 func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
+	if !g.state.Is(StateBuildFreeDiscarded) {
+		return ErrWrongState
+	}
+
 	// TODO: check current state
 	var ok bool
 	for _, dID := range g.discardedCards {
@@ -273,21 +297,60 @@ func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
 	g.discardedCards = newDiscarded
 
 	g.buildCard(id)
-	g.nextState()
+	g.nextTurn()
+	g.state = g.state.Next()
 	return nil
 }
 
 func (g *Game) PlayDiscardedPToken(id PTokenID) (err error) {
-	// TODO: check game state
+	if !g.state.Is(StateBuildFreePToken) {
+		return ErrWrongState
+	}
+
 	panic("Not implemented")
+
+	g.state = g.state.Next()
+	return nil
 }
 
-func (g *Game) nextState() {
-	if g.repeatTurn {
-		g.repeatTurn = false
+func (g *Game) nextTurn() {
+	if g.ageDesk.state.anyExists() {
+		if g.repeatTurn {
+			g.repeatTurn = false
+		} else {
+			g.currentPlayerIndex = g.currentPlayerIndex.Next()
+		}
 	} else {
-		g.currentPlayerIndex = g.currentPlayerIndex.Next()
+		if g.currentAge == 2 {
+			winner := g.finalVPs()
+			g.victory(winner, WinCivilian)
+			return
+		}
+		g.repeatTurn = false
+		g.nextAge()
 	}
+}
+
+func (g *Game) nextAge() {
+	switch {
+	case g.military.Shields[0] > g.military.Shields[1]:
+		g.currentPlayerIndex = 1
+		g.state = StateChooseFirstPlayer
+	case g.military.Shields[0] < g.military.Shields[1]:
+		g.currentPlayerIndex = 0
+		g.state = StateChooseFirstPlayer
+	default:
+		// same player starts next age
+	}
+
+	switch g.currentAge {
+	case 0:
+	case 1:
+		g.ageDesk = g.ageDesk2
+	case 2:
+		g.ageDesk = g.ageDesk3
+	}
+	g.currentAge++
 }
 
 func (g *Game) Player(i PlayerIndex) Player {
@@ -316,9 +379,63 @@ func (g *Game) apply(card CardName) {
 	}
 }
 
-func (g *Game) Victory() {
-	panic("Not implemented")
+func (g *Game) finalVPs() Winner {
+	for pi, fs := range g.endEffects {
+		for _, f := range fs {
+			vp := f.finalVP(g, PlayerIndex(pi))
+			g.vps[pi][vp.t] += vp.v
+		}
+	}
+
+	var score [numPlayers]VP
+	for pi, vs := range g.vps {
+		for _, v := range vs {
+			score[pi] += v
+		}
+	}
+
+	switch {
+	case score[0] > score[1]:
+		return Winner1Player
+	case score[1] > score[0]:
+		return Winner2Player
+	}
+
+	switch {
+	case g.vps[0][BlueVP] > g.vps[1][BlueVP]:
+		return Winner1Player
+	case g.vps[1][BlueVP] > g.vps[0][BlueVP]:
+		return Winner2Player
+	}
+
+	return WinnerBoth
 }
+
+func (g *Game) victory(w Winner, reason WinReason) {
+	g.state = StateVictory
+	g.winner = w
+	g.winReason = reason
+}
+
+type WinReason uint8
+
+const (
+	WinNone WinReason = iota
+	WinCivilian
+	WinMilitary
+	WinScience
+)
+
+type Winner uint8
+
+const (
+	Winner1Player Winner = iota
+	Winner2Player
+	WinnerBoth
+	numWinners
+)
+
+var _ = [1]struct{}{}[numWinners-1-numPlayers]
 
 func (g *Game) GettingPToken(i PlayerIndex) {
 	panic("Not implemented")
@@ -338,9 +455,28 @@ type State uint8
 // Game states
 const (
 	StateNone State = iota
-	StateInit
 	StateSelectWonders
-	StateAgeI
+	StateGameTurn
+	StateBuildFreeDiscarded
+	StateDiscardOpponentBuild
+	StateBuildFreePToken
+	StateChooseFirstPlayer
+	StateVictory
+	numStates int = iota
+)
+
+var (
+	stateNames = map[State]string{
+		StateNone:                 "None",
+		StateSelectWonders:        "SelectWonders",
+		StateGameTurn:             "GameTurn",
+		StateBuildFreeDiscarded:   "BuildFreeDiscarded",
+		StateDiscardOpponentBuild: "DiscardOpponentBuild",
+		StateBuildFreePToken:      "BuildFreePToken",
+		StateChooseFirstPlayer:    "ChooseFirstPlayer",
+		StateVictory:              "Victory",
+	}
+	_ = [1]struct{}{}[len(stateNames)-numStates]
 )
 
 // Is has that current state
@@ -348,18 +484,29 @@ func (s State) Is(check State) bool {
 	return s == check
 }
 
+func (s State) String() string {
+	return stateNames[s]
+}
+
 // Next ...
 func (s State) Next() State {
 	switch s {
 	case StateNone:
-		return StateInit
-	case StateInit:
 		return StateSelectWonders
 	case StateSelectWonders:
-		return StateAgeI
+		return StateGameTurn
+	case StateGameTurn:
+	case StateBuildFreeDiscarded:
+		return StateGameTurn
+	case StateDiscardOpponentBuild:
+		return StateGameTurn
+	case StateBuildFreePToken:
+		return StateGameTurn
+	case StateVictory:
 	default:
 		panic("unknown state")
 	}
+	return s
 }
 
 // type gameState struct {
@@ -399,7 +546,7 @@ type freeDiscardedCard struct{}
 var _ Effect = freeDiscardedCard{}
 
 func (freeDiscardedCard) applyEffect(g *Game, i PlayerIndex) {
-	panic("Not implemented")
+	g.state = StateBuildFreeDiscarded
 }
 
 func DiscardOpponentBuild(color CardColor) Effect {
@@ -413,7 +560,7 @@ type discardOpponentBuild struct {
 var _ Effect = discardOpponentBuild{}
 
 func (c discardOpponentBuild) applyEffect(g *Game, i PlayerIndex) {
-	panic("Not implemented")
+	g.state = StateDiscardOpponentBuild
 }
 
 func DiscardOpponentCoins(c Coins) Effect {
@@ -439,5 +586,5 @@ type playDiscardedPToken struct{}
 var _ Effect = playDiscardedPToken{}
 
 func (playDiscardedPToken) applyEffect(g *Game, i PlayerIndex) {
-	panic("Not implemented")
+	g.state = StateBuildFreePToken
 }

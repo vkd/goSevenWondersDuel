@@ -38,7 +38,15 @@ var (
 
 	mapPTokens = makeMapPTokensByName(listPTokens)
 	_          = [1]struct{}{}[len(mapPTokens)-numPTokens]
+
+	listPTokensIDs [numPTokens]PTokenID
 )
+
+func init() {
+	for i := range listPTokensIDs {
+		listPTokensIDs[i] = PTokenID(i)
+	}
+}
 
 func newPToken(name PTokenName, ee ...interface{}) PToken {
 	return PToken{
@@ -55,14 +63,10 @@ func makeMapPTokensByName(list []PToken) map[PTokenName]*PToken {
 	return m
 }
 
-// NewPTokenNames - return all shuffled PToken names
-func NewPTokenNames(rnd *rand.Rand) [numPTokens]PTokenName {
-	var out [numPTokens]PTokenName
-	for i, pt := range listPTokens {
-		out[i] = pt.Name
-	}
-	rnd.Shuffle(numPTokens, func(i, j int) {
-		out[i], out[j] = out[j], out[i]
+func shufflePTokens(rnd *rand.Rand) []PTokenID {
+	var ptokens = listPTokensIDs
+	rnd.Shuffle(len(ptokens), func(i, j int) {
+		ptokens[i], ptokens[j] = ptokens[j], ptokens[i]
 	})
-	return out
+	return ptokens[:]
 }

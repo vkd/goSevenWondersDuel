@@ -24,7 +24,7 @@ func (m *Military) addShields(g *Game, i PlayerIndex, s Shields) {
 		m.Tokens5[i.Next()] = true
 	}
 	if diff >= 10 {
-		g.Victory()
+		g.victory(i.winner(), WinMilitary)
 	}
 }
 

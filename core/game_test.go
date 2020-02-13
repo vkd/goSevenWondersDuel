@@ -10,7 +10,7 @@ import (
 func TestZeroGame(t *testing.T) {
 	game, err := NewGame(WithSeed(0))
 	require.NoError(t, err)
-	assert.Equal(t, game.GetState(), StateInit)
+	assert.Equal(t, game.GetState(), StateNone)
 
 	wonders, ptokens, ok := game.Init()
 	assert.True(t, ok)
@@ -26,5 +26,5 @@ func TestZeroGame(t *testing.T) {
 		[...]WonderID{wonders[0], wonders[1], wonders[5], wonders[6]},
 	)
 	assert.NoError(t, err)
-	assert.Equal(t, game.GetState(), StateAgeI)
+	assert.Equal(t, game.GetState(), StateGameTurn)
 }
