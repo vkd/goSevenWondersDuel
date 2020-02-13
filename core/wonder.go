@@ -14,6 +14,10 @@ type Wonder struct {
 // WonderID - ID of the wonder
 type WonderID uint32
 
+func (id WonderID) wonder() *Wonder {
+	return &listWonders[id]
+}
+
 // WonderName - name of a wonder
 type WonderName string
 

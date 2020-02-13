@@ -158,6 +158,18 @@ func (g *Game) CardCost(id CardID) Coins {
 	)
 }
 
+func (g *Game) WonderCost(id WonderID) Coins {
+	return CostByCoins(
+		id.wonder().Cost,
+		*g.currentPlayer(),
+		NewTradingPrice(
+			*g.opponent(),
+			g.PriceMarkets[g.currentPlayerIndex]...,
+		),
+		g.OneAnyMarkets[g.currentPlayerIndex],
+	)
+}
+
 func (g *Game) ConstructBuilding(id CardID) (state CardsState, err error) {
 	ok := g.ageDesk.testBuild(id)
 	state = g.ageDesk.state
@@ -199,6 +211,41 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
 
 	g.nextState()
 	return state, true
+}
+
+func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err error) {
+	state = g.ageDesk.state
+	if len(g.BuildWonders[0])+len(g.BuildWonders[1]) >= 7 {
+		return state, fmt.Errorf("wonder (id = %d) cannot be built", wid)
+	}
+
+	ok := g.ageDesk.testBuild(cid)
+	state = g.ageDesk.state
+	if !ok {
+		return state, fmt.Errorf("card (id = %d) cannot be taken", cid)
+	}
+
+	pay := g.WonderCost(wid)
+	if g.currentPlayer().Coins < pay {
+		return state, fmt.Errorf("not enough coins")
+	}
+
+	err = g.ageDesk.Build(cid)
+	state = g.ageDesk.state
+	if err != nil {
+		return state, err
+	}
+	g.currentPlayer().Coins -= pay
+
+	wonder := wid.wonder()
+	for _, eff := range wonder.Effects {
+		eff.applyEffect(g, g.currentPlayerIndex)
+	}
+
+	g.BuildWonders[g.currentPlayerIndex] = append(g.BuildWonders[g.currentPlayerIndex], wid)
+	g.nextState()
+
+	return state, nil
 }
 
 func (g *Game) nextState() {
