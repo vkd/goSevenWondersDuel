@@ -27,6 +27,7 @@ type Game struct {
 	AvailableWonders [numPlayers][]WonderID
 	BuildWonders     [numPlayers][]WonderID
 	BuiltCards       [numPlayers][numCardColors][]CardID
+	discardedCards   []CardID
 
 	// TODO: make private
 	PriceMarkets  [numPlayers]PriceMarkets
@@ -47,8 +48,6 @@ type Game struct {
 	ageII   [SizeAge]CardID
 	ageIII  [SizeAge]CardID
 	ageDesk ageDesk
-
-	// log *logrus.Logger
 
 	rnd *rand.Rand
 }
@@ -190,15 +189,18 @@ func (g *Game) ConstructBuilding(id CardID) (state CardsState, err error) {
 	}
 	g.currentPlayer().Coins -= pay
 
+	g.buildCard(id)
+	g.nextState()
+
+	return state, nil
+}
+
+func (g *Game) buildCard(id CardID) {
 	card := id.card()
 	for _, eff := range card.Effects {
 		eff.applyEffect(g, g.currentPlayerIndex)
 	}
 	g.BuiltCards[g.currentPlayerIndex][card.Color] = append(g.BuiltCards[g.currentPlayerIndex][card.Color], id)
-
-	g.nextState()
-
-	return state, nil
 }
 
 func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
@@ -207,6 +209,8 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
 	if err != nil {
 		return state, false
 	}
+
+	g.discardedCards = append(g.discardedCards, id)
 
 	g.currentPlayer().Coins += Coins(2) + Coins(len(g.BuiltCards[g.currentPlayerIndex][Yellow]))
 
@@ -217,7 +221,7 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ bool) {
 func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err error) {
 	state = g.ageDesk.state
 	if len(g.BuildWonders[0])+len(g.BuildWonders[1]) >= 7 {
-		return state, fmt.Errorf("wonder (id = %d) cannot be built", wid)
+		return state, fmt.Errorf("wonder (id = %d) cannot be built: max 7 wonders are allowed", wid)
 	}
 
 	ok := g.ageDesk.testBuild(cid)
@@ -247,6 +251,32 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 	g.nextState()
 
 	return state, nil
+}
+
+func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
+	// TODO: check current state
+	var ok bool
+	for _, dID := range g.discardedCards {
+		if dID == id {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("card (id=%d) is not discarded", id)
+	}
+
+	var newDiscarded []CardID
+	for _, did := range g.discardedCards {
+		if did != id {
+			newDiscarded = append(newDiscarded, did)
+		}
+	}
+	g.discardedCards = newDiscarded
+
+	g.buildCard(id)
+	g.nextState()
+	return nil
 }
 
 func (g *Game) nextState() {
