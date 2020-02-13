@@ -290,6 +290,18 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 	return state, nil
 }
 
+func (g *Game) ChoosePToken(id PTokenID) error {
+	if !g.state.Is(StateChoosePToken) {
+		return ErrWrongState
+	}
+
+	panic("Not implemented")
+
+	g.state = g.state.Next()
+	g.nextTurn()
+	return nil
+}
+
 func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
 	if !g.state.Is(StateBuildFreeDiscarded) {
 		return ErrWrongState
@@ -499,8 +511,8 @@ const (
 
 var _ = [1]struct{}{}[numWinners-1-numPlayers]
 
-func (g *Game) GettingPToken(i PlayerIndex) {
-	panic("Not implemented")
+func (g *Game) gettingPToken(i PlayerIndex) {
+	g.state = StateChoosePToken
 }
 
 func (g *Game) Military() Military {
@@ -522,6 +534,7 @@ const (
 	StateBuildFreeDiscarded
 	StateDiscardOpponentBuild
 	StateBuildFreePToken
+	StateChoosePToken
 	StateChooseFirstPlayer
 	StateVictory
 	numStates int = iota
@@ -535,6 +548,7 @@ var (
 		StateBuildFreeDiscarded:   "BuildFreeDiscarded",
 		StateDiscardOpponentBuild: "DiscardOpponentBuild",
 		StateBuildFreePToken:      "BuildFreePToken",
+		StateChoosePToken:         "ChoosePToken",
 		StateChooseFirstPlayer:    "ChooseFirstPlayer",
 		StateVictory:              "Victory",
 	}
@@ -561,6 +575,8 @@ func (s State) Next() State {
 	case StateBuildFreeDiscarded:
 		return StateGameTurn
 	case StateDiscardOpponentBuild:
+		return StateGameTurn
+	case StateChoosePToken:
 		return StateGameTurn
 	case StateBuildFreePToken:
 		return StateGameTurn

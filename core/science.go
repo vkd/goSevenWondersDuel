@@ -44,7 +44,7 @@ func (s ScientificSymbol) applyEffect(g *Game, i PlayerIndex) {
 		return
 	}
 	if g.players[i].ScientificSymbols[s]%2 == 0 {
-		g.GettingPToken(i)
+		g.gettingPToken(i)
 	}
 }
 
