@@ -384,6 +384,17 @@ func (g *Game) PlayDiscardedPToken(id PTokenID) (err error) {
 	return nil
 }
 
+func (g *Game) ChooseFirstPlayer(i PlayerIndex) error {
+	if !g.state.Is(StateChooseFirstPlayer) {
+		return ErrWrongState
+	}
+
+	g.currentPlayerIndex = i % numPlayers
+
+	g.state = g.state.Next()
+	return nil
+}
+
 func (g *Game) nextTurn() {
 	if !g.state.Is(StateGameTurn) {
 		return
@@ -419,12 +430,13 @@ func (g *Game) nextAge() {
 
 	switch g.currentAge {
 	case 0:
-	case 1:
 		g.ageDesk = g.ageDesk2
-	case 2:
+		g.currentAge++
+	case 1:
 		g.ageDesk = g.ageDesk3
+		g.currentAge++
+	case 2:
 	}
-	g.currentAge++
 }
 
 func (g *Game) Player(i PlayerIndex) Player {
