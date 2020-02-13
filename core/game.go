@@ -279,6 +279,11 @@ func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
 	return nil
 }
 
+func (g *Game) PlayDiscardedPToken(id PTokenID) (err error) {
+	// TODO: check game state
+	panic("Not implemented")
+}
+
 func (g *Game) nextState() {
 	if g.repeatTurn {
 		g.repeatTurn = false
@@ -323,6 +328,10 @@ func (g *Game) GettingPToken(i PlayerIndex) {
 
 func (g *Game) Military() Military {
 	return g.military
+}
+
+func (g *Game) CurrentPlayerIndex() PlayerIndex {
+	return g.currentPlayerIndex
 }
 
 // State of a game
@@ -381,4 +390,56 @@ var _ Effect = repeatTurn{}
 
 func (repeatTurn) applyEffect(g *Game, _ PlayerIndex) {
 	g.repeatTurn = true
+}
+
+func BuildFreeDiscardedCard() Effect {
+	return freeDiscardedCard{}
+}
+
+type freeDiscardedCard struct{}
+
+var _ Effect = freeDiscardedCard{}
+
+func (freeDiscardedCard) applyEffect(g *Game, i PlayerIndex) {
+	panic("Not implemented")
+}
+
+func DiscardOpponentBuild(color CardColor) Effect {
+	return discardOpponentBuild{color}
+}
+
+type discardOpponentBuild struct {
+	color CardColor
+}
+
+var _ Effect = discardOpponentBuild{}
+
+func (c discardOpponentBuild) applyEffect(g *Game, i PlayerIndex) {
+	panic("Not implemented")
+}
+
+func DiscardOpponentCoins(c Coins) Effect {
+	return discardOpponentCoins{c}
+}
+
+type discardOpponentCoins struct {
+	coins Coins
+}
+
+var _ Effect = discardOpponentCoins{}
+
+func (c discardOpponentCoins) applyEffect(g *Game, i PlayerIndex) {
+	g.opponent().Coins.sub(c.coins)
+}
+
+func PlayOneOf3DiscardedPToken() Effect {
+	return playDiscardedPToken{}
+}
+
+type playDiscardedPToken struct{}
+
+var _ Effect = playDiscardedPToken{}
+
+func (playDiscardedPToken) applyEffect(g *Game, i PlayerIndex) {
+	panic("Not implemented")
 }

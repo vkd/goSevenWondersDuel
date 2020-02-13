@@ -8,6 +8,8 @@ type PToken struct {
 	Effects []Effect
 }
 
+type PTokenID uint8
+
 // PTokenName - name of a progress token
 type PTokenName string
 

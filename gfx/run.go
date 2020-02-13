@@ -67,10 +67,11 @@ const (
 )
 
 func run() error {
-	gg, err := core.NewGame(core.WithSeed(0))
+	g, err := core.NewGame(core.WithSeed(0))
 	if err != nil {
 		return err
 	}
+	var gg = g
 
 	wonders, _, ok := gg.Init()
 	if !ok {
@@ -205,10 +206,11 @@ func run() error {
 		}
 
 		if win.JustPressed(pixelgl.KeyR) {
-			gg, err = core.NewGame(core.WithSeed(0))
+			g, err = core.NewGame(core.WithSeed(0))
 			if err != nil {
 				return err
 			}
+			gg = g
 			wonders, _, ok = gg.Init()
 			if !ok {
 				return fmt.Errorf("cannot init game")
@@ -370,13 +372,6 @@ func run() error {
 			}
 		}
 
-		var dialog interface {
-			Show(pixel.Target)
-		}
-		if dialog != nil {
-			dialog.Show(win)
-		}
-
 		// debug info
 		txt.Clear()
 		txt.Color = colornames.Orange
@@ -388,7 +383,7 @@ func run() error {
 			int(deltaEpoh),
 			int(win.MousePosition().X),
 			int(win.MousePosition().Y),
-			0,
+			gg.CurrentPlayerIndex(),
 		)
 		txt.Draw(win, pixel.IM)
 
