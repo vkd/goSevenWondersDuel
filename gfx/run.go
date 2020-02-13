@@ -96,7 +96,7 @@ func run() error {
 	war := text.New(pixel.V(windowWidth/2, windowHeight-30), atlas)
 	statsLPlayer := text.New(pixel.V(30, 100), atlas)
 	statsLPlayer.Color = colornames.Yellow
-	statsRPlayer := text.New(pixel.V(windowWidth-230, 100), atlas)
+	statsRPlayer := text.New(pixel.V(windowWidth-330, 100), atlas)
 	statsRPlayer.Color = colornames.Yellow
 
 	var left float64 = leftPaddingCards
@@ -286,7 +286,7 @@ func run() error {
 					if gg.CurrentPlayer().Coins >= gg.CardCost(tableCards.Cards[i].ID) {
 						color = colornames.Green
 					}
-					drawBorder(tableCards.Rects[i], win, color, 1)
+					drawBorder(tableCards.Rects[i], win, color, 2)
 				}
 				idx := text.New(tableCards.Rects[i].Max, atlas)
 				idx.Color = colornames.Lightgreen
@@ -360,7 +360,7 @@ func run() error {
 }
 
 func debugPlayerInfo(p core.Player) string {
-	return fmt.Sprintf("Money: %d\nResources: %v\nVP: %d\nChains: %v\nScience: %v", p.Coins, p.Resources, 0, p.Chains.Strings(), p.ScientificSymbols)
+	return fmt.Sprintf("Money: %d\n         : [W S C P G]\nResources: %v\nVP: %d\nChains: %v\n       : [W M C T P A S]\nScience: %v", p.Coins, p.Resources, 0, p.Chains.Strings(), p.ScientificSymbols)
 }
 
 var (
