@@ -21,6 +21,7 @@ type Game struct {
 
 	players            [numPlayers]Player
 	currentPlayerIndex PlayerIndex
+	repeatTurn         bool
 
 	// TODO: make private
 	AvailableWonders [numPlayers][]WonderID
@@ -249,7 +250,11 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 }
 
 func (g *Game) nextState() {
-	g.currentPlayerIndex = g.currentPlayerIndex.Next()
+	if g.repeatTurn {
+		g.repeatTurn = false
+	} else {
+		g.currentPlayerIndex = g.currentPlayerIndex.Next()
+	}
 }
 
 func (g *Game) Player(i PlayerIndex) Player {
@@ -334,4 +339,16 @@ func (s State) Next() State {
 
 func zeroRand() *rand.Rand {
 	return rand.New(rand.NewSource(0))
+}
+
+func RepeatTurn() Effect {
+	return repeatTurn{}
+}
+
+type repeatTurn struct{}
+
+var _ Effect = repeatTurn{}
+
+func (repeatTurn) applyEffect(g *Game, _ PlayerIndex) {
+	g.repeatTurn = true
 }
