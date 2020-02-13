@@ -47,5 +47,14 @@ func TestCostOfCards_Chain(t *testing.T) {
 	// OR the possession of the Stable
 	g.players[0] = Player{}
 	g.apply("Stable")
-	assert.Equal(t, Coins(0), CostByCoins(costOf("Horse breeders"), g.players[0], tp))
+	assert.Equal(t, Coins(0), g.CardCostCoins(getID("Horse breeders")))
+}
+
+func getID(name CardName) CardID {
+	for i, c := range cards {
+		if c.Name == name {
+			return CardID(i)
+		}
+	}
+	panic("unknown name")
 }

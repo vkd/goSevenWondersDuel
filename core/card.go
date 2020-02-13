@@ -12,7 +12,7 @@ type Card struct {
 	Color CardColor
 	Cost  Cost
 
-	// -----------------
+	FreeChain *FreeChain
 
 	Effects []Effect
 }
@@ -269,12 +269,11 @@ func newCard(name CardName, ct CardColor, args ...interface{}) (c Card) {
 
 	for _, arg := range args {
 		switch arg := arg.(type) {
+		case FreeChain:
+			var fc FreeChain = arg
+			c.FreeChain = &fc
 		case Cost:
-			if c.Cost != nil {
-				c.Cost = orCost{c.Cost, arg}
-			} else {
-				c.Cost = arg
-			}
+			c.Cost = arg
 		case VP:
 			c.Effects = append(c.Effects, typedVP{arg, VPTypeByColor(ct)})
 		case maxVPsPerCards:

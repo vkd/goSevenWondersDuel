@@ -31,11 +31,12 @@ type Game struct {
 	wondersPerPlayer [numPlayers][]WonderID
 	buildWonders     [numPlayers][]WonderID
 	builtCards       [numPlayers][numCardColors][]CardID
+	builtPTokens     [numPlayers][]PTokenID
 	discardedCards   []CardID
 
-	priceMarkets  [numPlayers]PriceMarkets
-	oneAnyMarkets [numPlayers]OneAnyMarkets
-	endEffects    [numPlayers][]Finaler
+	priceMarkets      [numPlayers]PriceMarkets
+	oneFreeResMarkets [numPlayers]OneFreeResMarkets
+	endEffects        [numPlayers][]Finaler
 
 	military Military
 
@@ -174,23 +175,47 @@ func (g *Game) CardsState() CardsState {
 	return g.ageDesk.state
 }
 
-func (g *Game) CardCost(id CardID) Coins {
-	return g.costForCurrentPlayer(id.card().Cost)
+func (g *Game) CardCostCoins(id CardID) Coins {
+	c, t := g.CardCost(id)
+	return c + t
 }
 
-func (g *Game) WonderCost(id WonderID) Coins {
-	return g.costForCurrentPlayer(id.wonder().Cost)
-}
+func (g *Game) CardCost(id CardID) (coins Coins, tradeRes Coins) {
+	card := id.card()
 
-func (g *Game) costForCurrentPlayer(cost Cost) Coins {
-	return CostByCoins(
-		cost,
+	if card.FreeChain != nil && g.currentPlayer().Chains.Contain(Chain(*card.FreeChain)) {
+		return 0, 0
+	}
+
+	reduces := g.oneFreeResMarkets[g.currentPlayerIndex]
+	if g.currentPlayer().IsMasonry && card.Color == Blue {
+		reduces = append(reduces, OneAnyMarket(), OneAnyMarket())
+	}
+	return CostTrade(
+		card.Cost,
 		*g.currentPlayer(),
-		NewTradingPrice(
-			*g.opponent(),
-			g.priceMarkets[g.currentPlayerIndex]...,
-		),
-		g.oneAnyMarkets[g.currentPlayerIndex],
+		g.newTradingPrice(),
+		reduces,
+	)
+}
+
+func (g *Game) WonderCost(id WonderID) (coins Coins, tradeRes Coins) {
+	reduces := g.oneFreeResMarkets[g.currentPlayerIndex]
+	if g.currentPlayer().IsArchitecture {
+		reduces = append(reduces, OneAnyMarket(), OneAnyMarket())
+	}
+	return CostTrade(
+		id.wonder().Cost,
+		*g.currentPlayer(),
+		g.newTradingPrice(),
+		reduces,
+	)
+}
+
+func (g *Game) newTradingPrice() TradingPrice {
+	return NewTradingPrice(
+		*g.opponent(),
+		g.priceMarkets[g.currentPlayerIndex]...,
 	)
 }
 
@@ -205,7 +230,8 @@ func (g *Game) ConstructBuilding(id CardID) (state CardsState, err error) {
 		return state, fmt.Errorf("card (id = %d) cannot be built", id)
 	}
 
-	pay := g.CardCost(id)
+	coins, trade := g.CardCost(id)
+	pay := coins + trade
 	if g.currentPlayer().Coins < pay {
 		return state, fmt.Errorf("not enough coins")
 	}
@@ -216,6 +242,16 @@ func (g *Game) ConstructBuilding(id CardID) (state CardsState, err error) {
 		return state, err
 	}
 	g.currentPlayer().Coins -= pay
+	if g.opponent().IsEconomy {
+		g.opponent().Coins += trade
+	}
+	if g.currentPlayer().IsStrategy && id.card().Color == Red {
+		Shields(1).applyEffect(g, g.currentPlayerIndex)
+	}
+	card := id.card()
+	if g.currentPlayer().IsUrbanism && card.FreeChain != nil && g.currentPlayer().Chains.Contain(Chain(*card.FreeChain)) {
+		g.currentPlayer().Coins += 4
+	}
 
 	g.buildCard(id)
 	g.nextTurn()
@@ -267,7 +303,8 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 		return state, fmt.Errorf("card (id = %d) cannot be taken", cid)
 	}
 
-	pay := g.WonderCost(wid)
+	coins, trade := g.WonderCost(wid)
+	pay := coins + trade
 	if g.currentPlayer().Coins < pay {
 		return state, fmt.Errorf("not enough coins")
 	}
@@ -278,6 +315,12 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 		return state, err
 	}
 	g.currentPlayer().Coins -= pay
+	if g.opponent().IsEconomy {
+		g.opponent().Coins += trade
+	}
+	if g.currentPlayer().IsTheology {
+		g.repeatTurn = true
+	}
 
 	wonder := wid.wonder()
 	for _, eff := range wonder.Effects {

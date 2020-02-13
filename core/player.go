@@ -33,6 +33,13 @@ type Player struct {
 	Chains Chains
 
 	ScientificSymbols ScientificSymbols
+
+	IsArchitecture bool
+	IsEconomy      bool
+	IsMasonry      bool
+	IsStrategy     bool
+	IsTheology     bool
+	IsUrbanism     bool
 }
 
 // NewPlayer of a game

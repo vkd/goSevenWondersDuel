@@ -335,7 +335,7 @@ func run() error {
 				}
 				if !c.Covered {
 					var color = colornames.Red
-					if gg.CurrentPlayer().Coins >= gg.CardCost(tableCards.Cards[i].ID) {
+					if gg.CurrentPlayer().Coins >= gg.CardCostCoins(tableCards.Cards[i].ID) {
 						color = colornames.Green
 					}
 					drawBorder(tableCards.Rects[i], win, color, 2)

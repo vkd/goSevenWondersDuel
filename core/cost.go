@@ -1,11 +1,16 @@
 package core
 
-func CostByCoins(cost Cost, p Player, tp TradingPrice, rr ...ResourceReducer) Coins {
+func CostTrade(cost Cost, p Player, tp TradingPrice, rr ...ResourceReducer) (coins Coins, tradeRes Coins) {
 	// TODO: make nil interface is valuable
 	if cost == nil {
-		return 0
+		return 0, 0
 	}
 	return cost.cost(p, tp, rr...)
+}
+
+func CostByCoins(cost Cost, p Player, tp TradingPrice, rr ...ResourceReducer) Coins {
+	c, t := CostTrade(cost, p, tp, rr...)
+	return c + t
 }
 
 type ResourceReducer interface {
@@ -13,7 +18,7 @@ type ResourceReducer interface {
 }
 
 type Cost interface {
-	cost(Player, TradingPrice, ...ResourceReducer) Coins
+	cost(Player, TradingPrice, ...ResourceReducer) (coins Coins, tradeRes Coins)
 }
 
 type Pricer interface {
@@ -33,36 +38,36 @@ type Price struct {
 	Resources Resources
 }
 
-func (p Price) cost(player Player, tp TradingPrice, rr ...ResourceReducer) Coins {
+func (p Price) cost(player Player, tp TradingPrice, rr ...ResourceReducer) (coins Coins, tradeRes Coins) {
 	var toBuy = p.Resources.Reduce(player.Resources)
 	for _, reducer := range rr {
 		toBuy = reducer.reduceResources(toBuy, tp)
 	}
-	var cost = tp.CostOf(toBuy) + p.Coins
-	return cost
+	return p.Coins, tp.CostOf(toBuy)
 }
 
-type orCost []Cost
+// type orCost []Cost
 
-func (cs orCost) cost(p Player, tp TradingPrice, rr ...ResourceReducer) Coins {
-	var min Coins = maxCoins
-	for _, c := range cs {
-		coins := c.cost(p, tp, rr...)
-		if coins < min {
-			min = coins
-		}
-	}
-	return min
-}
+// func (cs orCost) cost(p Player, tp TradingPrice, rr ...ResourceReducer) (coins Coins, tradeRes Coins) {
+// 	var min, minTrade Coins = maxCoins, maxCoins
+// 	for _, c := range cs {
+// 		coins, trade := c.cost(p, tp, rr...)
+// 		if coins+trade < min+minTrade {
+// 			min = coins
+// 			minTrade = trade
+// 		}
+// 	}
+// 	return min, minTrade
+// }
 
 type FreeChain Chain
 
-func (c FreeChain) cost(p Player, _ TradingPrice, _ ...ResourceReducer) Coins {
-	if p.Chains.Contain(Chain(c)) {
-		return 0
-	}
-	return maxCoins
-}
+// func (c FreeChain) cost(p Player, _ TradingPrice, _ ...ResourceReducer) (Coins, Coins) {
+// 	if p.Chains.Contain(Chain(c)) {
+// 		return 0, 0
+// 	}
+// 	return maxCoins, maxCoins
+// }
 
 // TradingPrice of resources for one player
 type TradingPrice [numResources]Coins
@@ -124,29 +129,33 @@ func OneCoinPrice(r Resource) PriceMarket {
 	}
 }
 
-// OneAnyMarket - one of these resources by every round
-type OneAnyMarket []Resource
+// OneFreeResMarket - one of these resources by every round
+type OneFreeResMarket []Resource
 
-var _ Effect = OneAnyMarket{}
+var _ Effect = OneFreeResMarket{}
 
 // OneRawMarket by raw materials
-func OneRawMarket() OneAnyMarket { return OneAnyMarket(rawMaterials) }
+func OneRawMarket() OneFreeResMarket { return OneFreeResMarket(rawMaterials) }
 
 // OneManufacturedMarket by manufactured goods
-func OneManufacturedMarket() OneAnyMarket { return OneAnyMarket(manufacturedGoods) }
+func OneManufacturedMarket() OneFreeResMarket { return OneFreeResMarket(manufacturedGoods) }
 
-func (m OneAnyMarket) applyEffect(g *Game, i PlayerIndex) {
-	g.oneAnyMarkets[i] = append(g.oneAnyMarkets[i], m)
+func OneAnyMarket() OneFreeResMarket {
+	return OneFreeResMarket(allResources)
 }
 
-type OneAnyMarkets []OneAnyMarket
+func (m OneFreeResMarket) applyEffect(g *Game, i PlayerIndex) {
+	g.oneFreeResMarkets[i] = append(g.oneFreeResMarkets[i], m)
+}
 
-func (ms OneAnyMarkets) reduceResources(rs Resources, tp TradingPrice) Resources {
+type OneFreeResMarkets []OneFreeResMarket
+
+func (ms OneFreeResMarkets) reduceResources(rs Resources, tp TradingPrice) Resources {
 	_, out := reduceCosts(ms, rs, tp)
 	return out
 }
 
-func reduceCosts(ms OneAnyMarkets, rs Resources, tp TradingPrice) (Coins, Resources) {
+func reduceCosts(ms OneFreeResMarkets, rs Resources, tp TradingPrice) (Coins, Resources) {
 	if len(ms) == 0 {
 		return 0, rs
 	}
