@@ -62,9 +62,7 @@ func NewRes(rs ...Resource) Resources {
 }
 
 func (rs Resources) ReduceOne(r Resource) Resources {
-	if rs[r] > 0 {
-		rs[r]--
-	}
+	rs.reduceOne(r)
 	return rs
 }
 
@@ -96,6 +94,12 @@ func (rs *Resources) add(rs2 Resources) {
 
 func (rs *Resources) addOne(r Resource) {
 	rs[r]++
+}
+
+func (rs *Resources) reduceOne(r Resource) {
+	if rs[r] > 0 {
+		rs[r]--
+	}
 }
 
 func (rs Resources) applyPrice(p *Price) {

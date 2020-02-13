@@ -17,6 +17,17 @@ type Card struct {
 	Effects []Effect
 }
 
+func (c Card) discard(g *Game, i PlayerIndex) {
+	for _, e := range c.Effects {
+		switch e := e.(type) {
+		case Resource:
+			g.players[i].Resources.reduceOne(e)
+		default:
+			panic(fmt.Sprintf("Unknown effect type for discard: %T", e))
+		}
+	}
+}
+
 // CardID - ID of the card
 type CardID uint32
 

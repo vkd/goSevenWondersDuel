@@ -22,6 +22,8 @@ type Game struct {
 	winner     Winner
 	winReason  WinReason
 
+	discardOpponentBuild discardOpponentBuild
+
 	players            [numPlayers]Player
 	currentPlayerIndex PlayerIndex
 	repeatTurn         bool
@@ -314,8 +316,47 @@ func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
 	g.discardedCards = newDiscarded
 
 	g.buildCard(id)
-	g.nextTurn()
 	g.state = g.state.Next()
+	g.nextTurn()
+	return nil
+}
+
+func (g *Game) DiscardOpponentBuild(id CardID) error {
+	if !g.state.Is(StateDiscardOpponentBuild) {
+		return ErrWrongState
+	}
+
+	card := id.card()
+
+	if card.Color != g.discardOpponentBuild.color {
+		return fmt.Errorf("wrong card id: wrong color")
+	}
+
+	opponentID := g.CurrentPlayerIndex().Next()
+
+	var ok bool
+	for _, b := range g.builtCards[opponentID][card.Color] {
+		if b == id {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("wrong card id: %d is not built on opponent side", id)
+	}
+
+	var newBuiltCards []CardID
+	for _, b := range g.builtCards[opponentID][card.Color] {
+		if b != id {
+			newBuiltCards = append(newBuiltCards, b)
+		}
+	}
+	g.builtCards[opponentID][card.Color] = newBuiltCards
+
+	card.discard(g, opponentID)
+
+	g.state = g.state.Next()
+	g.nextTurn()
 	return nil
 }
 
@@ -327,10 +368,14 @@ func (g *Game) PlayDiscardedPToken(id PTokenID) (err error) {
 	panic("Not implemented")
 
 	g.state = g.state.Next()
+	g.nextTurn()
 	return nil
 }
 
 func (g *Game) nextTurn() {
+	if !g.state.Is(StateGameTurn) {
+		return
+	}
 	if g.ageDesk.state.anyExists() {
 		if g.repeatTurn {
 			g.repeatTurn = false
@@ -577,6 +622,7 @@ type discardOpponentBuild struct {
 var _ Effect = discardOpponentBuild{}
 
 func (c discardOpponentBuild) applyEffect(g *Game, i PlayerIndex) {
+	g.discardOpponentBuild = c
 	g.state = StateDiscardOpponentBuild
 }
 
