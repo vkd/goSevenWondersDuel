@@ -71,9 +71,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	var gg = g
 
-	wonders := gg.GetAvailableWonders()
+	wonders := g.GetAvailableWonders()
 	currentWonder = 0
 
 	var discardedCards []core.CardID
@@ -121,7 +120,7 @@ func run() error {
 	// +------------------------------> x
 	// topCenter.Y -= cardHeight
 	var tableCards = TableCards{
-		Cards: gg.CardsState(),
+		Cards: g.CardsState(),
 		Rects: genCardRects(ageGrid.genAgeIVecs(topCenter.Sub(pixel.V(0, cardHeight)))),
 	}
 
@@ -227,9 +226,8 @@ func run() error {
 			if err != nil {
 				return err
 			}
-			gg = g
-			wonders = gg.GetAvailableWonders()
-			tableCards.Cards = gg.CardsState()
+			wonders = g.GetAvailableWonders()
+			tableCards.Cards = g.CardsState()
 			discardedCards = nil
 
 			currentWonder = 0
@@ -278,7 +276,7 @@ func run() error {
 
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			if selectedCardIndex > -1 {
-				tableCards.Cards, err = gg.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
+				tableCards.Cards, err = g.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
 				if err != nil {
 					log.Printf("Error on build: %v", err)
 				}
@@ -291,7 +289,7 @@ func run() error {
 				}
 			}
 			if selectedDiscardedIndex > -1 {
-				err = gg.ConstructDiscardedCard(discardedCards[selectedDiscardedIndex])
+				err = g.ConstructDiscardedCard(discardedCards[selectedDiscardedIndex])
 				if err != nil {
 					log.Printf("Error on build discarded: %v", err)
 				}
@@ -300,7 +298,7 @@ func run() error {
 			if selectedCardIndex > -1 {
 				var err error
 				var id = tableCards.Cards[selectedCardIndex].ID
-				tableCards.Cards, err = gg.DiscardCard(id)
+				tableCards.Cards, err = g.DiscardCard(id)
 				if err != nil {
 					log.Printf("Card %d is not discarded: %v", id, err)
 				} else {
@@ -314,7 +312,7 @@ func run() error {
 		// drawCard(0, pixel.V(510, 10), win)
 		// drawFirstEpoh(win, pixel.V(windowWidth/2, windowHeight-100))
 
-		m := gg.Military()
+		m := g.Military()
 		warPoint := int(m.Shields[0]) - int(m.Shields[1])
 
 		war.Clear()
@@ -356,7 +354,7 @@ func run() error {
 				}
 				if !c.Covered {
 					var color = colornames.Red
-					if gg.CurrentPlayer().Coins >= gg.CardCostCoins(tableCards.Cards[i].ID) {
+					if g.CurrentPlayer().Coins >= g.CardCostCoins(tableCards.Cards[i].ID) {
 						color = colornames.Green
 					}
 					drawBorder(tableCards.Rects[i], win, color, 2)
@@ -432,11 +430,11 @@ func run() error {
 		txt.Draw(win, pixel.IM)
 
 		statsLPlayer.Clear()
-		fmt.Fprintf(statsLPlayer, debugPlayerInfo(gg.Player(0), currectPlayer == 0))
+		fmt.Fprintf(statsLPlayer, debugPlayerInfo(g.Player(0), currectPlayer == 0))
 		statsLPlayer.Draw(win, pixel.IM)
 
 		statsRPlayer.Clear()
-		fmt.Fprintf(statsRPlayer, debugPlayerInfo(gg.Player(1), currectPlayer == 1))
+		fmt.Fprintf(statsRPlayer, debugPlayerInfo(g.Player(1), currectPlayer == 1))
 		statsRPlayer.Draw(win, pixel.IM)
 
 		win.Update()
