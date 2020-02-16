@@ -407,6 +407,7 @@ func (g *Game) DiscardOpponentBuild(id CardID) error {
 		}
 	}
 	g.builtCards[opponentID][card.Color] = newBuiltCards
+	g.discardedCards = append(g.discardedCards, id)
 
 	card.discard(g, opponentID)
 
