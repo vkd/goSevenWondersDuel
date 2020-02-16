@@ -95,8 +95,8 @@ func (m MaxCoinsPerCardColor) applyEffect(g *Game, i PlayerIndex) {
 	g.player(i).Coins += max
 }
 
-func MaxOneCoinPerCards(colors ...CardColor) CoinsPerCardColor {
-	return CoinsPerCardColor{
+func MaxOneCoinPerCards(colors ...CardColor) MaxCoinsPerCardColor {
+	return MaxCoinsPerCardColor{
 		Colors: colors,
 		Coins:  1,
 	}
