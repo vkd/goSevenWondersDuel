@@ -160,8 +160,7 @@ func reduceCosts(ms OneFreeResMarkets, rs Resources, tp TradingPrice) (Coins, Re
 		return 0, rs
 	}
 
-	var max Coins
-	var maxRs Resources = rs
+	var max, maxRs = reduceCosts(ms[1:], rs, tp)
 	for _, r := range ms[0] {
 		if rs[r] == 0 {
 			continue
