@@ -73,10 +73,7 @@ func run() error {
 	}
 	var gg = g
 
-	wonders, _, ok := gg.Init()
-	if !ok {
-		return fmt.Errorf("cannot init game")
-	}
+	wonders := gg.GetAvailableWonders()
 	currentWonder = 0
 
 	var discardedCards []core.CardID
@@ -231,10 +228,7 @@ func run() error {
 				return err
 			}
 			gg = g
-			wonders, _, ok = gg.Init()
-			if !ok {
-				return fmt.Errorf("cannot init game")
-			}
+			wonders = gg.GetAvailableWonders()
 			tableCards.Cards = gg.CardsState()
 			discardedCards = nil
 

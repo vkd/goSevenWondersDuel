@@ -42,7 +42,7 @@ type Game struct {
 
 	vps [numPlayers][numVPTypes]VP
 
-	availablePTokens []PTokenID
+	availablePTokens [initialPTokens]PTokenID
 	restPTokens      []PTokenID
 
 	availableWonders [initialWonders]WonderID
@@ -84,7 +84,7 @@ func NewGame(opts ...Option) (*Game, error) {
 
 	// init PTokens
 	ptokens := shufflePTokens(g.rnd)
-	g.availablePTokens = ptokens[:initialPTokens]
+	copy(g.availablePTokens[:], ptokens)
 	g.restPTokens = ptokens[initialPTokens:]
 
 	wonders := shuffleWonders(g.rnd)
@@ -109,6 +109,7 @@ func NewGame(opts ...Option) (*Game, error) {
 		g.players[i] = NewPlayer()
 	}
 
+	g.state = g.state.Next()
 	return &g, nil
 }
 
@@ -123,15 +124,11 @@ var (
 	ErrWrongSelectedWonders = errors.New("wrong selected wonders")
 )
 
-// Init of a game
-func (g *Game) Init() (wonders [initialWonders]WonderID, ptokens [initialPTokens]PTokenName, ok bool) {
-	if !g.state.Is(StateNone) {
-		return
-	}
-	wonders = g.availableWonders
-	ok = true
-	g.state = g.state.Next()
-	return
+func (g *Game) GetAvailableWonders() (wonders [initialWonders]WonderID) {
+	return g.availableWonders
+}
+func (g *Game) GetAvailablePTokens() (wonders [initialPTokens]PTokenID) {
+	return g.availablePTokens
 }
 
 // SelectWonders as part of an initialize of a game
