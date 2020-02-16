@@ -35,6 +35,21 @@ func (m *Military) diffFor(i PlayerIndex) Shields {
 	return m.Shields[i] - m.Shields[i.Next()]
 }
 
+func (m Military) VP(i PlayerIndex) VP {
+	var dt = m.Shields[i].Sub(m.Shields[i.Next()])
+	if dt <= 0 {
+		return 0
+	}
+	switch {
+	case dt <= 2:
+		return 2
+	case dt <= 5:
+		return 5
+	default:
+		return 10
+	}
+}
+
 // Shields - military power
 type Shields uint8
 
@@ -42,4 +57,11 @@ var _ Effect = Shields(0)
 
 func (s Shields) applyEffect(g *Game, i PlayerIndex) {
 	g.military.addShields(g, i, s)
+}
+
+func (s Shields) Sub(s2 Shields) Shields {
+	if s <= s2 {
+		return 0
+	}
+	return s - s2
 }
