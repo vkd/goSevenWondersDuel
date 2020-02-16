@@ -35,6 +35,8 @@ func (c CardID) card() *Card {
 	return &cards[c]
 }
 
+type CardID uint32
+
 // CardName - name of card
 type CardName string
 
