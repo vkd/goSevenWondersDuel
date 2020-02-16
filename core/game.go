@@ -517,6 +517,14 @@ func (g *Game) finalVPs() Winner {
 		}
 	}
 
+	for i := PlayerIndex(0); i < numPlayers; i++ {
+		g.vps[i][CoinsVP] = VP(1).Mul(g.player(i).Coins.Div(3))
+	}
+
+	for i := PlayerIndex(0); i < numPlayers; i++ {
+		g.vps[i][MilitaryVP] = g.military.VP(i)
+	}
+
 	var score [numPlayers]VP
 	for pi, vs := range g.vps {
 		for _, v := range vs {
