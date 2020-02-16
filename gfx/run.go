@@ -61,7 +61,8 @@ func Run() error {
 type BoardState uint8
 
 const (
-	Table BoardState = iota
+	NoneState BoardState = iota
+	Table
 	Wonders
 	DiscardedCards
 )
@@ -153,33 +154,15 @@ func run() error {
 
 	var fps = time.Tick(time.Second / 15)
 
-	var boardState BoardState
+	var boardState BoardState = Wonders
 
-	for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
-		wonderTaken[i] = true
-		wonderChosen[i] = wonders[idx]
-		currentWonder++
-	}
+	var verbose bool = true
 
-	{
-		var fst, snd [4]core.WonderID
-		var i, j int
-		for idx, wc := range wonderChosen {
-			switch wonderToPlayer[idx] {
-			case 0:
-				fst[i] = wc
-				i++
-			case 1:
-				snd[j] = wc
-				j++
-			}
-		}
-
-		err = g.SelectWonders(fst, snd)
-		if err != nil {
-			return err
-		}
-	}
+	// for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
+	// 	wonderTaken[i] = true
+	// 	wonderChosen[i] = wonders[idx]
+	// 	currentWonder++
+	// }
 
 	// var minX, minY, minW, minH float64
 	// minW, minH = wonderWidth*2, wonderHeight*2
@@ -231,31 +214,8 @@ func run() error {
 			discardedCards = nil
 
 			currentWonder = 0
-			for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
-				wonderTaken[i] = true
-				wonderChosen[i] = wonders[idx]
-				currentWonder++
-			}
-
-			{
-				var fst, snd [4]core.WonderID
-				var i, j int
-				for idx, wc := range wonderChosen {
-					switch wonderToPlayer[idx] {
-					case 0:
-						fst[i] = wc
-						i++
-					case 1:
-						snd[j] = wc
-						j++
-					}
-				}
-
-				err = g.SelectWonders(fst, snd)
-				if err != nil {
-					return err
-				}
-			}
+			wonderTaken = [8]bool{}
+			boardState = Wonders
 		}
 
 		if win.JustPressed(pixelgl.KeyW) {
@@ -266,6 +226,9 @@ func run() error {
 		}
 		if win.JustPressed(pixelgl.KeyD) {
 			boardState = DiscardedCards
+		}
+		if win.JustPressed(pixelgl.KeyV) {
+			verbose = !verbose
 		}
 
 		if win.JustPressed(pixelgl.KeyQ) || win.JustPressed(pixelgl.KeyEscape) {
@@ -286,6 +249,28 @@ func run() error {
 					wonderTaken[selectedWonderIndex] = true
 					wonderChosen[currentWonder] = wonders[selectedWonderIndex]
 					currentWonder++
+					if currentWonder >= 8 {
+						{
+							var fst, snd [4]core.WonderID
+							var i, j int
+							for idx, wc := range wonderChosen {
+								switch wonderToPlayer[idx] {
+								case 0:
+									fst[i] = wc
+									i++
+								case 1:
+									snd[j] = wc
+									j++
+								}
+							}
+
+							err = g.SelectWonders(fst, snd)
+							if err != nil {
+								return err
+							}
+						}
+						boardState = Table
+					}
 				}
 			}
 			if selectedDiscardedIndex > -1 {
@@ -414,28 +399,30 @@ func run() error {
 		var currectPlayer = g.CurrentPlayerIndex()
 
 		// debug info
-		txt.Clear()
-		txt.Color = colornames.Orange
-		fmt.Fprintf(txt,
-			"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\nState: %s",
-			int(left),
-			int(bottom),
-			int(cardTitleHeight),
-			int(deltaEpoh),
-			int(win.MousePosition().X),
-			int(win.MousePosition().Y),
-			currectPlayer,
-			g.GetState().String(),
-		)
-		txt.Draw(win, pixel.IM)
+		if verbose {
+			txt.Clear()
+			txt.Color = colornames.Orange
+			fmt.Fprintf(txt,
+				"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\nState: %s",
+				int(left),
+				int(bottom),
+				int(cardTitleHeight),
+				int(deltaEpoh),
+				int(win.MousePosition().X),
+				int(win.MousePosition().Y),
+				currectPlayer,
+				g.GetState().String(),
+			)
+			txt.Draw(win, pixel.IM)
 
-		statsLPlayer.Clear()
-		fmt.Fprintf(statsLPlayer, debugPlayerInfo(g.Player(0), currectPlayer == 0))
-		statsLPlayer.Draw(win, pixel.IM)
+			statsLPlayer.Clear()
+			fmt.Fprintf(statsLPlayer, debugPlayerInfo(g.Player(0), currectPlayer == 0))
+			statsLPlayer.Draw(win, pixel.IM)
 
-		statsRPlayer.Clear()
-		fmt.Fprintf(statsRPlayer, debugPlayerInfo(g.Player(1), currectPlayer == 1))
-		statsRPlayer.Draw(win, pixel.IM)
+			statsRPlayer.Clear()
+			fmt.Fprintf(statsRPlayer, debugPlayerInfo(g.Player(1), currectPlayer == 1))
+			statsRPlayer.Draw(win, pixel.IM)
+		}
 
 		win.Update()
 
@@ -464,18 +451,11 @@ type TableCards struct {
 }
 
 var (
-	showCard bool
-
 	atlas = text.NewAtlas(basicfont.Face7x13, text.ASCII)
 )
 
 func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target) {
-	im := cardIM
-	if !showCard {
-		im = im.Scaled(pixel.ZV, 0.5).Moved(pixel.V(cardWidth/2, cardHeight/2))
-	} else {
-		im = im.Moved(pixel.V(cardWidth, cardHeight))
-	}
+	im := cardIM.Moved(pixel.V(cardWidth/2, cardHeight/2))
 	if faceUp {
 		cardsTx[id].Draw(win, im.Moved(r.Min))
 	} else {
@@ -511,5 +491,5 @@ func drawBorder(c pixel.Rect, win pixel.Target, color color.RGBA, thickness floa
 }
 
 var (
-	cardIM = pixel.IM //.Moved(pixel.V(cardWidth/2, cardHeight/2))
+	cardIM = pixel.IM.Scaled(pixel.ZV, 0.5) //.Moved(pixel.V(cardWidth/2, cardHeight/2))
 )
