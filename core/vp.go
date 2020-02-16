@@ -38,6 +38,24 @@ const (
 	numVPTypes = iota
 )
 
+var (
+	namesVPType = map[VPType]string{
+		BlueVP:     "Blue",
+		GreenVP:    "Green",
+		YellowVP:   "Yellow",
+		PurpleVP:   "Purple",
+		WonderVP:   "Wonder",
+		PTokenVP:   "PToken",
+		CoinsVP:    "Coins",
+		MilitaryVP: "Military",
+	}
+	_ = [1]struct{}{}[len(namesVPType)-numVPTypes]
+)
+
+func (t VPType) String() string {
+	return namesVPType[t]
+}
+
 // VPTypeByColor of card
 func VPTypeByColor(c CardColor) VPType {
 	switch c {
