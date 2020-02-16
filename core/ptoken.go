@@ -13,8 +13,21 @@ type PToken struct {
 
 type PTokenID uint8
 
+func (p PTokenID) pToken() *PToken {
+	return &listPTokens[p]
+}
+
 // PTokenName - name of a progress token
 type PTokenName string
+
+func pTokenID(name PTokenName) PTokenID {
+	for i, p := range listPTokens {
+		if p.Name == name {
+			return PTokenID(i)
+		}
+	}
+	panic(fmt.Sprintf("cannot find %q ptoken", name))
+}
 
 const (
 	numPTokens = 10

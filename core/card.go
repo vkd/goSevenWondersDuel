@@ -46,6 +46,15 @@ func (n CardName) card() *Card {
 	return c
 }
 
+func cardID(name CardName) CardID {
+	for i := range cards {
+		if cards[i].Name == name {
+			return CardID(i)
+		}
+	}
+	panic(fmt.Sprintf("cannot find %q card", name))
+}
+
 // CardColor - There are 7 different types of Buildings, easily identifiable by their colored border.
 type CardColor uint8
 

@@ -24,6 +24,15 @@ func (id WonderID) wonder() *Wonder {
 // WonderName - name of a wonder
 type WonderName string
 
+func wonderID(name WonderName) WonderID {
+	for i := range listWonders {
+		if listWonders[i].Name == name {
+			return WonderID(i)
+		}
+	}
+	panic(fmt.Sprintf("cannot find %q wonder", name))
+}
+
 // ----
 
 const (
