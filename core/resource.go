@@ -50,7 +50,7 @@ func (r Resource) applyPrice(p *Price) {
 }
 
 // Resources - stack of resources
-type Resources [numResources]uint
+type Resources [numResources]uint8
 
 // NewRes - construct a new resources stack
 func NewRes(rs ...Resource) Resources {
