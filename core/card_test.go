@@ -47,5 +47,5 @@ func TestCostOfCards_Chain(t *testing.T) {
 	// OR the possession of the Stable
 	g.players[0] = Player{}
 	g.apply("Stable")
-	assert.Equal(t, Coins(0), CostByCoins(costOf("Horse breeders"), g.players[0], tp))
+	assert.Equal(t, Coins(0), g.CardCostCoins(cardID("Horse breeders")))
 }

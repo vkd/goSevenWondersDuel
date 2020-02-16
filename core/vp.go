@@ -7,7 +7,7 @@ import (
 // VP - victory points
 type VP uint8
 
-func (v VP) Mul(i int) VP {
+func (v VP) Mul(i uint8) VP {
 	return v * VP(i)
 }
 
@@ -37,6 +37,24 @@ const (
 	MilitaryVP
 	numVPTypes = iota
 )
+
+var (
+	namesVPType = map[VPType]string{
+		BlueVP:     "Blue",
+		GreenVP:    "Green",
+		YellowVP:   "Yellow",
+		PurpleVP:   "Purple",
+		WonderVP:   "Wonder",
+		PTokenVP:   "PToken",
+		CoinsVP:    "Coins",
+		MilitaryVP: "Military",
+	}
+	_ = [1]struct{}{}[len(namesVPType)-numVPTypes]
+)
+
+func (t VPType) String() string {
+	return namesVPType[t]
+}
 
 // VPTypeByColor of card
 func VPTypeByColor(c CardColor) VPType {
@@ -79,7 +97,7 @@ func (m maxVPsPerCards) finalVP(g *Game, i PlayerIndex) typedVP {
 	for pi := range g.players {
 		var vp VP
 		for _, color := range m.Colors {
-			vp += m.VP.Mul(len(g.BuiltCards[pi][color]))
+			vp += m.VP.Mul(uint8(len(g.builtCards[pi][color])))
 		}
 		if vp > max {
 			max = vp
@@ -104,7 +122,7 @@ func (v vPsPerWonder) applyEffect(g *Game, i PlayerIndex) {
 func (v vPsPerWonder) finalVP(g *Game, i PlayerIndex) typedVP {
 	var max VP
 	for pi := range g.players {
-		vp := v.VP.Mul(len(g.BuildWonders[pi]))
+		vp := v.VP.Mul(uint8(len(g.buildWonders[pi])))
 		if vp > max {
 			max = vp
 		}
@@ -133,7 +151,7 @@ func (v vPPerCoins) applyEffect(g *Game, i PlayerIndex) {
 func (v vPPerCoins) finalVP(g *Game, i PlayerIndex) typedVP {
 	var max VP
 	for pi := range g.players {
-		vp := VP(1).Mul(int(g.players[pi].Coins.Div(3)))
+		vp := VP(1).Mul(g.players[pi].Coins.Div(3))
 		if vp > max {
 			max = vp
 		}

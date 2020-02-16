@@ -39,8 +39,12 @@ func (s ScientificSymbol) String() string {
 
 func (s ScientificSymbol) applyEffect(g *Game, i PlayerIndex) {
 	g.players[i].ScientificSymbols.set(s)
+	if g.players[i].ScientificSymbols.uniqs() >= 6 {
+		g.victory(i.winner(), WinScience)
+		return
+	}
 	if g.players[i].ScientificSymbols[s]%2 == 0 {
-		g.GettingPToken(i)
+		g.gettingPToken(i)
 	}
 }
 
@@ -61,4 +65,13 @@ type ScientificSymbols [numOfScientificSymbols]uint8
 
 func (ss *ScientificSymbols) set(s ScientificSymbol) {
 	ss[s]++
+}
+
+func (ss ScientificSymbols) uniqs() (count int) {
+	for _, s := range ss {
+		if s > 0 {
+			count++
+		}
+	}
+	return
 }

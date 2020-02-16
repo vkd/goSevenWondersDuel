@@ -1,6 +1,9 @@
 package core
 
-import "math/rand"
+import (
+	"fmt"
+	"math/rand"
+)
 
 // PToken - progress token
 type PToken struct {
@@ -8,8 +11,23 @@ type PToken struct {
 	Effects []Effect
 }
 
+type PTokenID uint8
+
+func (p PTokenID) pToken() *PToken {
+	return &listPTokens[p]
+}
+
 // PTokenName - name of a progress token
 type PTokenName string
+
+func pTokenID(name PTokenName) PTokenID {
+	for i, p := range listPTokens {
+		if p.Name == name {
+			return PTokenID(i)
+		}
+	}
+	panic(fmt.Sprintf("cannot find %q ptoken", name))
+}
 
 const (
 	numPTokens = 10
@@ -17,32 +35,46 @@ const (
 
 var (
 	listPTokens = []PToken{
-		newPToken("Agriculture"),
-		// newPToken("Agriculture", Coins(6), VP(4)),
-		newPToken("Architecture"),
-		newPToken("Economy"),
-		newPToken("Law"),
-		// newPToken("Law", Scales),
-		newPToken("Masonry"),
-		newPToken("Mathematics"),
-		newPToken("Philosophy"),
-		// newPToken("Philosophy", VP(7)),
-		newPToken("Strategy"),
-		newPToken("Theology"),
-		newPToken("Urbanism"),
-		// newPToken("Urbanism", Coins(6)),
+		newPToken("Agriculture", Coins(6), VP(4)),
+		newPToken("Architecture", Architecture()),
+		newPToken("Economy", Economy()),
+		newPToken("Law", Scales),
+		newPToken("Masonry", Masonry()),
+		newPToken("Mathematics", Mathematics()),
+		newPToken("Philosophy", VP(7)),
+		newPToken("Strategy", Strategy()),
+		newPToken("Theology", Theology()),
+		newPToken("Urbanism", Coins(6), Urbanism()),
 	}
 	_ = [1]struct{}{}[len(listPTokens)-numPTokens]
 
 	mapPTokens = makeMapPTokensByName(listPTokens)
 	_          = [1]struct{}{}[len(mapPTokens)-numPTokens]
+
+	listPTokensIDs [numPTokens]PTokenID
 )
 
-func newPToken(name PTokenName, ee ...interface{}) PToken {
-	return PToken{
-		Name: name,
-		// Effects: ee,
+func init() {
+	for i := range listPTokensIDs {
+		listPTokensIDs[i] = PTokenID(i)
 	}
+}
+
+func newPToken(name PTokenName, ee ...interface{}) PToken {
+	var pt = PToken{
+		Name: name,
+	}
+	for _, e := range ee {
+		switch e := e.(type) {
+		case VP:
+			pt.Effects = append(pt.Effects, typedVP{e, PTokenVP})
+		case Effect:
+			pt.Effects = append(pt.Effects, e)
+		default:
+			panic(fmt.Sprintf("Not allow for ptoken builder: %T", e))
+		}
+	}
+	return pt
 }
 
 func makeMapPTokensByName(list []PToken) map[PTokenName]*PToken {
@@ -53,14 +85,72 @@ func makeMapPTokensByName(list []PToken) map[PTokenName]*PToken {
 	return m
 }
 
-// NewPTokenNames - return all shuffled PToken names
-func NewPTokenNames(rnd *rand.Rand) [numPTokens]PTokenName {
-	var out [numPTokens]PTokenName
-	for i, pt := range listPTokens {
-		out[i] = pt.Name
-	}
-	rnd.Shuffle(numPTokens, func(i, j int) {
-		out[i], out[j] = out[j], out[i]
+func shufflePTokens(rnd *rand.Rand) []PTokenID {
+	var ptokens = listPTokensIDs
+	rnd.Shuffle(len(ptokens), func(i, j int) {
+		ptokens[i], ptokens[j] = ptokens[j], ptokens[i]
 	})
-	return out
+	return ptokens[:]
+}
+
+func Architecture() Effect {
+	return effertFunc(func(g *Game, i PlayerIndex) {
+		g.player(i).IsArchitecture = true
+	})
+}
+
+func Economy() Effect {
+	return effertFunc(func(g *Game, i PlayerIndex) {
+		g.player(i).IsEconomy = true
+	})
+}
+
+func Masonry() Effect {
+	return effertFunc(func(g *Game, i PlayerIndex) {
+		g.player(i).IsMasonry = true
+	})
+}
+
+func Mathematics() Effect {
+	return mathematics{}
+}
+
+type mathematics struct{}
+
+var _ Effect = mathematics{}
+var _ Finaler = mathematics{}
+
+func (m mathematics) applyEffect(g *Game, i PlayerIndex) {
+	g.endEffects[i] = append(g.endEffects[i], m)
+}
+
+func (mathematics) finalVP(g *Game, i PlayerIndex) typedVP {
+	return typedVP{
+		v: VP(3).Mul(uint8(len(g.builtPTokens[i]))),
+		t: PTokenVP,
+	}
+}
+
+func Strategy() Effect {
+	return effertFunc(func(g *Game, i PlayerIndex) {
+		g.player(i).IsStrategy = true
+	})
+}
+
+func Theology() Effect {
+	return effertFunc(func(g *Game, i PlayerIndex) {
+		g.player(i).IsTheology = true
+	})
+}
+
+func Urbanism() Effect {
+	return effertFunc(func(g *Game, i PlayerIndex) {
+		g.player(i).IsUrbanism = true
+	})
+}
+
+type effertFunc func(*Game, PlayerIndex)
+
+func (fn effertFunc) applyEffect(g *Game, i PlayerIndex) {
+	fn(g, i)
 }

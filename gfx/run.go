@@ -2,6 +2,7 @@ package gfx
 
 import (
 	"fmt"
+	"image/color"
 	"log"
 	"strconv"
 	"strings"
@@ -60,21 +61,25 @@ func Run() error {
 type BoardState uint8
 
 const (
-	Desk BoardState = iota
+	Table BoardState = iota
 	Wonders
+	DiscardedCards
 )
 
 func run() error {
-	gg, err := core.NewGame(core.WithSeed(0))
+	g, err := core.NewGame(core.WithSeed(0))
 	if err != nil {
 		return err
 	}
+	var gg = g
 
 	wonders, _, ok := gg.Init()
 	if !ok {
 		return fmt.Errorf("cannot init game")
 	}
 	currentWonder = 0
+
+	var discardedCards []core.CardID
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "7 Wonders",
@@ -95,7 +100,7 @@ func run() error {
 	war := text.New(pixel.V(windowWidth/2, windowHeight-30), atlas)
 	statsLPlayer := text.New(pixel.V(30, 100), atlas)
 	statsLPlayer.Color = colornames.Yellow
-	statsRPlayer := text.New(pixel.V(windowWidth-230, 100), atlas)
+	statsRPlayer := text.New(pixel.V(windowWidth-330, 100), atlas)
 	statsRPlayer.Color = colornames.Yellow
 
 	var left float64 = leftPaddingCards
@@ -137,6 +142,19 @@ func run() error {
 		}
 	}
 
+	var discardedRects []pixel.Rect
+	{
+		var dx float64 = 10
+		var dy float64 = dx
+		for j := 0; j < 3; j++ {
+			var y float64 = (windowHeight+dy)/2 - float64(j)*(cardHeight+dy)
+			for i := 0; i < 8; i++ {
+				var x float64 = 50 + (cardWidth+dx)*float64(i)
+				discardedRects = append(discardedRects, pixel.R(x, y, x+cardWidth, y+cardHeight))
+			}
+		}
+	}
+
 	var fps = time.Tick(time.Second / 15)
 
 	var boardState BoardState
@@ -145,6 +163,26 @@ func run() error {
 		wonderTaken[i] = true
 		wonderChosen[i] = wonders[idx]
 		currentWonder++
+	}
+
+	{
+		var fst, snd [4]core.WonderID
+		var i, j int
+		for idx, wc := range wonderChosen {
+			switch wonderToPlayer[idx] {
+			case 0:
+				fst[i] = wc
+				i++
+			case 1:
+				snd[j] = wc
+				j++
+			}
+		}
+
+		err = g.SelectWonders(fst, snd)
+		if err != nil {
+			return err
+		}
 	}
 
 	// var minX, minY, minW, minH float64
@@ -187,11 +225,55 @@ func run() error {
 			// }
 		}
 
-		if win.Pressed(pixelgl.KeyW) {
+		if win.JustPressed(pixelgl.KeyR) {
+			g, err = core.NewGame(core.WithSeed(0))
+			if err != nil {
+				return err
+			}
+			gg = g
+			wonders, _, ok = gg.Init()
+			if !ok {
+				return fmt.Errorf("cannot init game")
+			}
+			tableCards.Cards = gg.CardsState()
+			discardedCards = nil
+
+			currentWonder = 0
+			for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
+				wonderTaken[i] = true
+				wonderChosen[i] = wonders[idx]
+				currentWonder++
+			}
+
+			{
+				var fst, snd [4]core.WonderID
+				var i, j int
+				for idx, wc := range wonderChosen {
+					switch wonderToPlayer[idx] {
+					case 0:
+						fst[i] = wc
+						i++
+					case 1:
+						snd[j] = wc
+						j++
+					}
+				}
+
+				err = g.SelectWonders(fst, snd)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		if win.JustPressed(pixelgl.KeyW) {
 			boardState = Wonders
 		}
-		if win.Pressed(pixelgl.KeyD) {
-			boardState = Desk
+		if win.JustPressed(pixelgl.KeyT) {
+			boardState = Table
+		}
+		if win.JustPressed(pixelgl.KeyD) {
+			boardState = DiscardedCards
 		}
 
 		if win.JustPressed(pixelgl.KeyQ) || win.JustPressed(pixelgl.KeyEscape) {
@@ -202,7 +284,7 @@ func run() error {
 
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			if selectedCardIndex > -1 {
-				tableCards.Cards, err = gg.BuildCard(tableCards.Cards[selectedCardIndex].ID)
+				tableCards.Cards, err = gg.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
 				if err != nil {
 					log.Printf("Error on build: %v", err)
 				}
@@ -214,6 +296,23 @@ func run() error {
 					currentWonder++
 				}
 			}
+			if selectedDiscardedIndex > -1 {
+				err = gg.ConstructDiscardedCard(discardedCards[selectedDiscardedIndex])
+				if err != nil {
+					log.Printf("Error on build discarded: %v", err)
+				}
+			}
+		} else if win.JustPressed(pixelgl.MouseButtonRight) {
+			if selectedCardIndex > -1 {
+				var err error
+				var id = tableCards.Cards[selectedCardIndex].ID
+				tableCards.Cards, err = gg.DiscardCard(id)
+				if err != nil {
+					log.Printf("Card %d is not discarded: %v", id, err)
+				} else {
+					discardedCards = append(discardedCards, id)
+				}
+			}
 		}
 
 		// showCard = win.Pressed(pixelgl.KeyLeftShift) || win.Pressed(pixelgl.MouseButtonLeft)
@@ -221,11 +320,14 @@ func run() error {
 		// drawCard(0, pixel.V(510, 10), win)
 		// drawFirstEpoh(win, pixel.V(windowWidth/2, windowHeight-100))
 
+		m := gg.Military()
+		warPoint := int(m.Shields[0]) - int(m.Shields[1])
+
 		war.Clear()
 		war.Color = colornames.Red
 		warText := []string{
 			"9 . . 6 . . 3 . . 0 . . 3 . . 6 . . 9\n",
-			strings.Repeat(" ", int(0)*2+18) + "*\n", // 18 = 0
+			strings.Repeat(" ", int(warPoint)*2+18) + "*\n", // 18 = 0
 			"X    -5    -2           -2    -5    X\n",
 			"  10     5     2     2     5     10  \n",
 		}
@@ -238,15 +340,32 @@ func run() error {
 
 		selectedCardIndex = -1
 		selectedWonderIndex = -1
+		selectedDiscardedIndex = -1
+
 		switch boardState {
-		case Desk:
+		case Table:
 			for i, c := range tableCards.Cards {
 				if !c.Exists {
 					continue
 				}
-				drawCard(c, tableCards.Rects[i], win)
 				if !c.Covered && tableCards.Rects[i].Contains(mouse) {
 					selectedCardIndex = i
+				}
+			}
+			for i, c := range tableCards.Cards {
+				if !c.Exists {
+					continue
+				}
+				drawCard(c.ID, c.FaceUp, tableCards.Rects[i], win)
+				if i == selectedCardIndex {
+					drawSelectedBorder(tableCards.Rects[i], win)
+				}
+				if !c.Covered {
+					var color = colornames.Red
+					if gg.CurrentPlayer().Coins >= gg.CardCostCoins(tableCards.Cards[i].ID) {
+						color = colornames.Green
+					}
+					drawBorder(tableCards.Rects[i], win, color, 2)
 				}
 				idx := text.New(tableCards.Rects[i].Max, atlas)
 				idx.Color = colornames.Lightgreen
@@ -256,9 +375,6 @@ func run() error {
 				idx.Draw(win, pixel.IM)
 			}
 
-			if selectedCardIndex > -1 {
-				drawCardBorder(tableCards.Rects[selectedCardIndex], win)
-			}
 		case Wonders:
 			var wonder0Y float64 = 0
 			var wonder1Y float64 = 0
@@ -289,30 +405,44 @@ func run() error {
 				}
 			}
 			if selectedWonderIndex >= 0 {
-				drawCardBorder(wonderRects[selectedWonderIndex%4], win)
+				drawSelectedBorder(wonderRects[selectedWonderIndex%4], win)
+			}
+		case DiscardedCards:
+			for i, did := range discardedCards {
+				drawCard(did, true, discardedRects[i], win)
+				if discardedRects[i].Contains(mouse) {
+					selectedDiscardedIndex = i
+				}
+			}
+			if selectedDiscardedIndex >= 0 {
+				drawSelectedBorder(discardedRects[selectedDiscardedIndex], win)
 			}
 		}
 
+		var currectPlayer = g.CurrentPlayerIndex()
+
+		// debug info
 		txt.Clear()
 		txt.Color = colornames.Orange
 		fmt.Fprintf(txt,
-			"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\n",
+			"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\nState: %s",
 			int(left),
 			int(bottom),
 			int(cardTitleHeight),
 			int(deltaEpoh),
 			int(win.MousePosition().X),
 			int(win.MousePosition().Y),
-			0,
+			currectPlayer,
+			g.GetState().String(),
 		)
 		txt.Draw(win, pixel.IM)
 
 		statsLPlayer.Clear()
-		fmt.Fprintf(statsLPlayer, debugPlayerInfo(gg.Player(0)))
+		fmt.Fprintf(statsLPlayer, debugPlayerInfo(gg.Player(0), currectPlayer == 0))
 		statsLPlayer.Draw(win, pixel.IM)
 
 		statsRPlayer.Clear()
-		fmt.Fprintf(statsRPlayer, debugPlayerInfo(gg.Player(1)))
+		fmt.Fprintf(statsRPlayer, debugPlayerInfo(gg.Player(1), currectPlayer == 1))
 		statsRPlayer.Draw(win, pixel.IM)
 
 		win.Update()
@@ -322,13 +452,18 @@ func run() error {
 	return nil
 }
 
-func debugPlayerInfo(p core.Player) string {
-	return fmt.Sprintf("Money: %d\nResources: %v\nVP: %d\nChains: %v\nScience: %v", p.Coins, p.Resources, 0, p.Chains.Strings(), p.ScientificSymbols)
+func debugPlayerInfo(p core.Player, isActive bool) string {
+	var active string
+	if isActive {
+		active = "*"
+	}
+	return fmt.Sprintf("IsActive: %s\nMoney: %d\n         : [W S C P G]\nResources: %v\nChains: %v\n       : [W M C T P A S]\nScience: %v", active, p.Coins, p.Resources, p.Chains.Strings(), p.ScientificSymbols)
 }
 
 var (
-	selectedCardIndex   int = -1
-	selectedWonderIndex int = -1
+	selectedCardIndex      int = -1
+	selectedWonderIndex    int = -1
+	selectedDiscardedIndex int = -1
 )
 
 type TableCards struct {
@@ -342,30 +477,26 @@ var (
 	atlas = text.NewAtlas(basicfont.Face7x13, text.ASCII)
 )
 
-func drawCard(c core.CardState, r pixel.Rect, win pixel.Target) {
-	if !c.Exists {
-		return
-	}
-
+func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target) {
 	im := cardIM
 	if !showCard {
 		im = im.Scaled(pixel.ZV, 0.5).Moved(pixel.V(cardWidth/2, cardHeight/2))
 	} else {
 		im = im.Moved(pixel.V(cardWidth, cardHeight))
 	}
-	if c.FaceUp {
-		cardsTx[c.ID].Draw(win, im.Moved(r.Min))
+	if faceUp {
+		cardsTx[id].Draw(win, im.Moved(r.Min))
 	} else {
 		cardsTxBack[0].Draw(win, im.Moved(r.Min))
 	}
 	// if r.Contains(mouse) && c.IsOnTop() {
-	// 	drawCardBorder(c, win)
+	// 	drawSelectedBorder(c, win)
 	// }
 
 	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
 	txt.Color = colornames.Lightblue
-	if c.FaceUp {
-		fmt.Fprintf(txt, "Index: %d", c.ID)
+	if faceUp {
+		fmt.Fprintf(txt, "Index: %d", id)
 	}
 	txt.Draw(win, pixel.IM)
 }
@@ -374,12 +505,16 @@ func drawWonder(win pixel.Target, id core.WonderID, rect pixel.Rect) {
 	wondersTx[id].Draw(win, pixel.IM.Scaled(pixel.ZV, 0.5).Moved(pixel.V(wonderWidth/2, wonderHeight/2)).Moved(rect.Min))
 }
 
-func drawCardBorder(c pixel.Rect, win pixel.Target) {
+func drawSelectedBorder(c pixel.Rect, win pixel.Target) {
+	drawBorder(c, win, colornames.Yellow, 4)
+}
+
+func drawBorder(c pixel.Rect, win pixel.Target, color color.RGBA, thickness float64) {
 	imd := imdraw.New(nil)
-	imd.Color = colornames.Yellow
+	imd.Color = color
 	imd.EndShape = imdraw.RoundEndShape
 	imd.Push(c.Min, c.Max)
-	imd.Rectangle(4)
+	imd.Rectangle(thickness)
 	imd.Draw(win)
 }
 

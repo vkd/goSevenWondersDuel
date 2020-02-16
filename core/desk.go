@@ -55,6 +55,15 @@ func (s *CardsState) hide(i cardIndex) {
 	}
 }
 
+func (ss CardsState) anyExists() bool {
+	for _, s := range ss {
+		if s.Exists {
+			return true
+		}
+	}
+	return false
+}
+
 func (s CardsState) isAnyExists(idxs []cardIndex) bool {
 	for _, idx := range idxs {
 		if s[idx].Exists {

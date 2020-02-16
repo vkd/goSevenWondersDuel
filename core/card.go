@@ -12,9 +12,20 @@ type Card struct {
 	Color CardColor
 	Cost  Cost
 
-	// -----------------
+	FreeChain *FreeChain
 
 	Effects []Effect
+}
+
+func (c Card) discard(g *Game, i PlayerIndex) {
+	for _, e := range c.Effects {
+		switch e := e.(type) {
+		case Resource:
+			g.players[i].Resources.reduceOne(e)
+		default:
+			panic(fmt.Sprintf("Unknown effect type for discard: %T", e))
+		}
+	}
 }
 
 // CardID - ID of the card
@@ -35,6 +46,15 @@ func (n CardName) card() *Card {
 		panic(fmt.Sprintf("Cannot find %q card", n))
 	}
 	return c
+}
+
+func cardID(name CardName) CardID {
+	for i := range cards {
+		if cards[i].Name == name {
+			return CardID(i)
+		}
+	}
+	panic(fmt.Sprintf("cannot find %q card", name))
 }
 
 // CardColor - There are 7 different types of Buildings, easily identifiable by their colored border.
@@ -260,12 +280,11 @@ func newCard(name CardName, ct CardColor, args ...interface{}) (c Card) {
 
 	for _, arg := range args {
 		switch arg := arg.(type) {
+		case FreeChain:
+			var fc FreeChain = arg
+			c.FreeChain = &fc
 		case Cost:
-			if c.Cost != nil {
-				c.Cost = orCost{c.Cost, arg}
-			} else {
-				c.Cost = arg
-			}
+			c.Cost = arg
 		case VP:
 			c.Effects = append(c.Effects, typedVP{arg, VPTypeByColor(ct)})
 		case maxVPsPerCards:
