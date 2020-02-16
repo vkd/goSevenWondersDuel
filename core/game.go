@@ -634,6 +634,8 @@ func (s State) Next() State {
 		return StateGameTurn
 	case StateChoosePToken:
 		return StateGameTurn
+	case StateChooseFirstPlayer:
+		return StateGameTurn
 	case StateBuildFreePToken:
 		return StateGameTurn
 	case StateVictory:
