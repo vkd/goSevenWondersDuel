@@ -237,6 +237,33 @@ func run() error {
 			}
 			tableCards.Cards = gg.CardsState()
 			discardedCards = nil
+
+			currentWonder = 0
+			for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
+				wonderTaken[i] = true
+				wonderChosen[i] = wonders[idx]
+				currentWonder++
+			}
+
+			{
+				var fst, snd [4]core.WonderID
+				var i, j int
+				for idx, wc := range wonderChosen {
+					switch wonderToPlayer[idx] {
+					case 0:
+						fst[i] = wc
+						i++
+					case 1:
+						snd[j] = wc
+						j++
+					}
+				}
+
+				err = g.SelectWonders(fst, snd)
+				if err != nil {
+					return err
+				}
+			}
 		}
 
 		if win.JustPressed(pixelgl.KeyW) {
