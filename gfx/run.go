@@ -452,15 +452,18 @@ type TableCards struct {
 
 var (
 	atlas = text.NewAtlas(basicfont.Face7x13, text.ASCII)
+
+	cardIM = pixel.IM.Scaled(pixel.ZV, cardWidth/textureCardWidth) //.Moved(pixel.V(cardWidth/2, cardHeight/2))
 )
 
 func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target) {
-	im := cardIM.Moved(pixel.V(cardWidth/2, cardHeight/2))
+	im := cardIM //.Moved(pixel.V(cardWidth/2, cardHeight/2))
+	var t = cardsTxBack[0]
 	if faceUp {
-		cardsTx[id].Draw(win, im.Moved(r.Min))
-	} else {
-		cardsTxBack[0].Draw(win, im.Moved(r.Min))
+		t = cardsTx[id]
 	}
+	t.Draw(win, im.Moved(r.Center()))
+
 	// if r.Contains(mouse) && c.IsOnTop() {
 	// 	drawSelectedBorder(c, win)
 	// }
@@ -489,7 +492,3 @@ func drawBorder(c pixel.Rect, win pixel.Target, color color.RGBA, thickness floa
 	imd.Rectangle(thickness)
 	imd.Draw(win)
 }
-
-var (
-	cardIM = pixel.IM.Scaled(pixel.ZV, 0.5) //.Moved(pixel.V(cardWidth/2, cardHeight/2))
-)

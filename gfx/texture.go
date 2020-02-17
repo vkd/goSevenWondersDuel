@@ -95,25 +95,35 @@ func loadTextures() error {
 	return nil
 }
 
+const (
+	textureCardWidth  float64 = 264
+	textureCardHeight float64 = 400
+)
+
+var (
+	cardLefts   = [4]float64{90, 355, 621, 887}
+	cardBottoms = [4]float64{75, 476, 878, 1280}
+)
+
 func rectByCard(i int) pixel.Rect {
 	i = i % 16
 	x := cardLefts[i%4]
 	y := cardBottoms[3-(i/4)]
-	return pixel.R(x, y, x+cardWidth*2, y+cardHeight*2)
+	return pixel.R(x, y, x+textureCardWidth, y+textureCardHeight)
 }
 
 func rectByWonder(i int) pixel.Rect {
 	i = i % 8
 	x := wonderLefts[i%2]
 	y := wonderBottoms[3-(i/2)]
-	return pixel.R(x, y, x+wonderWidth*2, y+wonderHeight*2)
+	return pixel.R(x, y, x+588, y+382)
 }
 
 func rectByWonder9(i int) pixel.Rect {
 	i = i % 8
 	x := wonderLefts[i%2]
 	y := []float64{57, 441}[3-(i/2)]
-	return pixel.R(x, y, x+wonderWidth*2, y+wonderHeight*2)
+	return pixel.R(x, y, x+588, y+382)
 }
 
 func loadPicture(path string) (pixel.Picture, error) {
@@ -130,9 +140,6 @@ func loadPicture(path string) (pixel.Picture, error) {
 }
 
 var (
-	cardLefts   = []float64{90, 355, 621, 887}
-	cardBottoms = []float64{75, 476, 878, 1280}
-
 	wonderLefts   = []float64{30, 621}
 	wonderBottoms = []float64{110, 494, 878, 1262}
 )
