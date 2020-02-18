@@ -46,6 +46,7 @@ var (
 	wonderToPlayer = [8]core.PlayerIndex{0, 1, 1, 0, 1, 0, 0, 1}
 	wonderTaken    [8]bool
 	wonderBuilt    [2][4]uint8
+	ptokens        []core.PTokenID
 )
 
 func Run() error {
@@ -65,6 +66,7 @@ const (
 	Table
 	Wonders
 	DiscardedCards
+	PTokensState
 )
 
 func run() error {
@@ -74,6 +76,7 @@ func run() error {
 	}
 
 	wonders := g.GetAvailableWonders()
+	ptokens = g.GetAvailablePTokens()
 	currentWonder = 0
 
 	var discardedCards []core.CardID
@@ -126,7 +129,6 @@ func run() error {
 	}
 
 	var wonderRects []pixel.Rect
-
 	{
 		var dx float64 = 10
 		var dy float64 = dx
@@ -136,6 +138,19 @@ func run() error {
 			wonderRects = append(wonderRects, pixel.R(x, y, x+wonderWidth, y+wonderHeight))
 			wonderRects = append(wonderRects, pixel.R(x+wonderWidth+dx, y, x+wonderWidth+dx+wonderWidth, y+wonderHeight))
 			y += wonderHeight + dy
+		}
+	}
+
+	var ptokenCircles []pixel.Circle
+	{
+		var width float64 = progressWidth
+		var radius = width / 2
+		var dx float64 = 30
+		var x = windowWidth/2 - 2*(width+dx)
+		var y = windowHeight / 2
+		for i := 0; i < 5; i++ {
+			ptokenCircles = append(ptokenCircles, pixel.C(pixel.V(x, y), radius))
+			x += width + dx
 		}
 	}
 
@@ -194,6 +209,7 @@ func run() error {
 		selectedUserWonderIndex int = -1
 		selectedConstructWonder int = -1
 		selectedDiscardedIndex  int = -1
+		selectedPTokenIndex     int = -1
 	)
 
 	for !win.Closed() {
@@ -240,6 +256,7 @@ func run() error {
 				return err
 			}
 			wonders = g.GetAvailableWonders()
+			ptokens = g.GetAvailablePTokens()
 			tableCards.Cards = g.CardsState()
 			discardedCards = nil
 
@@ -261,6 +278,21 @@ func run() error {
 		}
 		if win.JustPressed(pixelgl.KeyV) {
 			verbose = !verbose
+		}
+		if win.JustPressed(pixelgl.KeyP) {
+			boardState = PTokensState
+		}
+		if win.JustPressed(pixelgl.Key1) {
+			err = g.ChooseFirstPlayer(0)
+			if err != nil {
+				log.Printf("Error on choose first player: %v", err)
+			}
+		}
+		if win.JustPressed(pixelgl.Key2) {
+			err = g.ChooseFirstPlayer(1)
+			if err != nil {
+				log.Printf("Error on choose first player: %v", err)
+			}
 		}
 
 		if win.JustPressed(pixelgl.KeyQ) || win.JustPressed(pixelgl.KeyEscape) {
@@ -321,6 +353,12 @@ func run() error {
 					selectedConstructWonder = selectedUserWonderIndex % 4
 				}
 			}
+			if selectedPTokenIndex > -1 {
+				err = g.ChoosePToken(ptokens[selectedPTokenIndex])
+				if err != nil {
+					log.Printf("Error on choose PToken: %v", err)
+				}
+			}
 		} else if win.JustPressed(pixelgl.MouseButtonRight) {
 			if selectedCardIndex > -1 {
 				var err error
@@ -361,6 +399,7 @@ func run() error {
 		selectedWonderIndex = -1
 		selectedUserWonderIndex = -1
 		selectedDiscardedIndex = -1
+		selectedPTokenIndex = -1
 
 		switch boardState {
 		case Table:
@@ -462,6 +501,16 @@ func run() error {
 			if selectedDiscardedIndex >= 0 {
 				drawSelectedBorder(discardedRects[selectedDiscardedIndex], win)
 			}
+		case PTokensState:
+			for i, pt := range ptokens {
+				drawPToken(win, pt, ptokenCircles[i])
+				if ptokenCircles[i].Contains(mouse) {
+					selectedPTokenIndex = i
+				}
+			}
+			if selectedPTokenIndex > -1 {
+				drawCircle(win, ptokenCircles[selectedPTokenIndex], borderColor, 4)
+			}
 		}
 
 		var currectPlayer = g.CurrentPlayerIndex()
@@ -517,6 +566,8 @@ var (
 	atlas = text.NewAtlas(basicfont.Face7x13, text.ASCII)
 
 	cardIM = pixel.IM.Scaled(pixel.ZV, cardWidth/textureCardWidth) //.Moved(pixel.V(cardWidth/2, cardHeight/2))
+
+	borderColor = colornames.Yellow
 )
 
 func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost core.Coins) {
@@ -550,6 +601,10 @@ func drawWonder(win pixel.Target, id core.WonderID, rect pixel.Rect, cost core.C
 	txt.Draw(win, pixel.IM)
 }
 
+func drawPToken(win pixel.Target, id core.PTokenID, c pixel.Circle) {
+	progressTx[id].Draw(win, pixel.IM.Moved(c.Center))
+}
+
 func drawSelectedBorder(c pixel.Rect, win pixel.Target) {
 	drawBorder(c, win, colornames.Yellow, 4)
 }
@@ -561,4 +616,12 @@ func drawBorder(c pixel.Rect, win pixel.Target, color color.RGBA, thickness floa
 	imd.Push(c.Min, c.Max)
 	imd.Rectangle(thickness)
 	imd.Draw(win)
+}
+
+func drawCircle(t pixel.Target, c pixel.Circle, color color.RGBA, thickness float64) {
+	circle := imdraw.New(nil)
+	circle.Color = color
+	circle.Push(c.Center)
+	circle.Circle(c.Radius, thickness)
+	circle.Draw(t)
 }

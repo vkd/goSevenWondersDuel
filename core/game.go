@@ -42,7 +42,7 @@ type Game struct {
 
 	vps [numPlayers][numVPTypes]VP
 
-	availablePTokens [initialPTokens]PTokenID
+	availablePTokens []PTokenID
 	restPTokens      []PTokenID
 
 	availableWonders [initialWonders]WonderID
@@ -84,7 +84,7 @@ func NewGame(opts ...Option) (*Game, error) {
 
 	// init PTokens
 	ptokens := shufflePTokens(g.rnd)
-	copy(g.availablePTokens[:], ptokens)
+	g.availablePTokens = ptokens[:initialPTokens]
 	g.restPTokens = ptokens[initialPTokens:]
 
 	wonders := shuffleWonders(g.rnd)
@@ -127,7 +127,7 @@ var (
 func (g *Game) GetAvailableWonders() (wonders [initialWonders]WonderID) {
 	return g.availableWonders
 }
-func (g *Game) GetAvailablePTokens() (wonders [initialPTokens]PTokenID) {
+func (g *Game) GetAvailablePTokens() (ptokens []PTokenID) {
 	return g.availablePTokens
 }
 
@@ -335,7 +335,30 @@ func (g *Game) ChoosePToken(id PTokenID) error {
 		return ErrWrongState
 	}
 
-	panic("Not implemented")
+	var ok bool
+	for _, pt := range g.availablePTokens {
+		if pt == id {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("PToken (id=%d) cannot be taken", id)
+	}
+
+	var newPTokens []PTokenID
+	for _, pt := range g.availablePTokens {
+		if pt == id {
+			continue
+		}
+		newPTokens = append(newPTokens, pt)
+	}
+
+	g.builtPTokens[g.currentPlayerIndex] = append(g.builtPTokens[g.currentPlayerIndex], id)
+
+	for _, e := range id.pToken().Effects {
+		e.applyEffect(g, g.currentPlayerIndex)
+	}
 
 	g.state = g.state.Next()
 	g.nextTurn()

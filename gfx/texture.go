@@ -88,8 +88,9 @@ func loadTextures() error {
 		return fmt.Errorf("Error on load textures: %v", err)
 	}
 	for i := 0; i < 10; i++ {
-		y := float64(159 * i)
-		progressTx[i] = pixel.NewSprite(pic, pixel.R(0, y, 159, y+159))
+		var x = float64(159 * i)
+		var y float64 = 0
+		progressTx[i] = pixel.NewSprite(pic, pixel.R(x, y, x+159, y+159))
 	}
 
 	return nil
