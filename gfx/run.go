@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -44,6 +45,7 @@ var (
 	currentWonder  int
 	wonderToPlayer = [8]core.PlayerIndex{0, 1, 1, 0, 1, 0, 0, 1}
 	wonderTaken    [8]bool
+	wonderBuilt    [2][4]uint8
 )
 
 func Run() error {
@@ -245,6 +247,7 @@ func run() error {
 			userWonders = [2][]core.WonderID{}
 			wonderTaken = [8]bool{}
 			boardState = Wonders
+			wonderBuilt = [2][4]uint8{}
 		}
 
 		if win.JustPressed(pixelgl.KeyW) {
@@ -270,6 +273,7 @@ func run() error {
 			if selectedCardIndex > -1 {
 				if selectedConstructWonder > -1 {
 					tableCards.Cards, err = g.ConstructWonder(tableCards.Cards[selectedCardIndex].ID, userWonders[g.CurrentPlayerIndex()][selectedConstructWonder])
+					wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID)
 					selectedConstructWonder = -1
 				} else {
 					tableCards.Cards, err = g.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
@@ -314,7 +318,7 @@ func run() error {
 				if selectedConstructWonder == selectedUserWonderIndex {
 					selectedConstructWonder = -1
 				} else {
-					selectedConstructWonder = selectedUserWonderIndex
+					selectedConstructWonder = selectedUserWonderIndex % 4
 				}
 			}
 		} else if win.JustPressed(pixelgl.MouseButtonRight) {
@@ -399,9 +403,9 @@ func run() error {
 
 					cs, trade := g.WonderCost(id)
 					cost := cs + trade
-					drawWonder(win, id, r, cost)
+					drawWonder(win, id, r, cost, wonderBuilt[pi][wi])
 
-					if core.PlayerIndex(pi) == g.CurrentPlayerIndex() && r.Contains(mouse) {
+					if core.PlayerIndex(pi) == pIndex && wonderBuilt[pi][wi] == 0 && r.Contains(mouse) {
 						selectedUserWonderIndex = wi + pi*4
 					}
 				}
@@ -414,8 +418,11 @@ func run() error {
 				r := userWonderRects[selectedUserWonderIndex/4][selectedUserWonderIndex%4]
 				drawSelectedBorder(r, win)
 			}
-			for wi, id := range userWonders[g.CurrentPlayerIndex()] {
-				r := userWonderRects[g.CurrentPlayerIndex()][wi]
+			for wi, id := range userWonders[pIndex] {
+				if wonderBuilt[pIndex][wi] != 0 {
+					continue
+				}
+				r := userWonderRects[pIndex][wi]
 
 				cs, trade := g.WonderCost(id)
 				cost := cs + trade
@@ -437,7 +444,7 @@ func run() error {
 				if wonderTaken[i] {
 					continue
 				}
-				drawWonder(win, wonders[i], r, 0)
+				drawWonder(win, wonders[i], r, 0, 0)
 				if r.Contains(mouse) {
 					selectedWonderIndex = i
 				}
@@ -528,8 +535,14 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost 
 	txt.Draw(win, pixel.IM)
 }
 
-func drawWonder(win pixel.Target, id core.WonderID, rect pixel.Rect, cost core.Coins) {
+func drawWonder(win pixel.Target, id core.WonderID, rect pixel.Rect, cost core.Coins, builtCardID uint8) {
 	wondersTx[id].Draw(win, pixel.IM.Scaled(pixel.ZV, 0.5).Moved(pixel.V(wonderWidth/2, wonderHeight/2)).Moved(rect.Min))
+
+	if builtCardID > 0 {
+		var t = cardsTx[builtCardID-1]
+		t.Draw(win, cardIM.Rotated(pixel.ZV, -math.Pi/2).Moved(rect.Center()))
+		return
+	}
 
 	txt := text.New(pixel.V(rect.Min.X, rect.Max.Y-10), atlas)
 	txt.Color = colornames.Lightblue
