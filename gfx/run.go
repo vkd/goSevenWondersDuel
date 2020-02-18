@@ -333,13 +333,14 @@ func run() error {
 				if !c.Exists {
 					continue
 				}
-				drawCard(c.ID, c.FaceUp, tableCards.Rects[i], win)
+				cost := g.CardCostCoins(tableCards.Cards[i].ID)
+				drawCard(c.ID, c.FaceUp, tableCards.Rects[i], win, cost)
 				if i == selectedCardIndex {
 					drawSelectedBorder(tableCards.Rects[i], win)
 				}
 				if !c.Covered {
 					var color = colornames.Red
-					if g.CurrentPlayer().Coins >= g.CardCostCoins(tableCards.Cards[i].ID) {
+					if g.CurrentPlayer().Coins >= cost {
 						color = colornames.Green
 					}
 					drawBorder(tableCards.Rects[i], win, color, 2)
@@ -386,7 +387,7 @@ func run() error {
 			}
 		case DiscardedCards:
 			for i, did := range discardedCards {
-				drawCard(did, true, discardedRects[i], win)
+				drawCard(did, true, discardedRects[i], win, 0)
 				if discardedRects[i].Contains(mouse) {
 					selectedDiscardedIndex = i
 				}
@@ -456,7 +457,7 @@ var (
 	cardIM = pixel.IM.Scaled(pixel.ZV, cardWidth/textureCardWidth) //.Moved(pixel.V(cardWidth/2, cardHeight/2))
 )
 
-func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target) {
+func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost core.Coins) {
 	im := cardIM //.Moved(pixel.V(cardWidth/2, cardHeight/2))
 	var t = cardsTxBack[0]
 	if faceUp {
@@ -471,7 +472,7 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target) {
 	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
 	txt.Color = colornames.Lightblue
 	if faceUp {
-		fmt.Fprintf(txt, "Index: %d", id)
+		fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
 	}
 	txt.Draw(win, pixel.IM)
 }
