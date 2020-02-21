@@ -608,6 +608,13 @@ func (g *Game) finalVPs() Winner {
 	return WinnerBoth
 }
 
+func (g *Game) VictoryResult() (w Winner, reason WinReason, vps [2][numVPTypes]VP, _ error) {
+	if !g.state.Is(StateVictory) {
+		return w, reason, vps, ErrWrongState
+	}
+	return g.winner, g.winReason, g.vps, nil
+}
+
 func (g *Game) victory(w Winner, reason WinReason) {
 	g.state = StateVictory
 	g.winner = w
