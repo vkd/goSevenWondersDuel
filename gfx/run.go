@@ -43,6 +43,12 @@ var (
 	wonderTaken    [8]bool
 	wonderBuilt    [2][4]uint8
 	ptokens        []core.PTokenID
+
+	topCenter = pixel.V(windowWidth/2, windowHeight-100)
+
+	ageIRects   = genCardRects(ageGrid.genAgeIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
+	ageIIRects  = genCardRects(ageGrid.genAgeIIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
+	ageIIIRects = genCardRects(ageGrid.genAgeIIIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
 )
 
 func Run() error {
@@ -65,6 +71,7 @@ const (
 	PTokensState
 	DiscardedPTokensState
 	OpponentsDestroyState
+	PlayerCardsState
 )
 
 func run() error {
@@ -101,8 +108,6 @@ func run() error {
 	statsRPlayer := text.New(pixel.V(windowWidth-330, 100), atlas)
 	statsRPlayer.Color = colornames.Yellow
 
-	var topCenter = pixel.V(windowWidth/2, windowHeight-100)
-
 	// * - topCenter
 	// X - topCenter.Y -= cardHeight
 	// O - cards grid
@@ -120,7 +125,7 @@ func run() error {
 	// topCenter.Y -= cardHeight
 	var tableCards = TableCards{
 		Cards: g.CardsState(),
-		Rects: genCardRects(ageGrid.genAgeIVecs(topCenter.Sub(pixel.V(0, cardHeight)))),
+		Rects: ageIRects,
 	}
 
 	var wonderRects []pixel.Rect
@@ -184,6 +189,7 @@ func run() error {
 
 	var discardedPTokens []core.PTokenID
 	var opponentsDestroyableBuildings []core.CardID
+	var playerCards [2][]core.CardID
 
 	var fps = time.NewTicker(time.Second / 15)
 	defer fps.Stop()
@@ -191,6 +197,7 @@ func run() error {
 	var boardState BoardState = Wonders
 
 	var verbose bool = true
+	var currentAge = 1
 
 	// for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
 	// 	wonderTaken[i] = true
@@ -199,8 +206,31 @@ func run() error {
 	// }
 
 	var nextTurn = func() {
+		var isNextAge bool = true
+		for _, cs := range tableCards.Cards {
+			if cs.Exists {
+				isNextAge = false
+				break
+			}
+		}
+		if isNextAge {
+			currentAge++
+			switch currentAge {
+			case 2:
+				tableCards.Rects = ageIIRects
+			case 3:
+				tableCards.Rects = ageIIIRects
+			case 4:
+				w, r, vps, _ := g.VictoryResult()
+				log.Printf("w: %v, r: %v, vps: %v", w, r, vps)
+			}
+			tableCards.Cards = g.CardsState()
+		}
+
 		switch g.GetState() {
 		case core.StateGameTurn:
+			boardState = Table
+		case core.StateChooseFirstPlayer:
 			boardState = Table
 		case core.StateBuildFreePToken:
 			discardedPTokens, err = g.GetDiscardedPTokens()
@@ -214,6 +244,16 @@ func run() error {
 				log.Printf("Error on next turn (discard opponents building): %v", err)
 			}
 			boardState = OpponentsDestroyState
+		case core.StateBuildFreeDiscarded:
+			boardState = DiscardedCards
+		case core.StateChoosePToken:
+			boardState = PTokensState
+		case core.StateVictory:
+			w, reason, vps, err := g.VictoryResult()
+			if err != nil {
+				log.Printf("Error on get victory result: %v", err)
+			}
+			log.Printf("w: %v, reason: %v, vps: %v", w, reason, vps)
 		}
 	}
 
@@ -242,7 +282,7 @@ func run() error {
 		// if win.Pressed(pixelgl.KeyRight) {
 		// }
 
-		if win.JustPressed(pixelgl.KeyR) {
+		if win.JustPressed(pixelgl.KeyF12) {
 			g, err = core.NewGame(core.WithSeed(0))
 			if err != nil {
 				return err
@@ -250,7 +290,9 @@ func run() error {
 			wonders = g.GetAvailableWonders()
 			ptokens = g.GetAvailablePTokens()
 			tableCards.Cards = g.CardsState()
+			tableCards.Rects = ageIRects
 			discardedCards = nil
+			currentAge = 1
 
 			currentWonder = 0
 			userWonders = [2][]core.WonderID{}
@@ -274,6 +316,9 @@ func run() error {
 		if win.JustPressed(pixelgl.KeyP) {
 			boardState = PTokensState
 		}
+		if win.JustPressed(pixelgl.KeyH) {
+			boardState = PlayerCardsState
+		}
 		if win.JustPressed(pixelgl.Key1) {
 			err = g.ChooseFirstPlayer(0)
 			if err != nil {
@@ -287,7 +332,7 @@ func run() error {
 			}
 		}
 
-		if win.JustPressed(pixelgl.KeyQ) || win.JustPressed(pixelgl.KeyEscape) {
+		if win.JustPressed(pixelgl.KeyEscape) {
 			win.SetClosed(true)
 		}
 
@@ -301,6 +346,9 @@ func run() error {
 					wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID) + 1
 				} else {
 					tableCards.Cards, err = g.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
+					if err == nil {
+						playerCards[pIndex] = append(playerCards[pIndex], tableCards.Cards[selectedCardIndex].ID)
+					}
 				}
 				if err != nil {
 					log.Printf("Error on build: %v", err)
@@ -338,6 +386,8 @@ func run() error {
 				err = g.ConstructDiscardedCard(discardedCards[selectedDiscardedIndex])
 				if err != nil {
 					log.Printf("Error on build discarded: %v", err)
+				} else {
+					playerCards[pIndex] = append(playerCards[pIndex], discardedCards[selectedDiscardedIndex])
 				}
 			}
 			if selectedUserWonderIndex > -1 {
@@ -352,6 +402,7 @@ func run() error {
 				if err != nil {
 					log.Printf("Error on choose PToken: %v", err)
 				}
+				ptokens = g.GetAvailablePTokens()
 			}
 			if selectDiscardedPToken > -1 {
 				err = g.PlayDiscardedPToken(discardedPTokens[selectDiscardedPToken])
@@ -367,6 +418,13 @@ func run() error {
 				if err != nil {
 					log.Printf("Error on discard opponent building: %v", err)
 				} else {
+					var newList []core.CardID
+					for _, cid := range playerCards[(pIndex+1)%2] {
+						if cid != opponentsDestroyableBuildings[selectOpponentsBuilding] {
+							newList = append(newList, cid)
+						}
+					}
+					playerCards[(pIndex+1)%2] = newList
 					opponentsDestroyableBuildings = nil
 					boardState = Table
 				}
@@ -547,6 +605,10 @@ func run() error {
 			if selectOpponentsBuilding > -1 {
 				drawBorder(discardedRects[selectOpponentsBuilding], win, borderColor, 4)
 			}
+		case PlayerCardsState:
+			for i, cid := range playerCards[pIndex] {
+				drawCard(cid, true, discardedRects[i], win, 0)
+			}
 		}
 
 		var currectPlayer = g.CurrentPlayerIndex()
@@ -557,9 +619,11 @@ func run() error {
 			txt.Color = colornames.Orange
 			fmt.Fprintf(txt,
 				"Active player: %d\n"+
-					"State: %s\n",
+					"State: %s\n"+
+					"Age: %d\n",
 				currectPlayer,
 				g.GetState().String(),
+				currentAge,
 			)
 			txt.Draw(win, pixel.IM)
 
