@@ -353,6 +353,7 @@ func (g *Game) ChoosePToken(id PTokenID) error {
 		}
 		newPTokens = append(newPTokens, pt)
 	}
+	g.availablePTokens = newPTokens
 
 	g.builtPTokens[g.currentPlayerIndex] = append(g.builtPTokens[g.currentPlayerIndex], id)
 
