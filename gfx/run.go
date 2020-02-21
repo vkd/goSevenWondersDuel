@@ -63,6 +63,8 @@ const (
 	Wonders
 	DiscardedCards
 	PTokensState
+	DiscardedPTokensState
+	OpponentsDestroyState
 )
 
 func run() error {
@@ -180,6 +182,9 @@ func run() error {
 		}
 	}
 
+	var discardedPTokens []core.PTokenID
+	var opponentsDestroyableBuildings []core.CardID
+
 	var fps = time.NewTicker(time.Second / 15)
 	defer fps.Stop()
 
@@ -193,6 +198,25 @@ func run() error {
 	// 	currentWonder++
 	// }
 
+	var nextTurn = func() {
+		switch g.GetState() {
+		case core.StateGameTurn:
+			boardState = Table
+		case core.StateBuildFreePToken:
+			discardedPTokens, err = g.GetDiscardedPTokens()
+			if err != nil {
+				log.Printf("Error on next turn (build free ptoken): %v", err)
+			}
+			boardState = DiscardedPTokensState
+		case core.StateDiscardOpponentBuild:
+			opponentsDestroyableBuildings, err = g.GetDiscardedOpponentsBuildings()
+			if err != nil {
+				log.Printf("Error on next turn (discard opponents building): %v", err)
+			}
+			boardState = OpponentsDestroyState
+		}
+	}
+
 	var (
 		selectedCardIndex       int = -1
 		selectedWonderIndex     int = -1
@@ -200,6 +224,8 @@ func run() error {
 		selectedConstructWonder int = -1
 		selectedDiscardedIndex  int = -1
 		selectedPTokenIndex     int = -1
+		selectDiscardedPToken   int = -1
+		selectOpponentsBuilding int = -1
 	)
 
 	for !win.Closed() {
@@ -271,13 +297,15 @@ func run() error {
 			if selectedCardIndex > -1 {
 				if selectedConstructWonder > -1 {
 					tableCards.Cards, err = g.ConstructWonder(tableCards.Cards[selectedCardIndex].ID, userWonders[g.CurrentPlayerIndex()][selectedConstructWonder])
-					wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID)
-					selectedConstructWonder = -1
+
+					wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID) + 1
 				} else {
 					tableCards.Cards, err = g.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
 				}
 				if err != nil {
 					log.Printf("Error on build: %v", err)
+				} else {
+					selectedConstructWonder = -1
 				}
 			}
 			if selectedWonderIndex > -1 {
@@ -325,6 +353,25 @@ func run() error {
 					log.Printf("Error on choose PToken: %v", err)
 				}
 			}
+			if selectDiscardedPToken > -1 {
+				err = g.PlayDiscardedPToken(discardedPTokens[selectDiscardedPToken])
+				if err != nil {
+					log.Printf("Error on play discarded PTokens: %v", err)
+				} else {
+					discardedPTokens = nil
+					boardState = Table
+				}
+			}
+			if selectOpponentsBuilding > -1 {
+				err = g.DiscardOpponentBuild(opponentsDestroyableBuildings[selectOpponentsBuilding])
+				if err != nil {
+					log.Printf("Error on discard opponent building: %v", err)
+				} else {
+					opponentsDestroyableBuildings = nil
+					boardState = Table
+				}
+			}
+			nextTurn()
 		} else if win.JustPressed(pixelgl.MouseButtonRight) {
 			if selectedCardIndex > -1 {
 				var err error
@@ -336,6 +383,7 @@ func run() error {
 					discardedCards = append(discardedCards, id)
 				}
 			}
+			nextTurn()
 		}
 
 		// showCard = win.Pressed(pixelgl.KeyLeftShift) || win.Pressed(pixelgl.MouseButtonLeft)
@@ -366,6 +414,8 @@ func run() error {
 		selectedUserWonderIndex = -1
 		selectedDiscardedIndex = -1
 		selectedPTokenIndex = -1
+		selectDiscardedPToken = -1
+		selectOpponentsBuilding = -1
 
 		switch boardState {
 		case Table:
@@ -476,6 +526,26 @@ func run() error {
 			}
 			if selectedPTokenIndex > -1 {
 				drawCircle(win, ptokenCircles[selectedPTokenIndex], borderColor, 4)
+			}
+		case DiscardedPTokensState:
+			for i, pi := range discardedPTokens {
+				drawPToken(win, pi, ptokenCircles[i])
+				if ptokenCircles[i].Contains(mouse) {
+					selectDiscardedPToken = i
+				}
+			}
+			if selectDiscardedPToken > -1 {
+				drawCircle(win, ptokenCircles[selectDiscardedPToken], borderColor, 4)
+			}
+		case OpponentsDestroyState:
+			for i, cid := range opponentsDestroyableBuildings {
+				drawCard(cid, true, discardedRects[i], win, 0)
+				if discardedRects[i].Contains(mouse) {
+					selectOpponentsBuilding = i
+				}
+			}
+			if selectOpponentsBuilding > -1 {
+				drawBorder(discardedRects[selectOpponentsBuilding], win, borderColor, 4)
 			}
 		}
 

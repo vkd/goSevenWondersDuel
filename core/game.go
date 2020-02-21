@@ -396,6 +396,13 @@ func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
 	return nil
 }
 
+func (g *Game) GetDiscardedOpponentsBuildings() ([]CardID, error) {
+	if !g.state.Is(StateDiscardOpponentBuild) {
+		return nil, ErrWrongState
+	}
+	return g.builtCards[g.CurrentPlayerIndex().Next()][g.discardOpponentBuild.color], nil
+}
+
 func (g *Game) DiscardOpponentBuild(id CardID) error {
 	if !g.state.Is(StateDiscardOpponentBuild) {
 		return ErrWrongState
@@ -441,9 +448,7 @@ func (g *Game) GetDiscardedPTokens() (_ []PTokenID, err error) {
 		return nil, ErrWrongState
 	}
 
-	panic("Not implemented")
-
-	return nil, nil
+	return g.restPTokens[:3], nil
 }
 
 func (g *Game) PlayDiscardedPToken(id PTokenID) (err error) {
@@ -463,6 +468,14 @@ func (g *Game) PlayDiscardedPToken(id PTokenID) (err error) {
 	}
 
 	g.builtPTokens[g.currentPlayerIndex] = append(g.builtPTokens[g.currentPlayerIndex], id)
+
+	var newList []PTokenID
+	for _, pi := range g.restPTokens {
+		if pi != id {
+			newList = append(newList, pi)
+		}
+	}
+	g.restPTokens = newList
 
 	for _, e := range id.pToken().Effects {
 		e.applyEffect(g, g.currentPlayerIndex)
