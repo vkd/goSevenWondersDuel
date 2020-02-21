@@ -96,15 +96,12 @@ func run() error {
 		log.Fatalf("Error on load textures: %v", err)
 	}
 
-	txt := text.New(pixel.V(30, windowHeight-30), atlas)
+	txt := text.New(pixel.V(80, windowHeight-30), atlas)
 	war := text.New(pixel.V(windowWidth/2, windowHeight-30), atlas)
 	statsLPlayer := text.New(pixel.V(30, 100), atlas)
 	statsLPlayer.Color = colornames.Yellow
 	statsRPlayer := text.New(pixel.V(windowWidth-330, 100), atlas)
 	statsRPlayer.Color = colornames.Yellow
-
-	var left float64 = leftPaddingCards
-	var bottom float64 = bottomPaddingCards
 
 	var topCenter = pixel.V(windowWidth/2, windowHeight-100)
 
@@ -520,16 +517,10 @@ func run() error {
 			txt.Clear()
 			txt.Color = colornames.Orange
 			fmt.Fprintf(txt,
-				"Left: %d\nBottom: %d\nTitle: %d\nDelta: %d\n\nMouse (%d;%d)\nActive player: %d\nState: %s\nSelectedConstructWonder: %d",
-				int(left),
-				int(bottom),
-				int(cardTitleHeight),
-				int(deltaEpoh),
-				int(win.MousePosition().X),
-				int(win.MousePosition().Y),
+				"Active player: %d\n"+
+					"State: %s\n",
 				currectPlayer,
 				g.GetState().String(),
-				selectedConstructWonder,
 			)
 			txt.Draw(win, pixel.IM)
 
@@ -554,7 +545,20 @@ func debugPlayerInfo(p core.Player, isActive bool) string {
 	if isActive {
 		active = "*"
 	}
-	return fmt.Sprintf("IsActive: %s\nMoney: %d\n         : [W S C P G]\nResources: %v\nChains: %v\n       : [W M C T P A S]\nScience: %v", active, p.Coins, p.Resources, p.Chains.Strings(), p.ScientificSymbols)
+	return fmt.Sprintf(
+		"IsActive: %s\n"+
+			"Money: %d\n"+
+			"         : [W S C P G]\n"+
+			"Resources: %v\n"+
+			"Chains: %v\n"+
+			"       : [W M C T P A S]\n"+
+			"Science: %v",
+		active,
+		p.Coins,
+		p.Resources,
+		p.Chains.Strings(),
+		p.ScientificSymbols,
+	)
 }
 
 type TableCards struct {
