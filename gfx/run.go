@@ -254,6 +254,13 @@ func run() error {
 				log.Printf("Error on get victory result: %v", err)
 			}
 			log.Printf("w: %v, reason: %v, vps: %v", w, reason, vps)
+			for i := 0; i < 2; i++ {
+				log.Printf("Player: %d", i)
+				for tp, vp := range vps[i] {
+					log.Printf("%s: %d", core.VPType(tp).String(), vp)
+				}
+				log.Printf("---")
+			}
 		}
 	}
 
