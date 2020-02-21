@@ -20,9 +20,6 @@ import (
 )
 
 const (
-	leftPaddingCards   float64 = 89
-	bottomPaddingCards float64 = 74
-
 	// cardWidth      float64 = 264
 	cardWidth float64 = 132
 	// cardHeight     float64 = 400
@@ -37,8 +34,7 @@ const (
 	windowWidth  float64 = 1200
 	windowHeight float64 = 800
 
-	progressWidth  float64 = 159
-	progressHeight float64 = 159
+	progressWidth float64 = 159
 )
 
 var (
@@ -184,7 +180,8 @@ func run() error {
 		}
 	}
 
-	var fps = time.Tick(time.Second / 15)
+	var fps = time.NewTicker(time.Second / 15)
+	defer fps.Stop()
 
 	var boardState BoardState = Wonders
 
@@ -195,10 +192,6 @@ func run() error {
 	// 	wonderChosen[i] = wonders[idx]
 	// 	currentWonder++
 	// }
-
-	// var minX, minY, minW, minH float64
-	// minW, minH = wonderWidth*2, wonderHeight*2
-	// minX, minY = wonderLefts[1], wonderBottoms[1]
 
 	var (
 		selectedCardIndex       int = -1
@@ -214,38 +207,14 @@ func run() error {
 
 		win.Clear(colornames.Purple)
 
-		if win.Pressed(pixelgl.KeyUp) {
-			// if win.Pressed(pixelgl.KeyLeftShift) {
-			// 	// minH += 1
-			// 	minY += minH
-			// } else {
-			// 	minY += 1
-			// }
-		}
-		if win.Pressed(pixelgl.KeyDown) {
-			// if win.Pressed(pixelgl.KeyLeftShift) {
-			// 	// minH -= 1
-			// 	minY -= minH
-			// } else {
-			// 	minY -= 1
-			// }
-		}
-		if win.Pressed(pixelgl.KeyLeft) {
-			// if win.Pressed(pixelgl.KeyLeftShift) {
-			// 	// minW -= 1
-			// 	minX -= minW
-			// } else {
-			// 	minX -= 1
-			// }
-		}
-		if win.Pressed(pixelgl.KeyRight) {
-			// if win.Pressed(pixelgl.KeyLeftShift) {
-			// 	// minW += 1
-			// 	minX += minW
-			// } else {
-			// 	minX += 1
-			// }
-		}
+		// if win.Pressed(pixelgl.KeyUp) {
+		// }
+		// if win.Pressed(pixelgl.KeyDown) {
+		// }
+		// if win.Pressed(pixelgl.KeyLeft) {
+		// }
+		// if win.Pressed(pixelgl.KeyRight) {
+		// }
 
 		if win.JustPressed(pixelgl.KeyR) {
 			g, err = core.NewGame(core.WithSeed(0))
@@ -388,7 +357,7 @@ func run() error {
 		align := war.BoundsOf(warText[0]).W() / 2
 		for _, text := range warText {
 			war.Dot.X -= align
-			war.WriteString(text)
+			war.WriteString(text) // nolint
 		}
 		war.Draw(win, pixel.IM)
 
@@ -428,7 +397,7 @@ func run() error {
 				idx.Color = colornames.Lightgreen
 				idx.Dot.X -= idx.BoundsOf(strconv.Itoa(i)).W()
 				idx.Dot.Y -= 10
-				idx.WriteString(strconv.Itoa(i))
+				idx.WriteString(strconv.Itoa(i)) // nolint
 				idx.Draw(win, pixel.IM)
 			}
 
@@ -535,7 +504,7 @@ func run() error {
 
 		win.Update()
 
-		<-fps
+		<-fps.C
 	}
 	return nil
 }
