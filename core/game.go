@@ -507,13 +507,37 @@ func (g *Game) nextTurn() {
 		}
 	} else {
 		if g.currentAge == 2 {
-			winner := g.finalVPs()
-			g.victory(winner, WinCivilian)
+			g.victory(WinnerBoth, WinCivilian)
 			return
 		}
 		g.repeatTurn = false
 		g.nextAge()
 	}
+}
+
+func (g *Game) getWinner() Winner {
+	var score [numPlayers]VP
+	for pi, vs := range g.vps {
+		for _, v := range vs {
+			score[pi] += v
+		}
+	}
+
+	switch {
+	case score[0] > score[1]:
+		return Winner1Player
+	case score[1] > score[0]:
+		return Winner2Player
+	}
+
+	switch {
+	case g.vps[0][BlueVP] > g.vps[1][BlueVP]:
+		return Winner1Player
+	case g.vps[1][BlueVP] > g.vps[0][BlueVP]:
+		return Winner2Player
+	}
+
+	return WinnerBoth
 }
 
 func (g *Game) nextAge() {
@@ -565,7 +589,7 @@ func (g *Game) apply(card CardName) {
 	}
 }
 
-func (g *Game) finalVPs() Winner {
+func (g *Game) finalVPs() {
 	for pi, fs := range g.endEffects {
 		for _, f := range fs {
 			vp := f.finalVP(g, PlayerIndex(pi))
@@ -580,29 +604,6 @@ func (g *Game) finalVPs() Winner {
 	for i := PlayerIndex(0); i < numPlayers; i++ {
 		g.vps[i][MilitaryVP] = g.military.VP(i)
 	}
-
-	var score [numPlayers]VP
-	for pi, vs := range g.vps {
-		for _, v := range vs {
-			score[pi] += v
-		}
-	}
-
-	switch {
-	case score[0] > score[1]:
-		return Winner1Player
-	case score[1] > score[0]:
-		return Winner2Player
-	}
-
-	switch {
-	case g.vps[0][BlueVP] > g.vps[1][BlueVP]:
-		return Winner1Player
-	case g.vps[1][BlueVP] > g.vps[0][BlueVP]:
-		return Winner2Player
-	}
-
-	return WinnerBoth
 }
 
 func (g *Game) VictoryResult() (w Winner, reason WinReason, vps [2][numVPTypes]VP, _ error) {
@@ -613,6 +614,13 @@ func (g *Game) VictoryResult() (w Winner, reason WinReason, vps [2][numVPTypes]V
 }
 
 func (g *Game) victory(w Winner, reason WinReason) {
+	g.finalVPs()
+
+	switch reason {
+	case WinCivilian:
+		w = g.getWinner()
+	}
+
 	g.state = StateVictory
 	g.winner = w
 	g.winReason = reason
