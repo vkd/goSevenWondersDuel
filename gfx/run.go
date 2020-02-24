@@ -72,10 +72,17 @@ const (
 	DiscardedPTokensState
 	OpponentsDestroyState
 	PlayerCardsState
+	OpponentCardsState
 )
 
 func run() error {
 	g, err := core.NewGame(core.WithSeed(0))
+	if err != nil {
+		return err
+	}
+	var w0 = [4]core.WonderID{0, 8, 10, 11}
+	var w1 = [4]core.WonderID{5, 6, 1, 4}
+	err = g.SelectWonders(w0, w1)
 	if err != nil {
 		return err
 	}
@@ -154,7 +161,7 @@ func run() error {
 		}
 	}
 
-	var userWonders [2][]core.WonderID
+	var userWonders [2][]core.WonderID = [2][]core.WonderID{w0[:], w1[:]}
 	var userWonderRects [2][4]pixel.Rect
 	{
 		for i := 0; i < 4; i++ {
@@ -194,7 +201,7 @@ func run() error {
 	var fps = time.NewTicker(time.Second / 15)
 	defer fps.Stop()
 
-	var boardState BoardState = Wonders
+	var boardState BoardState = Table
 
 	var verbose bool = true
 	var currentAge = 1
@@ -278,6 +285,7 @@ func run() error {
 
 	for !win.Closed() {
 		var pIndex = g.CurrentPlayerIndex()
+		var gameState = g.GetState()
 
 		win.Clear(colornames.Purple)
 
@@ -326,6 +334,9 @@ func run() error {
 		}
 		if win.JustPressed(pixelgl.KeyH) {
 			boardState = PlayerCardsState
+		}
+		if win.JustPressed(pixelgl.KeyO) {
+			boardState = OpponentCardsState
 		}
 		if win.JustPressed(pixelgl.Key1) {
 			err = g.ChooseFirstPlayer(0)
@@ -524,6 +535,27 @@ func run() error {
 			}
 
 		case Wonders:
+			switch gameState {
+			case core.StateSelectWonders:
+				// --- draft
+				var second int = 0
+				if currentWonder >= 4 {
+					second = 4
+				}
+				for i, r := range wonderRects {
+					i += second
+					if wonderTaken[i] {
+						continue
+					}
+					drawWonder(win, true, wonders[i], r, 0, 0)
+					if r.Contains(mouse) {
+						selectedWonderIndex = i
+					}
+				}
+				if selectedWonderIndex >= 0 {
+					drawSelectedBorder(wonderRects[selectedWonderIndex%4], win)
+				}
+			}
 			for pi, ws := range userWonders {
 				for wi, id := range ws {
 					r := userWonderRects[pi][wi]
@@ -563,25 +595,6 @@ func run() error {
 					color = colornames.Green
 				}
 				drawBorder(r, win, color, 2)
-			}
-
-			// --- draft
-			var second int = 0
-			if currentWonder >= 4 {
-				second = 4
-			}
-			for i, r := range wonderRects {
-				i += second
-				if wonderTaken[i] {
-					continue
-				}
-				drawWonder(win, true, wonders[i], r, 0, 0)
-				if r.Contains(mouse) {
-					selectedWonderIndex = i
-				}
-			}
-			if selectedWonderIndex >= 0 {
-				drawSelectedBorder(wonderRects[selectedWonderIndex%4], win)
 			}
 		case DiscardedCards:
 			for i, did := range discardedCards {
@@ -627,6 +640,10 @@ func run() error {
 			for i, cid := range playerCards[pIndex] {
 				drawCard(cid, true, discardedRects[i], win, 0)
 			}
+		case OpponentCardsState:
+			for i, cid := range playerCards[pIndex.Next()] {
+				drawCard(cid, true, discardedRects[i], win, 0)
+			}
 		}
 
 		var currectPlayer = g.CurrentPlayerIndex()
@@ -640,7 +657,7 @@ func run() error {
 					"State: %s\n"+
 					"Age: %d\n",
 				currectPlayer,
-				g.GetState().String(),
+				gameState.String(),
 				currentAge,
 			)
 			txt.Draw(win, pixel.IM)
