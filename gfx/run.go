@@ -721,7 +721,7 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost 
 	t.Draw(win, im.Moved(r.Center()))
 
 	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
-	txt.Color = colornames.Lightblue
+	txt.Color = colornames.White
 	if faceUp {
 		fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
 	}
@@ -743,7 +743,7 @@ func drawWonder(win pixel.Target, faceUp bool, id core.WonderID, rect pixel.Rect
 
 	if faceUp {
 		txt := text.New(pixel.V(rect.Min.X, rect.Max.Y-10), atlas)
-		txt.Color = colornames.Lightblue
+		txt.Color = colornames.White
 		fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
 		txt.Draw(win, pixel.IM)
 	}
