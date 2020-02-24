@@ -458,6 +458,11 @@ func run() error {
 
 		m := g.Military()
 		warPoint := int(m.Shields[0]) - int(m.Shields[1])
+		if warPoint < -9 {
+			warPoint = -9
+		} else if warPoint > 9 {
+			warPoint = 9
+		}
 
 		war.Clear()
 		war.Color = colornames.Red
