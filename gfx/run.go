@@ -198,6 +198,7 @@ func run() error {
 
 	var verbose bool = true
 	var currentAge = 1
+	var wondersBuilt int = 0
 
 	// for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
 	// 	wonderTaken[i] = true
@@ -351,6 +352,7 @@ func run() error {
 					tableCards.Cards, err = g.ConstructWonder(tableCards.Cards[selectedCardIndex].ID, userWonders[g.CurrentPlayerIndex()][selectedConstructWonder])
 
 					wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID) + 1
+					wondersBuilt++
 				} else {
 					tableCards.Cards, err = g.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
 					if err == nil {
@@ -528,7 +530,11 @@ func run() error {
 
 					cs, trade := g.WonderCost(id)
 					cost := cs + trade
-					drawWonder(win, id, r, cost, wonderBuilt[pi][wi])
+					if wonderBuilt[pi][wi] > 0 {
+						drawWonder(win, true, id, r, cost, wonderBuilt[pi][wi])
+					} else {
+						drawWonder(win, wondersBuilt < 7, id, r, cost, wonderBuilt[pi][wi])
+					}
 
 					if core.PlayerIndex(pi) == pIndex && wonderBuilt[pi][wi] == 0 && r.Contains(mouse) {
 						selectedUserWonderIndex = wi + pi*4
@@ -569,7 +575,7 @@ func run() error {
 				if wonderTaken[i] {
 					continue
 				}
-				drawWonder(win, wonders[i], r, 0, 0)
+				drawWonder(win, true, wonders[i], r, 0, 0)
 				if r.Contains(mouse) {
 					selectedWonderIndex = i
 				}
@@ -705,8 +711,12 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost 
 	txt.Draw(win, pixel.IM)
 }
 
-func drawWonder(win pixel.Target, id core.WonderID, rect pixel.Rect, cost core.Coins, builtCardID uint8) {
-	wondersTx[id].Draw(win, pixel.IM.Scaled(pixel.ZV, 0.5).Moved(pixel.V(wonderWidth/2, wonderHeight/2)).Moved(rect.Min))
+func drawWonder(win pixel.Target, faceUp bool, id core.WonderID, rect pixel.Rect, cost core.Coins, builtCardID uint8) {
+	var tx = wondersTxBack
+	if faceUp {
+		tx = wondersTx[id]
+	}
+	tx.Draw(win, pixel.IM.Scaled(pixel.ZV, 0.5).Moved(pixel.V(wonderWidth/2, wonderHeight/2)).Moved(rect.Min))
 
 	if builtCardID > 0 {
 		var t = cardsTx[builtCardID-1]
@@ -714,10 +724,12 @@ func drawWonder(win pixel.Target, id core.WonderID, rect pixel.Rect, cost core.C
 		return
 	}
 
-	txt := text.New(pixel.V(rect.Min.X, rect.Max.Y-10), atlas)
-	txt.Color = colornames.Lightblue
-	fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
-	txt.Draw(win, pixel.IM)
+	if faceUp {
+		txt := text.New(pixel.V(rect.Min.X, rect.Max.Y-10), atlas)
+		txt.Color = colornames.Lightblue
+		fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
+		txt.Draw(win, pixel.IM)
+	}
 }
 
 func drawPToken(win pixel.Target, id core.PTokenID, c pixel.Circle) {

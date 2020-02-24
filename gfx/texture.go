@@ -14,8 +14,8 @@ var (
 	cardsTx     [16*4 + 9]*pixel.Sprite
 	cardsTxBack [4]*pixel.Sprite
 
-	wondersTx [13]*pixel.Sprite
-	// wondersTxBack *pixel.Sprite
+	wondersTx     [13]*pixel.Sprite
+	wondersTxBack *pixel.Sprite
 
 	progressTx [10]*pixel.Sprite
 )
@@ -57,7 +57,7 @@ func loadTextures() error {
 	}
 	cardsTxBack[2] = pixel.NewSprite(pic, rectByCard(2))
 	cardsTxBack[3] = pixel.NewSprite(pic, rectByCard(0))
-	// wondersTxBack = pixel.NewSprite(pic, rectByWonder9(6))
+	wondersTxBack = pixel.NewSprite(pic, rectByWonder9(6))
 
 	pic, err = loadPicture("../../textures/9.jpg")
 	if err != nil {
