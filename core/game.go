@@ -516,17 +516,10 @@ func (g *Game) nextTurn() {
 }
 
 func (g *Game) getWinner() Winner {
-	var score [numPlayers]VP
-	for pi, vs := range g.vps {
-		for _, v := range vs {
-			score[pi] += v
-		}
-	}
-
 	switch {
-	case score[0] > score[1]:
+	case g.vps[0][SumVP] > g.vps[1][SumVP]:
 		return Winner1Player
-	case score[1] > score[0]:
+	case g.vps[1][SumVP] > g.vps[0][SumVP]:
 		return Winner2Player
 	}
 
@@ -603,6 +596,13 @@ func (g *Game) finalVPs() {
 
 	for i := PlayerIndex(0); i < numPlayers; i++ {
 		g.vps[i][MilitaryVP] = g.military.VP(i)
+	}
+
+	for pi, vs := range g.vps {
+		g.vps[pi][SumVP] = 0
+		for _, v := range vs {
+			g.vps[pi][SumVP] += v
+		}
 	}
 }
 

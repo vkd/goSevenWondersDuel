@@ -35,6 +35,7 @@ const (
 	PTokenVP
 	CoinsVP
 	MilitaryVP
+	SumVP
 	numVPTypes = iota
 )
 
@@ -48,6 +49,7 @@ var (
 		PTokenVP:   "PToken",
 		CoinsVP:    "Coins",
 		MilitaryVP: "Military",
+		SumVP:      "Sum",
 	}
 	_ = [1]struct{}{}[len(namesVPType)-numVPTypes]
 )

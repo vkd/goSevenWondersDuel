@@ -270,6 +270,7 @@ func TestZeroGame(t *testing.T) {
 		PTokenVP:   4,
 		CoinsVP:    8,
 		MilitaryVP: 0,
+		SumVP:      61,
 	}, game.vps[0])
 	assert.Equal(t, [numVPTypes]VP{
 		BlueVP:     17,
@@ -280,6 +281,7 @@ func TestZeroGame(t *testing.T) {
 		PTokenVP:   0,
 		CoinsVP:    2,
 		MilitaryVP: 2,
+		SumVP:      40,
 	}, game.vps[1])
 }
 
@@ -291,7 +293,10 @@ func countBuiltCards(g *Game, i PlayerIndex) (count int) {
 }
 
 func countVPs(g *Game, i PlayerIndex) (count VP) {
-	for _, vps := range g.vps[i] {
+	for vi, vps := range g.vps[i] {
+		if VPType(vi) == SumVP {
+			continue
+		}
 		count += vps
 	}
 	return
