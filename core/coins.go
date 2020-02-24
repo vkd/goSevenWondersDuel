@@ -1,9 +1,5 @@
 package core
 
-import (
-	"math"
-)
-
 // Coins allow you to construct certain Buildings, and to purchase resources
 // through commerce. The Treasury, the accumulated coins, is worth victory
 // points at the end of the game.
@@ -11,10 +7,6 @@ type Coins uint8
 
 var _ Pricer = Coins(0)
 var _ Effect = Coins(0)
-
-const (
-	maxCoins Coins = math.MaxUint8
-)
 
 func (c Coins) applyPrice(p *Price) {
 	p.Coins += c

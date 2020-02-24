@@ -10,10 +10,6 @@ func (i PlayerIndex) Next() PlayerIndex {
 	return (i + 1) % numPlayers
 }
 
-func (i PlayerIndex) player(g *Game) *Player {
-	return g.player(i)
-}
-
 func (i PlayerIndex) winner() Winner {
 	switch i {
 	case 0:

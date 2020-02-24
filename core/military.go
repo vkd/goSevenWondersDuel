@@ -15,10 +15,12 @@ func (m *Military) addShields(g *Game, i PlayerIndex, s Shields) {
 
 	var diff = m.diffFor(i)
 
+	// nolint: gosimple
 	if diff >= 3 && m.Tokens2[i.Next()] == false {
 		g.player(i.Next()).Coins.sub(2)
 		m.Tokens2[i.Next()] = true
 	}
+	// nolint: gosimple
 	if diff >= 6 && m.Tokens5[i.Next()] == false {
 		g.player(i.Next()).Coins.sub(5)
 		m.Tokens5[i.Next()] = true
@@ -37,10 +39,9 @@ func (m *Military) diffFor(i PlayerIndex) Shields {
 
 func (m Military) VP(i PlayerIndex) VP {
 	var dt = m.Shields[i].Sub(m.Shields[i.Next()])
-	if dt <= 0 {
-		return 0
-	}
 	switch {
+	case dt == 0:
+		return 0
 	case dt <= 2:
 		return 2
 	case dt <= 5:

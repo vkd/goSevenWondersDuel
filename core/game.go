@@ -48,9 +48,6 @@ type Game struct {
 	availableWonders [initialWonders]WonderID
 	restWonders      []WonderID
 
-	ageI     [SizeAge]CardID
-	ageII    [SizeAge]CardID
-	ageIII   [SizeAge]CardID
 	ageDesk  ageDesk
 	ageDesk2 ageDesk
 	ageDesk3 ageDesk

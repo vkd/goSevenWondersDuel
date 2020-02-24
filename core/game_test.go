@@ -1,7 +1,6 @@
 package core
 
 import (
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -304,19 +303,4 @@ func countVPs(g *Game, i PlayerIndex) (count VP) {
 		count += vps
 	}
 	return
-}
-
-func printState(game *Game) {
-	state := game.CardsState()
-	for _, s := range state {
-		if s.Exists {
-			if s.FaceUp {
-				log.Printf("card: %v", s.ID.card().Name)
-			} else {
-				log.Printf("card: ???")
-			}
-		} else {
-			log.Printf("card:")
-		}
-	}
 }
