@@ -40,7 +40,7 @@ func (s ScientificSymbol) String() string {
 func (s ScientificSymbol) applyEffect(g *Game, i PlayerIndex) {
 	g.players[i].ScientificSymbols.set(s)
 	if g.players[i].ScientificSymbols.uniqs() >= 6 {
-		g.victory(i.winner(), WinScience)
+		g.victory(i.winner(), ScientificSupremacy)
 		return
 	}
 	if g.players[i].ScientificSymbols[s]%2 == 0 {

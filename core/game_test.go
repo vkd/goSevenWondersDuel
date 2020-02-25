@@ -248,7 +248,7 @@ func TestZeroGame(t *testing.T) {
 	// === End Age III ===
 	assert.Equal(t, game.GetState(), StateVictory)
 	assert.Equal(t, Winner1Player, game.winner)
-	assert.Equal(t, WinCivilian, game.winReason)
+	assert.Equal(t, CivilianVictory, game.victoryType)
 
 	assert.Equal(t, [numPlayers]Shields{1 + 2 + 4, 3 + 5 + 1}, game.Military().Shields)
 	assert.Equal(t, 2+4+8, len(game.discardedCards))

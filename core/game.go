@@ -17,10 +17,10 @@ const (
 
 // Game - game state
 type Game struct {
-	state      State
-	currentAge uint8
-	winner     Winner
-	winReason  WinReason
+	state       State
+	currentAge  uint8
+	winner      Winner
+	victoryType VictoryType
 
 	discardOpponentBuild discardOpponentBuild
 
@@ -507,7 +507,7 @@ func (g *Game) nextTurn() {
 		}
 	} else {
 		if g.currentAge == 2 {
-			g.victory(WinnerBoth, WinCivilian)
+			g.victory(WinnerBoth, CivilianVictory)
 			return
 		}
 		g.repeatTurn = false
@@ -606,33 +606,35 @@ func (g *Game) finalVPs() {
 	}
 }
 
-func (g *Game) VictoryResult() (w Winner, reason WinReason, vps [2][numVPTypes]VP, _ error) {
+func (g *Game) VictoryResult() (w Winner, vic VictoryType, vps [2][numVPTypes]VP, _ error) {
 	if !g.state.Is(StateVictory) {
-		return w, reason, vps, ErrWrongState
+		return w, vic, vps, ErrWrongState
 	}
-	return g.winner, g.winReason, g.vps, nil
+	return g.winner, g.victoryType, g.vps, nil
 }
 
-func (g *Game) victory(w Winner, reason WinReason) {
+func (g *Game) victory(w Winner, vic VictoryType) {
 	g.finalVPs()
 
-	switch reason {
-	case WinCivilian:
+	switch vic {
+	case CivilianVictory:
 		w = g.getWinner()
 	}
 
 	g.state = StateVictory
 	g.winner = w
-	g.winReason = reason
+	g.victoryType = vic
 }
 
-type WinReason uint8
+// VictoryType - one of the way to claim victory.
+type VictoryType uint8
 
+// In 7 Wonders Duel, there are 3 ways to claim victory: military supremacy, scientific supremacy, and civilian victory.
 const (
-	WinNone WinReason = iota
-	WinCivilian
-	WinMilitary
-	WinScience
+	VictoryNone VictoryType = iota
+	CivilianVictory
+	MilitarySupremacy
+	ScientificSupremacy
 )
 
 type Winner uint8
