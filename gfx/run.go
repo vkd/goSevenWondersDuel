@@ -89,7 +89,7 @@ const (
 	OpponentCardsState
 )
 
-func run() error {
+func run() error { //nolint: gocognit, funlen, gocyclo
 	g, err := core.NewGame(core.WithSeed(0))
 	if err != nil {
 		return err
@@ -485,7 +485,7 @@ func run() error {
 		war.Color = colornames.Red
 		warText := []string{
 			"9 . . 6 . . 3 . . 0 . . 3 . . 6 . . 9\n",
-			strings.Repeat(" ", int(warPoint)*2+18) + "*\n", // 18 = 0
+			strings.Repeat(" ", warPoint*2+18) + "*\n", // 18 = 0
 			"X    -5    -2           -2    -5    X\n",
 			"  10     5     2     2     5     10  \n",
 		}
@@ -539,8 +539,7 @@ func run() error {
 			}
 
 		case Wonders:
-			switch gameState {
-			case core.StateSelectWonders:
+			if gameState == core.StateSelectWonders {
 				// --- draft
 				var second int = 0
 				if currentWonder >= 4 {
@@ -729,10 +728,7 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost 
 	t.Draw(win, im.Moved(r.Center()))
 
 	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
-	switch id.Color() {
-	default:
-		txt.Color = colornames.White
-	}
+	txt.Color = colornames.White
 	if faceUp {
 		fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
 	}

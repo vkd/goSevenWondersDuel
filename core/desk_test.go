@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -23,8 +22,7 @@ var (
 )
 
 func Test_ageDesk_Build(t *testing.T) {
-	var desk, err = newAgeDesk(testStructure, testCards)
-	require.NoError(t, err)
+	var desk = newAgeDesk(testStructure, testCards)
 
 	// Precheck
 	assert.False(t, desk.state[1].FaceUp)

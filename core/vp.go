@@ -59,7 +59,7 @@ func (t VPType) String() string {
 }
 
 // VPTypeByColor of card
-func VPTypeByColor(c CardColor) VPType {
+func VPTypeByColor(c CardColor) VPType { //nolint: interfacer
 	switch c {
 	case Blue:
 		return BlueVP

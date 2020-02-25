@@ -88,19 +88,9 @@ func NewGame(opts ...Option) (*Game, error) {
 	copy(g.availableWonders[:], wonders[:initialWonders])
 	g.restWonders = wonders[initialWonders:]
 
-	var err error
-	g.ageDesk, err = newAgeDesk(structureAgeI, shuffleAgeI(g.rnd))
-	if err != nil {
-		return nil, err
-	}
-	g.ageDesk2, err = newAgeDesk(structureAgeII, shuffleAgeII(g.rnd))
-	if err != nil {
-		return nil, err
-	}
-	g.ageDesk3, err = newAgeDesk(structureAgeIII, shuffleAgeIII(g.rnd))
-	if err != nil {
-		return nil, err
-	}
+	g.ageDesk = newAgeDesk(structureAgeI, shuffleAgeI(g.rnd))
+	g.ageDesk2 = newAgeDesk(structureAgeII, shuffleAgeII(g.rnd))
+	g.ageDesk3 = newAgeDesk(structureAgeIII, shuffleAgeIII(g.rnd))
 
 	for i := 0; i < numPlayers; i++ {
 		g.players[i] = NewPlayer()
@@ -343,7 +333,7 @@ func (g *Game) ChoosePToken(id PTokenID) error {
 		return fmt.Errorf("PToken (id=%d) cannot be taken", id)
 	}
 
-	var newPTokens []PTokenID
+	var newPTokens = make([]PTokenID, 0, len(g.availablePTokens)-1)
 	for _, pt := range g.availablePTokens {
 		if pt == id {
 			continue
@@ -616,8 +606,7 @@ func (g *Game) VictoryResult() (w Winner, vic VictoryType, vps [2][numVPTypes]VP
 func (g *Game) victory(w Winner, vic VictoryType) {
 	g.finalVPs()
 
-	switch vic {
-	case CivilianVictory:
+	if vic == CivilianVictory {
 		w = g.getWinner()
 	}
 
@@ -648,7 +637,7 @@ const (
 
 var _ = [1]struct{}{}[numWinners-1-numPlayers]
 
-func (g *Game) gettingPToken(i PlayerIndex) {
+func (g *Game) gettingPToken(_ PlayerIndex) {
 	g.state = StateChoosePToken
 }
 

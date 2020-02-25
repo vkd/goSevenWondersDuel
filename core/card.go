@@ -309,7 +309,7 @@ func newCard(name CardName, ct CardColor, args ...interface{}) (c Card) {
 }
 
 func appendAll(lists ...[]Card) []Card {
-	var out []Card
+	var out = make([]Card, 0, len(lists))
 	for _, l := range lists {
 		out = append(out, l...)
 	}

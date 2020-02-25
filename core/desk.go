@@ -55,9 +55,9 @@ func (s *CardsState) hide(i cardIndex) {
 	}
 }
 
-func (ss CardsState) anyExists() bool {
-	for _, s := range ss {
-		if s.Exists {
+func (s CardsState) anyExists() bool {
+	for _, cs := range s {
+		if cs.Exists {
 			return true
 		}
 	}
@@ -206,7 +206,7 @@ type ageDesk struct {
 	state     CardsState
 }
 
-func newAgeDesk(structure *ageStructure, cards []CardID) (desk ageDesk, _ error) {
+func newAgeDesk(structure *ageStructure, cards []CardID) (desk ageDesk) {
 	desk.structure = structure
 	desk.cards = cards
 
@@ -220,7 +220,7 @@ func newAgeDesk(structure *ageStructure, cards []CardID) (desk ageDesk, _ error)
 	for _, i := range structure.hiddenCards {
 		desk.state.hide(i)
 	}
-	return desk, nil
+	return desk
 }
 
 func (d *ageDesk) Build(id CardID) error {

@@ -18,7 +18,7 @@ func (c Coins) applyEffect(g *Game, i PlayerIndex) {
 
 func (c *Coins) sub(v Coins) {
 	if *c > v {
-		*c = *c - v
+		*c -= v
 	} else {
 		*c = 0
 	}

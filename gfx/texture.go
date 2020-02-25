@@ -3,6 +3,8 @@ package gfx
 import (
 	"fmt"
 	"image"
+
+	// Register image's formats
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
@@ -20,7 +22,7 @@ var (
 	progressTx [10]*pixel.Sprite
 )
 
-func loadTextures() error {
+func loadTextures() error { //nolint: funlen
 	var nextTxToLoadIndex int
 	for _, ll := range []struct {
 		filename string
@@ -34,7 +36,7 @@ func loadTextures() error {
 	} {
 		pic, err := loadPicture(ll.filename)
 		if err != nil {
-			return fmt.Errorf("Error on load texture (%s): %v", ll.filename, err)
+			return fmt.Errorf("error on load texture (%s): %v", ll.filename, err)
 		}
 		from := nextTxToLoadIndex
 		to := nextTxToLoadIndex + ll.count
@@ -46,14 +48,14 @@ func loadTextures() error {
 
 	pic, err := loadPicture("../../textures/4.jpg")
 	if err != nil {
-		return fmt.Errorf("Error on load texture: %v", err)
+		return fmt.Errorf("error on load texture: %v", err)
 	}
 	cardsTxBack[0] = pixel.NewSprite(pic, rectByCard(0))
 	cardsTxBack[1] = pixel.NewSprite(pic, rectByCard(4))
 
 	pic, err = loadPicture("../../textures/10.jpg")
 	if err != nil {
-		return fmt.Errorf("Error on load texture: %v", err)
+		return fmt.Errorf("error on load texture: %v", err)
 	}
 	cardsTxBack[2] = pixel.NewSprite(pic, rectByCard(2))
 	cardsTxBack[3] = pixel.NewSprite(pic, rectByCard(0))
@@ -61,7 +63,7 @@ func loadTextures() error {
 
 	pic, err = loadPicture("../../textures/9.jpg")
 	if err != nil {
-		return fmt.Errorf("Error on load texture: %v", err)
+		return fmt.Errorf("error on load texture: %v", err)
 	}
 	wondersTx[12] = pixel.NewSprite(pic, rectByWonder9(5))
 	wondersTx[0] = pixel.NewSprite(pic, rectByWonder9(6))
@@ -69,7 +71,7 @@ func loadTextures() error {
 
 	pic, err = loadPicture("../../textures/11.jpg")
 	if err != nil {
-		return fmt.Errorf("Erroron load texture: %v", err)
+		return fmt.Errorf("error on load texture: %v", err)
 	}
 	for i := 2; i < 10; i++ {
 		wondersTx[i] = pixel.NewSprite(pic, rectByWonder(i-2))
@@ -77,7 +79,7 @@ func loadTextures() error {
 
 	pic, err = loadPicture("../../textures/13.jpg")
 	if err != nil {
-		return fmt.Errorf("Error on load texture: %v", err)
+		return fmt.Errorf("error on load texture: %v", err)
 	}
 	for i := 10; i < 12; i++ {
 		wondersTx[i] = pixel.NewSprite(pic, rectByWonder(i-10))
@@ -85,7 +87,7 @@ func loadTextures() error {
 
 	pic, err = loadPicture("../../textures/progress_tokens.png")
 	if err != nil {
-		return fmt.Errorf("Error on load textures: %v", err)
+		return fmt.Errorf("error on load textures: %v", err)
 	}
 	for i := 0; i < 10; i++ {
 		var x = float64(159 * i)
@@ -107,21 +109,21 @@ var (
 )
 
 func rectByCard(i int) pixel.Rect {
-	i = i % 16
+	i %= 16
 	x := cardLefts[i%4]
 	y := cardBottoms[3-(i/4)]
 	return pixel.R(x, y, x+textureCardWidth, y+textureCardHeight)
 }
 
 func rectByWonder(i int) pixel.Rect {
-	i = i % 8
+	i %= 8
 	x := wonderLefts[i%2]
 	y := wonderBottoms[3-(i/2)]
 	return pixel.R(x, y, x+588, y+382)
 }
 
 func rectByWonder9(i int) pixel.Rect {
-	i = i % 8
+	i %= 8
 	x := wonderLefts[i%2]
 	y := []float64{57, 441}[3-(i/2)]
 	return pixel.R(x, y, x+588, y+382)

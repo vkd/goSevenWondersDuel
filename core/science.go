@@ -48,7 +48,7 @@ func (s ScientificSymbol) applyEffect(g *Game, i PlayerIndex) {
 	}
 }
 
-// IsFree contruction card if this symbol is presented
+// IsFree construction card if this symbol is presented
 // func (s ScientificSymbol) IsFree(p Player) bool {
 // 	return p.ScientificSymbols[s]
 // }

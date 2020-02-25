@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestZeroGame(t *testing.T) {
+func TestZeroGame(t *testing.T) { //nolint: funlen
 	game, err := NewGame(WithSeed(0))
 	require.NoError(t, err)
 
