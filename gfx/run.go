@@ -51,6 +51,20 @@ var (
 	ageIIIRects = genCardRects(ageGrid.genAgeIIIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
 )
 
+var discardedRects []pixel.Rect
+
+func init() {
+	var dx float64 = 10
+	var dy float64 = dx
+	for j := 0; j < 3; j++ {
+		var y float64 = (windowHeight+dy)/2 - float64(j)*(cardHeight+dy)
+		for i := 0; i < 8; i++ {
+			var x float64 = 50 + (cardWidth+dx)*float64(i)
+			discardedRects = append(discardedRects, pixel.R(x, y, x+cardWidth, y+cardHeight))
+		}
+	}
+}
+
 func Run() error {
 	pixelgl.Run(func() {
 		err := run()
@@ -181,22 +195,9 @@ func run() error {
 		}
 	}
 
-	var discardedRects []pixel.Rect
-	{
-		var dx float64 = 10
-		var dy float64 = dx
-		for j := 0; j < 3; j++ {
-			var y float64 = (windowHeight+dy)/2 - float64(j)*(cardHeight+dy)
-			for i := 0; i < 8; i++ {
-				var x float64 = 50 + (cardWidth+dx)*float64(i)
-				discardedRects = append(discardedRects, pixel.R(x, y, x+cardWidth, y+cardHeight))
-			}
-		}
-	}
-
 	var discardedPTokens []core.PTokenID
 	var opponentsDestroyableBuildings []core.CardID
-	var playerCards [2][]core.CardID
+	var playerCards [2][core.CardColorSize][]core.CardID
 
 	var fps = time.NewTicker(time.Second / 15)
 	defer fps.Stop()
@@ -365,9 +366,10 @@ func run() error {
 					wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID) + 1
 					wondersBuilt++
 				} else {
-					tableCards.Cards, err = g.ConstructBuilding(tableCards.Cards[selectedCardIndex].ID)
+					cardID := tableCards.Cards[selectedCardIndex].ID
+					tableCards.Cards, err = g.ConstructBuilding(cardID)
 					if err == nil {
-						playerCards[pIndex] = append(playerCards[pIndex], tableCards.Cards[selectedCardIndex].ID)
+						playerCards[pIndex][cardID.Color()] = append(playerCards[pIndex][cardID.Color()], cardID)
 					}
 				}
 				if err != nil {
@@ -403,11 +405,12 @@ func run() error {
 				}
 			}
 			if selectedDiscardedIndex > -1 {
-				err = g.ConstructDiscardedCard(discardedCards[selectedDiscardedIndex])
+				cardID := discardedCards[selectedDiscardedIndex]
+				err = g.ConstructDiscardedCard(cardID)
 				if err != nil {
 					log.Printf("Error on build discarded: %v", err)
 				} else {
-					playerCards[pIndex] = append(playerCards[pIndex], discardedCards[selectedDiscardedIndex])
+					playerCards[pIndex][cardID.Color()] = append(playerCards[pIndex][cardID.Color()], cardID)
 				}
 			}
 			if selectedUserWonderIndex > -1 {
@@ -434,17 +437,18 @@ func run() error {
 				}
 			}
 			if selectOpponentsBuilding > -1 {
-				err = g.DiscardOpponentBuild(opponentsDestroyableBuildings[selectOpponentsBuilding])
+				cardID := opponentsDestroyableBuildings[selectOpponentsBuilding]
+				err = g.DiscardOpponentBuild(cardID)
 				if err != nil {
 					log.Printf("Error on discard opponent building: %v", err)
 				} else {
 					var newList []core.CardID
-					for _, cid := range playerCards[(pIndex+1)%2] {
-						if cid != opponentsDestroyableBuildings[selectOpponentsBuilding] {
+					for _, cid := range playerCards[(pIndex+1)%2][cardID.Color()] {
+						if cid != cardID {
 							newList = append(newList, cid)
 						}
 					}
-					playerCards[(pIndex+1)%2] = newList
+					playerCards[(pIndex+1)%2][cardID.Color()] = newList
 					opponentsDestroyableBuildings = nil
 					boardState = Table
 				}
@@ -637,13 +641,9 @@ func run() error {
 				drawBorder(discardedRects[selectOpponentsBuilding], win, borderColor, 4)
 			}
 		case PlayerCardsState:
-			for i, cid := range playerCards[pIndex] {
-				drawCard(cid, true, discardedRects[i], win, 0)
-			}
+			drawHand(win, playerCards[pIndex])
 		case OpponentCardsState:
-			for i, cid := range playerCards[pIndex.Next()] {
-				drawCard(cid, true, discardedRects[i], win, 0)
-			}
+			drawHand(win, playerCards[pIndex.Next()])
 		}
 
 		var currectPlayer = g.CurrentPlayerIndex()
@@ -676,6 +676,14 @@ func run() error {
 		<-fps.C
 	}
 	return nil
+}
+
+func drawHand(t pixel.Target, hand [core.CardColorSize][]core.CardID) {
+	for color, stack := range hand {
+		for i, cid := range stack {
+			drawCard(cid, true, discardedRects[color].Moved(pixel.V(0, -50*float64(i))), t, 0)
+		}
+	}
 }
 
 func debugPlayerInfo(p core.Player, isActive bool) string {
@@ -721,7 +729,10 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost 
 	t.Draw(win, im.Moved(r.Center()))
 
 	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
-	txt.Color = colornames.White
+	switch id.Color() {
+	default:
+		txt.Color = colornames.White
+	}
 	if faceUp {
 		fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
 	}
