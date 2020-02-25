@@ -82,7 +82,7 @@ func TestZeroGame(t *testing.T) { //nolint: funlen
 	require.NoError(t, err)
 
 	// === End Age I ===
-	assert.Equal(t, [numPlayers]Shields{1, 3}, game.Military().Shields)
+	assert.Equal(t, [numPlayers]Shields{1, 3}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2, len(game.discardedCards))
 	assert.Equal(t, 2, len(game.buildWonders[0]))
 	assert.Equal(t, 0, len(game.buildWonders[1]))
@@ -163,7 +163,7 @@ func TestZeroGame(t *testing.T) { //nolint: funlen
 	require.NoError(t, err)
 
 	// === End Age II ===
-	assert.Equal(t, [numPlayers]Shields{1 + 2, 3 + 5}, game.Military().Shields)
+	assert.Equal(t, [numPlayers]Shields{1 + 2, 3 + 5}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2+4, len(game.discardedCards))
 	assert.Equal(t, 2+2, len(game.buildWonders[0]))
 	assert.Equal(t, 0+1, len(game.buildWonders[1]))
@@ -250,7 +250,7 @@ func TestZeroGame(t *testing.T) { //nolint: funlen
 	assert.Equal(t, Winner1Player, game.winner)
 	assert.Equal(t, CivilianVictory, game.victoryType)
 
-	assert.Equal(t, [numPlayers]Shields{1 + 2 + 4, 3 + 5 + 1}, game.Military().Shields)
+	assert.Equal(t, [numPlayers]Shields{1 + 2 + 4, 3 + 5 + 1}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2+4+8, len(game.discardedCards))
 	assert.Equal(t, 2+2, len(game.buildWonders[0]))
 	assert.Equal(t, 0+1+2, len(game.buildWonders[1]))

@@ -518,11 +518,13 @@ func (g *Game) getWinner() Winner {
 }
 
 func (g *Game) nextAge() {
+	var pos = g.military.ConflictPawn.Position()
+
 	switch {
-	case g.military.Shields[0] > g.military.Shields[1]:
+	case pos > 0:
 		g.currentPlayerIndex = 1
 		g.state = StateChooseFirstPlayer
-	case g.military.Shields[0] < g.military.Shields[1]:
+	case pos < 0:
 		g.currentPlayerIndex = 0
 		g.state = StateChooseFirstPlayer
 	default:

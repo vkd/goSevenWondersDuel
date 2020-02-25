@@ -474,12 +474,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 		// drawFirstEpoh(win, pixel.V(windowWidth/2, windowHeight-100))
 
 		m := g.Military()
-		warPoint := int(m.Shields[0]) - int(m.Shields[1])
-		if warPoint < -9 {
-			warPoint = -9
-		} else if warPoint > 9 {
-			warPoint = 9
-		}
+		var warPoint = m.ConflictPawn.Position()
 
 		war.Clear()
 		war.Color = colornames.Red
