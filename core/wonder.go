@@ -5,46 +5,45 @@ import (
 	"math/rand"
 )
 
-// Wonder from the Age of Antiquity
-type Wonder struct {
-	Name WonderName
+const (
+	// WondersCount - amount of wonders on the game.
+	WondersCount = 12
+)
 
-	// ----
-	Cost    Cost
-	Effects []Effect
+// Wonder card.
+// Each large card represents a Wonder from the Age of Antiquity.
+// Each Wonder consists of a name, a construction cost, and an effect.
+type Wonder struct {
+	Name   WonderName
+	Cost   Cost
+	Effect Effect
 }
 
-// WonderID - ID of the wonder
+// WonderName - name of a wonder.
+type WonderName string
+
+// WonderID - ID of a wonder.
 type WonderID uint32
 
 func (id WonderID) wonder() *Wonder {
-	return &listWonders[id]
+	return &allWonders[id]
 }
 
-// WonderName - name of a wonder
-type WonderName string
-
 func wonderID(name WonderName) WonderID {
-	for i := range listWonders {
-		if listWonders[i].Name == name {
+	for i := range allWonders {
+		if allWonders[i].Name == name {
 			return WonderID(i)
 		}
 	}
 	panic(fmt.Sprintf("cannot find %q wonder", name))
 }
 
-// ----
-
-const (
-	numWonders = 12
-)
-
 var (
-	wonderIDs [numWonders]WonderID
+	wonderIDs [WondersCount]WonderID
 )
 
 func init() {
-	for i := 0; i < numWonders; i++ {
+	for i := 0; i < len(wonderIDs); i++ {
 		wonderIDs[i] = WonderID(i)
 	}
 }
@@ -57,10 +56,10 @@ func shuffleWonders(rnd *rand.Rand) []WonderID {
 	return wonders[:]
 }
 
-var _ = [1]struct{}{}[len(shuffleWonders(zeroRand()))-numWonders]
+var _ = [1]struct{}{}[len(shuffleWonders(zeroRand()))-WondersCount]
 
 var (
-	listWonders = []Wonder{
+	allWonders = []Wonder{
 		newWonder("Temple of Artemis", Coins(12), RepeatTurn(), NewCost(Wood, Stone, Glass, Papyrus)),
 		newWonder("The Great Lighthouse", OneRawMarket(), VP(4), NewCost(Wood, Stone, Papyrus, Papyrus)),
 		newWonder("The Colossus", Shields(2), VP(3), NewCost(Clay, Clay, Clay, Glass)),
@@ -74,56 +73,25 @@ var (
 		newWonder("The Hanging Gardens", Coins(6), RepeatTurn(), VP(3), NewCost(Wood, Wood, Glass, Papyrus)),
 		newWonder("The Sphinx", RepeatTurn(), VP(6), NewCost(Stone, Clay, Glass, Glass)),
 	}
-	_ = [1]struct{}{}[numWonders-len(listWonders)]
-
-	mapWonders = makeMapWondersByName(listWonders)
-	_          = [1]struct{}{}[numWonders-len(mapWonders)]
+	_ = [1]struct{}{}[WondersCount-len(allWonders)]
 )
 
 func newWonder(name WonderName, args ...interface{}) (w Wonder) {
 	w.Name = name
+
+	var es Effects
 	for i := range args {
 		switch a := args[i].(type) {
 		case Cost:
 			w.Cost = a
 		case VP:
-			w.Effects = append(w.Effects, typedVP{a, WonderVP})
+			es = append(es, typedVP{a, WonderVP})
 		case Effect:
-			w.Effects = append(w.Effects, a)
+			es = append(es, a)
 		default:
-			panic(fmt.Sprintf("Not allow for PToken builder: %T", a))
+			panic(fmt.Sprintf("Not allowed for the Wonder constructor: %T", a))
 		}
 	}
+	w.Effect = es
 	return w
-}
-
-func makeMapWondersByName(list []Wonder) map[WonderName]*Wonder {
-	m := map[WonderName]*Wonder{}
-	for i, w := range list {
-		m[w.Name] = &list[i]
-	}
-	return m
-}
-
-// WonderNames - list on wonder's names
-type WonderNames []WonderName
-
-// IsExists - the name is exists in current list
-func (ws WonderNames) IsExists(name WonderName) bool {
-	for _, w := range ws {
-		if w == name {
-			return true
-		}
-	}
-	return false
-}
-
-// IsExistsAll - the names are exist in current list
-func (ws WonderNames) IsExistsAll(checkedNames WonderNames) bool {
-	for _, w := range ws {
-		if !checkedNames.IsExists(w) {
-			return false
-		}
-	}
-	return true
 }

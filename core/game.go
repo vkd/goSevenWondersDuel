@@ -124,7 +124,7 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 		return ErrWrongState
 	}
 
-	var available [numWonders]uint8
+	var available [WondersCount]uint8
 	for _, w := range g.availableWonders {
 		available[w]++
 	}
@@ -307,9 +307,7 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 	}
 
 	wonder := wid.wonder()
-	for _, eff := range wonder.Effects {
-		eff.applyEffect(g, g.currentPlayerIndex)
-	}
+	wonder.Effect.applyEffect(g, g.currentPlayerIndex)
 
 	g.buildWonders[g.currentPlayerIndex] = append(g.buildWonders[g.currentPlayerIndex], wid)
 	g.nextTurn()
