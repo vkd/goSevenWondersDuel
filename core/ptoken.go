@@ -5,23 +5,31 @@ import (
 	"math/rand"
 )
 
-// PToken - progress token
+const (
+	// PTokensCount - amount of different PTokens of the game.
+	PTokensCount = 10
+)
+
+// PToken - Progress Tokens.
+// The progress tokens represent effects which you can obtain by collecting
+// identical pairs of scientific symbols.
 type PToken struct {
-	Name    PTokenName
-	Effects []Effect
+	Name   PTokenName
+	Effect Effect
 }
 
+// PTokenName - name of a progress token.
+type PTokenName string
+
+// PTokenID - ID of a PToken.
 type PTokenID uint8
 
 func (p PTokenID) pToken() *PToken {
-	return &listPTokens[p]
+	return &allPTokens[p]
 }
 
-// PTokenName - name of a progress token
-type PTokenName string
-
 func pTokenID(name PTokenName) PTokenID {
-	for i, p := range listPTokens {
+	for i, p := range allPTokens {
 		if p.Name == name {
 			return PTokenID(i)
 		}
@@ -29,12 +37,28 @@ func pTokenID(name PTokenName) PTokenID {
 	panic(fmt.Sprintf("cannot find %q ptoken", name))
 }
 
-const (
-	numPTokens = 10
+var (
+	pTokenIDs [PTokensCount]PTokenID
 )
 
+func init() {
+	for i := range pTokenIDs {
+		pTokenIDs[i] = PTokenID(i)
+	}
+}
+
+func shufflePTokens(rnd *rand.Rand) []PTokenID {
+	var ptokens = pTokenIDs
+	rnd.Shuffle(len(ptokens), func(i, j int) {
+		ptokens[i], ptokens[j] = ptokens[j], ptokens[i]
+	})
+	return ptokens[:]
+}
+
+var _ = [1]struct{}{}[len(shufflePTokens(zeroRand()))-PTokensCount]
+
 var (
-	listPTokens = []PToken{
+	allPTokens = []PToken{
 		newPToken("Agriculture", Coins(6), VP(4)),
 		newPToken("Architecture", Architecture()),
 		newPToken("Economy", Economy()),
@@ -46,52 +70,30 @@ var (
 		newPToken("Theology", Theology()),
 		newPToken("Urbanism", Coins(6), Urbanism()),
 	}
-	_ = [1]struct{}{}[len(listPTokens)-numPTokens]
-
-	mapPTokens = makeMapPTokensByName(listPTokens)
-	_          = [1]struct{}{}[len(mapPTokens)-numPTokens]
-
-	listPTokensIDs [numPTokens]PTokenID
+	_ = [1]struct{}{}[len(allPTokens)-PTokensCount]
 )
-
-func init() {
-	for i := range listPTokensIDs {
-		listPTokensIDs[i] = PTokenID(i)
-	}
-}
 
 func newPToken(name PTokenName, ee ...interface{}) PToken {
 	var pt = PToken{
 		Name: name,
 	}
+
+	var es Effects
 	for _, e := range ee {
 		switch e := e.(type) {
 		case VP:
-			pt.Effects = append(pt.Effects, typedVP{e, PTokenVP})
+			es = append(es, typedVP{e, PTokenVP})
 		case Effect:
-			pt.Effects = append(pt.Effects, e)
+			es = append(es, e)
 		default:
-			panic(fmt.Sprintf("Not allow for ptoken builder: %T", e))
+			panic(fmt.Sprintf("Not allowed for the PToken constructor: %T", e))
 		}
 	}
+	pt.Effect = es
 	return pt
 }
 
-func makeMapPTokensByName(list []PToken) map[PTokenName]*PToken {
-	m := map[PTokenName]*PToken{}
-	for i, t := range list {
-		m[t.Name] = &list[i]
-	}
-	return m
-}
-
-func shufflePTokens(rnd *rand.Rand) []PTokenID {
-	var ptokens = listPTokensIDs
-	rnd.Shuffle(len(ptokens), func(i, j int) {
-		ptokens[i], ptokens[j] = ptokens[j], ptokens[i]
-	})
-	return ptokens[:]
-}
+// --- TODO ---
 
 func Architecture() Effect {
 	return effertFunc(func(g *Game, i PlayerIndex) {

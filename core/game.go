@@ -342,9 +342,7 @@ func (g *Game) ChoosePToken(id PTokenID) error {
 
 	g.builtPTokens[g.currentPlayerIndex] = append(g.builtPTokens[g.currentPlayerIndex], id)
 
-	for _, e := range id.pToken().Effects {
-		e.applyEffect(g, g.currentPlayerIndex)
-	}
+	id.pToken().Effect.applyEffect(g, g.currentPlayerIndex)
 
 	g.state = g.state.Next()
 	g.nextTurn()
@@ -463,9 +461,7 @@ func (g *Game) PlayDiscardedPToken(id PTokenID) (err error) {
 	}
 	g.restPTokens = newList
 
-	for _, e := range id.pToken().Effects {
-		e.applyEffect(g, g.currentPlayerIndex)
-	}
+	id.pToken().Effect.applyEffect(g, g.currentPlayerIndex)
 
 	g.state = g.state.Next()
 	g.nextTurn()

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	// WondersCount - amount of wonders on the game.
+	// WondersCount - amount of different wonders on the game.
 	WondersCount = 12
 )
 
@@ -43,7 +43,7 @@ var (
 )
 
 func init() {
-	for i := 0; i < len(wonderIDs); i++ {
+	for i := range wonderIDs {
 		wonderIDs[i] = WonderID(i)
 	}
 }
