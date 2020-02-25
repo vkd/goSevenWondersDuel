@@ -316,6 +316,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			wonderTaken = [8]bool{}
 			boardState = Wonders
 			wonderBuilt = [2][4]uint8{}
+			playerCards = [2][core.CardColorSize][]core.CardID{}
 		}
 
 		if win.JustPressed(pixelgl.KeyW) {
