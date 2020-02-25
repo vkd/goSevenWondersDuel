@@ -35,6 +35,10 @@ func (c CardID) card() *Card {
 	return &cards[c]
 }
 
+func (c CardID) Color() CardColor {
+	return c.card().Color
+}
+
 // CardName - name of card
 type CardName string
 
@@ -67,7 +71,8 @@ const (
 	Yellow                         // Commercial Buildings
 	Red                            // Military Buildings
 	Purple                         // Guilds
-	numCardColors = iota
+	CardColorSize = iota
+	numCardColors = CardColorSize
 )
 
 var (
