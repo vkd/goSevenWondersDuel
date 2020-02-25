@@ -378,7 +378,7 @@ func TestZeroGame_MilitarySupremacy(t *testing.T) { //nolint: funlen
 	require.NoError(t, err)
 
 	// 0
-	_, err = game.ConstructBuilding(cardID("Horse breeders"))
+	_, err = game.DiscardCard(cardID("Horse breeders"))
 	require.NoError(t, err)
 	_, err = game.ConstructBuilding(cardID("Library"))
 	require.NoError(t, err)
@@ -440,17 +440,17 @@ func TestZeroGame_MilitarySupremacy(t *testing.T) { //nolint: funlen
 	assert.Equal(t, Winner1Player, game.winner)
 	assert.Equal(t, MilitarySupremacy, game.victoryType)
 
-	assert.Equal(t, [numPlayers]Shields{4 + 6, 0}, game.Military().ConflictPawn.Shields)
-	assert.Equal(t, 2+5, len(game.discardedCards))
+	assert.Equal(t, [numPlayers]Shields{4 + 5, 0}, game.Military().ConflictPawn.Shields)
+	assert.Equal(t, 2+6, len(game.discardedCards))
 	assert.Equal(t, 2, len(game.buildWonders[0]))
 	assert.Equal(t, 0+1, len(game.buildWonders[1]))
-	assert.Equal(t, 9+7, countBuiltCards(game, 0))
+	assert.Equal(t, 9+6, countBuiltCards(game, 0))
 	assert.Equal(t, 7+5, countBuiltCards(game, 1))
 
-	assert.Equal(t, VP(6+13), countVPs(game, 0))
-	assert.Equal(t, VP(1+19), countVPs(game, 1))
-	assert.Equal(t, Coins(9), game.Player(0).Coins)
-	assert.Equal(t, Coins(6), game.Player(1).Coins)
+	assert.Equal(t, VP(6+14), countVPs(game, 0))
+	assert.Equal(t, VP(1+18), countVPs(game, 1))
+	assert.Equal(t, Coins(12), game.Player(0).Coins)
+	assert.Equal(t, Coins(3), game.Player(1).Coins)
 
 	assert.Equal(t, [numVPTypes]VP{
 		BlueVP:     0,
@@ -459,9 +459,9 @@ func TestZeroGame_MilitarySupremacy(t *testing.T) { //nolint: funlen
 		PurpleVP:   0,
 		WonderVP:   6,
 		PTokenVP:   0,
-		CoinsVP:    3,
+		CoinsVP:    4,
 		MilitaryVP: 10,
-		SumVP:      19,
+		SumVP:      20,
 	}, game.vps[0])
 	assert.Equal(t, [numVPTypes]VP{
 		BlueVP:     0,
@@ -470,9 +470,9 @@ func TestZeroGame_MilitarySupremacy(t *testing.T) { //nolint: funlen
 		PurpleVP:   0,
 		WonderVP:   4,
 		PTokenVP:   7,
-		CoinsVP:    2,
+		CoinsVP:    1,
 		MilitaryVP: 0,
-		SumVP:      20,
+		SumVP:      19,
 	}, game.vps[1])
 }
 
