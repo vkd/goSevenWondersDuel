@@ -5,7 +5,8 @@ type Military struct {
 	// Conflict pawn
 	Shields [numPlayers]Shields
 
-	// Military tokens
+	// Military Tokens.
+	// "true" means "is taken".
 	Tokens2 [numPlayers]bool
 	Tokens5 [numPlayers]bool
 }
