@@ -724,7 +724,12 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost 
 	t.Draw(win, im.Moved(r.Center()))
 
 	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
-	txt.Color = colornames.White
+	switch id.Color() {
+	case core.Yellow:
+		txt.Color = colornames.Black
+	default:
+		txt.Color = colornames.White
+	}
 	if faceUp {
 		fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
 	}
