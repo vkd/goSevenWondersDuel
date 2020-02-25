@@ -22,17 +22,21 @@ var (
 	progressTx [10]*pixel.Sprite
 )
 
+const (
+	pathPrefix = ""
+)
+
 func loadTextures() error { //nolint: funlen
 	var nextTxToLoadIndex int
 	for _, ll := range []struct {
 		filename string
 		count    int
 	}{
-		{"../../textures/1.jpg", 16},
-		{"../../textures/3.jpg", 16},
-		{"../../textures/5.jpg", 16},
-		{"../../textures/7.jpg", 16},
-		{"../../textures/9.jpg", 9},
+		{pathPrefix + "textures/1.jpg", 16},
+		{pathPrefix + "textures/3.jpg", 16},
+		{pathPrefix + "textures/5.jpg", 16},
+		{pathPrefix + "textures/7.jpg", 16},
+		{pathPrefix + "textures/9.jpg", 9},
 	} {
 		pic, err := loadPicture(ll.filename)
 		if err != nil {
@@ -46,14 +50,14 @@ func loadTextures() error { //nolint: funlen
 		}
 	}
 
-	pic, err := loadPicture("../../textures/4.jpg")
+	pic, err := loadPicture(pathPrefix + "textures/4.jpg")
 	if err != nil {
 		return fmt.Errorf("error on load texture: %v", err)
 	}
 	cardsTxBack[0] = pixel.NewSprite(pic, rectByCard(0))
 	cardsTxBack[1] = pixel.NewSprite(pic, rectByCard(4))
 
-	pic, err = loadPicture("../../textures/10.jpg")
+	pic, err = loadPicture(pathPrefix + "textures/10.jpg")
 	if err != nil {
 		return fmt.Errorf("error on load texture: %v", err)
 	}
@@ -61,7 +65,7 @@ func loadTextures() error { //nolint: funlen
 	cardsTxBack[3] = pixel.NewSprite(pic, rectByCard(0))
 	wondersTxBack = pixel.NewSprite(pic, rectByWonder9(6))
 
-	pic, err = loadPicture("../../textures/9.jpg")
+	pic, err = loadPicture(pathPrefix + "textures/9.jpg")
 	if err != nil {
 		return fmt.Errorf("error on load texture: %v", err)
 	}
@@ -69,7 +73,7 @@ func loadTextures() error { //nolint: funlen
 	wondersTx[0] = pixel.NewSprite(pic, rectByWonder9(6))
 	wondersTx[1] = pixel.NewSprite(pic, rectByWonder9(7))
 
-	pic, err = loadPicture("../../textures/11.jpg")
+	pic, err = loadPicture(pathPrefix + "textures/11.jpg")
 	if err != nil {
 		return fmt.Errorf("error on load texture: %v", err)
 	}
@@ -77,7 +81,7 @@ func loadTextures() error { //nolint: funlen
 		wondersTx[i] = pixel.NewSprite(pic, rectByWonder(i-2))
 	}
 
-	pic, err = loadPicture("../../textures/13.jpg")
+	pic, err = loadPicture(pathPrefix + "textures/13.jpg")
 	if err != nil {
 		return fmt.Errorf("error on load texture: %v", err)
 	}
@@ -85,7 +89,7 @@ func loadTextures() error { //nolint: funlen
 		wondersTx[i] = pixel.NewSprite(pic, rectByWonder(i-10))
 	}
 
-	pic, err = loadPicture("../../textures/progress_tokens.png")
+	pic, err = loadPicture(pathPrefix + "textures/progress_tokens.png")
 	if err != nil {
 		return fmt.Errorf("error on load textures: %v", err)
 	}
