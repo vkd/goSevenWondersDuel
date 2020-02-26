@@ -481,6 +481,9 @@ func (g *Game) ChooseFirstPlayer(i PlayerIndex) error {
 
 func (g *Game) nextTurn() {
 	if !g.state.Is(StateGameTurn) {
+		if g.state.Is(StateVictory) {
+			g.finalVPs()
+		}
 		return
 	}
 	if g.ageDesk.state.anyExists() {
@@ -492,6 +495,7 @@ func (g *Game) nextTurn() {
 	} else {
 		if g.currentAge == 2 {
 			g.victory(WinnerBoth, CivilianVictory)
+			g.finalVPs()
 			return
 		}
 		g.repeatTurn = false
@@ -590,6 +594,10 @@ func (g *Game) finalVPs() {
 			g.vps[pi][SumVP] += v
 		}
 	}
+
+	if g.victoryType == CivilianVictory {
+		g.winner = g.getWinner()
+	}
 }
 
 func (g *Game) VictoryResult() (w Winner, vic VictoryType, vps [2][numVPTypes]VP, _ error) {
@@ -600,12 +608,9 @@ func (g *Game) VictoryResult() (w Winner, vic VictoryType, vps [2][numVPTypes]VP
 }
 
 func (g *Game) victory(w Winner, vic VictoryType) {
-	g.finalVPs()
-
-	if vic == CivilianVictory {
-		w = g.getWinner()
+	if g.state.Is(StateVictory) {
+		return
 	}
-
 	g.state = StateVictory
 	g.winner = w
 	g.victoryType = vic
