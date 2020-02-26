@@ -476,6 +476,232 @@ func TestZeroGame_MilitarySupremacy(t *testing.T) { //nolint: funlen
 	}, game.vps[1])
 }
 
+func TestZeroGame_ScientificSupremacy(t *testing.T) { //nolint: funlen
+	game, err := NewGame(WithSeed(0))
+	require.NoError(t, err)
+
+	err = game.SelectWonders(
+		[...]WonderID{wonderID("Temple of Artemis"), wonderID("The Great Library"), wonderID("The Hanging Gardens"), wonderID("The Sphinx")},
+		//
+		[...]WonderID{wonderID("The Appian Way"), wonderID("The Statue of Zeus"), wonderID("The Great Lighthouse"), wonderID("The Mausoleum")},
+	)
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Quarry"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Logging camp"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Guard tower"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Pharmacist"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructWonder(cardID("Baths"), wonderID("Temple of Artemis"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Garrison"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Apothecary"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Clay pool"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Press"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Clay pit"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Workshop"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Lumber yard"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Glassworks"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Stable"))
+	require.NoError(t, err)
+	_, err = game.DiscardCard(cardID("Theater"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Stone pit"))
+	require.NoError(t, err)
+	_, err = game.DiscardCard(cardID("Palisade"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Altar"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Scriptorium"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Wood reserve"))
+	require.NoError(t, err)
+
+	// === End Age I ===
+	assert.Equal(t, [numPlayers]Shields{3, 0}, game.Military().ConflictPawn.Shields)
+	assert.Equal(t, 2, len(game.discardedCards))
+	assert.Equal(t, 1, len(game.buildWonders[0]))
+	assert.Equal(t, 0, len(game.buildWonders[1]))
+	assert.Equal(t, 10, countBuiltCards(game, 0))
+	assert.Equal(t, 7, countBuiltCards(game, 1))
+	assert.Equal(t, VP(3), countVPs(game, 0))
+	assert.Equal(t, VP(2), countVPs(game, 1))
+	assert.Equal(t, Coins(5), game.Player(0).Coins)
+	assert.Equal(t, Coins(2), game.Player(1).Coins)
+	assert.Equal(t, uint8(1), game.currentAge)
+	assert.Equal(t, game.GetState(), StateChooseFirstPlayer)
+
+	// === Age II ===
+	err = game.ChooseFirstPlayer(1)
+	require.NoError(t, err)
+	assert.Equal(t, game.GetState(), StateGameTurn)
+
+	// 1
+	_, err = game.DiscardCard(cardID("Brick yard"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Horse breeders"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Library"))
+	require.NoError(t, err)
+	err = game.ChoosePToken(pTokenID("Law"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.DiscardCard(cardID("Tribunal"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Drying room"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Barracks"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Laboratory"))
+	require.NoError(t, err)
+	err = game.ChoosePToken(pTokenID("Architecture"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Forum"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("School"))
+	require.NoError(t, err)
+	err = game.ChoosePToken(pTokenID("Strategy"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.DiscardCard(cardID("Postrum"))
+	require.NoError(t, err)
+	_, err = game.DiscardCard(cardID("Aqueduct"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Brewery"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Caravansery"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Parade ground"))
+	require.NoError(t, err)
+	_, err = game.ConstructWonder(cardID("Shelf quarry"), wonderID("The Great Lighthouse"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Sawmill"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("Walls"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Dispensary"))
+	require.NoError(t, err)
+	_, err = game.DiscardCard(cardID("Archery range"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Customs house"))
+	require.NoError(t, err)
+
+	// === End Age II ===
+	assert.Equal(t, [numPlayers]Shields{3 + 4, 0 + 3}, game.Military().ConflictPawn.Shields)
+	assert.Equal(t, 2+5, len(game.discardedCards))
+	assert.Equal(t, 1+0, len(game.buildWonders[0]))
+	assert.Equal(t, 0+1, len(game.buildWonders[1]))
+	assert.Equal(t, 10+8, countBuiltCards(game, 0))
+	assert.Equal(t, 7+6, countBuiltCards(game, 1))
+	assert.Equal(t, VP(3+2), countVPs(game, 0))
+	assert.Equal(t, VP(2+8), countVPs(game, 1))
+	assert.Equal(t, Coins(9), game.Player(0).Coins)
+	assert.Equal(t, Coins(3), game.Player(1).Coins)
+	assert.Equal(t, uint8(2), game.currentAge)
+	assert.Equal(t, game.GetState(), StateChooseFirstPlayer)
+
+	// === Age III ===
+	err = game.ChooseFirstPlayer(1)
+	require.NoError(t, err)
+	assert.Equal(t, game.GetState(), StateGameTurn)
+
+	// 1
+	_, err = game.DiscardCard(cardID("Shipowners guild"))
+	require.NoError(t, err)
+
+	// 0
+	_, err = game.ConstructBuilding(cardID("Port"))
+	require.NoError(t, err)
+	_, err = game.ConstructBuilding(cardID("University"))
+	require.NoError(t, err)
+
+	// === End Age III ===
+	assert.Equal(t, game.GetState(), StateVictory)
+	assert.Equal(t, Winner2Player, game.winner)
+	assert.Equal(t, ScientificSupremacy, game.victoryType)
+
+	assert.Equal(t, [numPlayers]Shields{3 + 4, 0 + 3}, game.Military().ConflictPawn.Shields)
+	assert.Equal(t, 2+5+1, len(game.discardedCards))
+	assert.Equal(t, 1+0, len(game.buildWonders[0]))
+	assert.Equal(t, 0+1, len(game.buildWonders[1]))
+	assert.Equal(t, 10+8+1, countBuiltCards(game, 0))
+	assert.Equal(t, 7+6+1, countBuiltCards(game, 1))
+
+	assert.Equal(t, Coins(9+11), game.Player(0).Coins)
+	assert.Equal(t, Coins(3+3), game.Player(1).Coins)
+
+	assert.Equal(t, [numVPTypes]VP{
+		BlueVP:     3,
+		GreenVP:    2,
+		YellowVP:   3,
+		PurpleVP:   0,
+		WonderVP:   0,
+		PTokenVP:   0,
+		CoinsVP:    6,
+		MilitaryVP: 5,
+		SumVP:      19,
+	}, game.vps[0])
+	assert.Equal(t, [numVPTypes]VP{
+		BlueVP:     0,
+		GreenVP:    8,
+		YellowVP:   0,
+		PurpleVP:   0,
+		WonderVP:   4,
+		PTokenVP:   0,
+		CoinsVP:    2,
+		MilitaryVP: 0,
+		SumVP:      14,
+	}, game.vps[1])
+}
+
 func countBuiltCards(g *Game, i PlayerIndex) (count int) {
 	for _, cc := range g.builtCards[i] {
 		count += len(cc)
