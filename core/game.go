@@ -100,6 +100,14 @@ func NewGame(opts ...Option) (*Game, error) {
 	return &g, nil
 }
 
+func (g *Game) BuildCards() [numPlayers][numCardColors][]CardID {
+	return g.builtCards
+}
+
+func (g *Game) CurrentAge() uint8 {
+	return g.currentAge + 1
+}
+
 // GetState of the game
 func (g *Game) GetState() State {
 	return g.state
@@ -347,6 +355,10 @@ func (g *Game) ChoosePToken(id PTokenID) error {
 	g.state = g.state.Next()
 	g.nextTurn()
 	return nil
+}
+
+func (g *Game) DiscardedCards() []CardID {
+	return g.discardedCards
 }
 
 func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
