@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -49,7 +50,26 @@ var (
 	ageIRects   = genCardRects(ageGrid.genAgeIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
 	ageIIRects  = genCardRects(ageGrid.genAgeIIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
 	ageIIIRects = genCardRects(ageGrid.genAgeIIIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
+
+	bot = newBot()
+
+	userWonders [2][]core.WonderID
+
+	boardState BoardState = Wonders
 )
+
+var (
+	// seed = 0
+	seed int64 = int64(time.Now().Nanosecond())
+)
+
+func newBot() core.Bot {
+	return core.SimpleBot(rand.New(rand.NewSource(seed)))
+}
+
+func newGame() (*core.Game, error) {
+	return core.NewGame(core.WithSeed(seed))
+}
 
 var discardedRects []pixel.Rect
 
@@ -90,7 +110,7 @@ const (
 )
 
 func run() error { //nolint: gocognit, funlen, gocyclo
-	g, err := core.NewGame(core.WithSeed(0))
+	g, err := newGame()
 	if err != nil {
 		return err
 	}
@@ -98,7 +118,10 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	var w1 = [4]core.WonderID{5, 6, 1, 4}
 	err = g.SelectWonders(w0, w1)
 	if err != nil {
-		return err
+		log.Printf("Error on preselected wonders: %v", err)
+	} else {
+		userWonders = [2][]core.WonderID{w0[:], w1[:]}
+		boardState = Table
 	}
 
 	wonders := g.GetAvailableWonders()
@@ -175,7 +198,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 		}
 	}
 
-	var userWonders [2][]core.WonderID = [2][]core.WonderID{w0[:], w1[:]}
 	var userWonderRects [2][4]pixel.Rect
 	{
 		for i := 0; i < 4; i++ {
@@ -202,10 +224,8 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	var fps = time.NewTicker(time.Second / 15)
 	defer fps.Stop()
 
-	var boardState BoardState = Table
-
 	var verbose bool = true
-	var currentAge = 1
+	var currentAge uint8 = 1
 	var wondersBuilt int = 0
 
 	// for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
@@ -215,14 +235,14 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	// }
 
 	var nextTurn = func() {
-		var isNextAge bool = true
-		for _, cs := range tableCards.Cards {
-			if cs.Exists {
-				isNextAge = false
-				break
-			}
+		for g.CurrentPlayerIndex() == 1 {
+			bot.NextTurn(g, 1)
+			tableCards.Cards = g.CardsState()
+			playerCards = g.BuildCards()
+			discardedCards = g.DiscardedCards()
 		}
-		if isNextAge {
+
+		if currentAge != g.CurrentAge() {
 			currentAge++
 			switch currentAge {
 			case 2:
@@ -232,6 +252,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			case 4:
 				w, r, vps, _ := g.VictoryResult()
 				log.Printf("w: %v, r: %v, vps: %v", w, r, vps)
+				return
 			}
 			tableCards.Cards = g.CardsState()
 		}
@@ -300,7 +321,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 		// }
 
 		if win.JustPressed(pixelgl.KeyF12) {
-			g, err = core.NewGame(core.WithSeed(0))
+			g, err = newGame()
 			if err != nil {
 				return err
 			}
@@ -317,6 +338,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			boardState = Wonders
 			wonderBuilt = [2][4]uint8{}
 			playerCards = [2][core.CardColorSize][]core.CardID{}
+			bot = newBot()
 		}
 
 		if win.JustPressed(pixelgl.KeyW) {
