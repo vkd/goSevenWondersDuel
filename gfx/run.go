@@ -526,12 +526,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 					}
 					drawBorder(tableCards.Rects[i], win, color, 2)
 				}
-				idx := text.New(tableCards.Rects[i].Max, atlas)
-				idx.Color = colornames.Lightgreen
-				idx.Dot.X -= idx.BoundsOf(strconv.Itoa(i)).W()
-				idx.Dot.Y -= 10
-				idx.WriteString(strconv.Itoa(i)) // nolint
-				idx.Draw(win, pixel.IM)
 			}
 
 		case Wonders:
@@ -723,17 +717,36 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost 
 	}
 	t.Draw(win, im.Moved(r.Center()))
 
-	txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
-	switch id.Color() {
-	case core.Yellow:
-		txt.Color = colornames.Black
-	default:
-		txt.Color = colornames.White
-	}
 	if faceUp {
-		fmt.Fprintf(txt, "Index: %d\nCost: %d", id, cost)
+		{
+			txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
+			switch id.Color() {
+			case core.Yellow:
+				txt.Color = colornames.Black
+			default:
+				txt.Color = colornames.White
+			}
+			var str strings.Builder
+			if cost > 0 {
+				str.WriteString(fmt.Sprintf("-%d coins", cost)) // nolint
+			}
+			fmt.Fprint(txt, str.String())
+			txt.Draw(win, pixel.IM)
+		}
+
+		{
+			idx := text.New(r.Max, atlas)
+			idx.Color = colornames.Lightgreen
+			s := strconv.Itoa(int(id))
+			if id < 10 {
+				s = " " + s
+			}
+			idx.Dot.X -= 16
+			idx.Dot.Y -= 12
+			idx.WriteString(s) // nolint
+			idx.Draw(win, pixel.IM)
+		}
 	}
-	txt.Draw(win, pixel.IM)
 }
 
 func drawWonder(win pixel.Target, faceUp bool, id core.WonderID, rect pixel.Rect, cost core.Coins, builtCardID uint8) {
