@@ -644,7 +644,23 @@ const (
 	CivilianVictory
 	MilitarySupremacy
 	ScientificSupremacy
+	VictoryTypeSize = iota
+
+	numVictoryTypes = VictoryTypeSize
 )
+
+func (v VictoryType) String() string {
+	switch v {
+	case CivilianVictory:
+		return "CivilianVictory"
+	case MilitarySupremacy:
+		return "MilitarySupremacy"
+	case ScientificSupremacy:
+		return "ScientificSupremacy"
+	default:
+		return "unknown victory type"
+	}
+}
 
 type Winner uint8
 
@@ -654,6 +670,19 @@ const (
 	WinnerBoth
 	numWinners
 )
+
+func (w Winner) String() string {
+	switch w {
+	case Winner1Player:
+		return "1 player is winner"
+	case Winner2Player:
+		return "2 player is winner"
+	case WinnerBoth:
+		return "No one is winner"
+	default:
+		return fmt.Sprintf("wrong winner value: %#v", w)
+	}
+}
 
 var _ = [1]struct{}{}[numWinners-1-numPlayers]
 
