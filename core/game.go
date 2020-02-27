@@ -296,7 +296,20 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 		return state, fmt.Errorf("wonder (id = %d) cannot be built: max 7 wonders are allowed", wid)
 	}
 
-	ok := g.ageDesk.testBuild(cid)
+	var ok bool
+	var newWs []WonderID
+	for _, w := range g.wondersPerPlayer[g.currentPlayerIndex] {
+		if w == wid && !ok {
+			ok = true
+			continue
+		}
+		newWs = append(newWs, w)
+	}
+	if !ok {
+		return state, fmt.Errorf("wonder (id = %d) is not related to current player", wid)
+	}
+
+	ok = g.ageDesk.testBuild(cid)
 	state = g.ageDesk.state
 	if !ok {
 		return state, fmt.Errorf("card (id = %d) cannot be taken", cid)
@@ -325,6 +338,7 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 	wonder.Effect.applyEffect(g, g.currentPlayerIndex)
 
 	g.buildWonders[g.currentPlayerIndex] = append(g.buildWonders[g.currentPlayerIndex], wid)
+	g.wondersPerPlayer[g.currentPlayerIndex] = newWs
 	g.nextTurn()
 
 	return state, nil
