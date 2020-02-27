@@ -279,6 +279,13 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
 	return state, nil
 }
 
+func (g *Game) GetMyAvailableWonders() []WonderID {
+	if len(g.buildWonders[0])+len(g.buildWonders[1]) >= 7 {
+		return nil
+	}
+	return g.wondersPerPlayer[g.currentPlayerIndex]
+}
+
 func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err error) {
 	state = g.ageDesk.state
 	if !g.state.Is(StateGameTurn) {
@@ -652,6 +659,10 @@ var _ = [1]struct{}{}[numWinners-1-numPlayers]
 
 func (g *Game) gettingPToken(_ PlayerIndex) {
 	g.state = StateChoosePToken
+	ps := g.GetAvailablePTokens()
+	if len(ps) == 0 {
+		g.state = g.state.Next()
+	}
 }
 
 func (g *Game) Military() Military {
@@ -766,6 +777,10 @@ var _ Effect = freeDiscardedCard{}
 
 func (freeDiscardedCard) applyEffect(g *Game, i PlayerIndex) {
 	g.state = StateBuildFreeDiscarded
+	ds := g.DiscardedCards()
+	if len(ds) == 0 {
+		g.state = g.state.Next()
+	}
 }
 
 func DiscardOpponentBuild(color CardColor) Effect {
@@ -781,6 +796,11 @@ var _ Effect = discardOpponentBuild{}
 func (c discardOpponentBuild) applyEffect(g *Game, i PlayerIndex) {
 	g.discardOpponentBuild = c
 	g.state = StateDiscardOpponentBuild
+
+	ds, _ := g.GetDiscardedOpponentsBuildings()
+	if len(ds) == 0 {
+		g.state = g.state.Next()
+	}
 }
 
 func DiscardOpponentCoins(c Coins) Effect {
