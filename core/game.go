@@ -279,11 +279,15 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
 	return state, nil
 }
 
-func (g *Game) GetMyAvailableWonders() []WonderID {
+func (g *Game) GetBuiltWonders() [numPlayers][]WonderID {
+	return g.buildWonders
+}
+
+func (g *Game) GetMyAvailableWonders() [numPlayers][]WonderID {
 	if len(g.buildWonders[0])+len(g.buildWonders[1]) >= 7 {
-		return nil
+		return [numPlayers][]WonderID{}
 	}
-	return g.wondersPerPlayer[g.currentPlayerIndex]
+	return g.wondersPerPlayer
 }
 
 func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err error) {
