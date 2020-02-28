@@ -1,8 +1,11 @@
 package core
 
 import (
+	"encoding/csv"
 	"fmt"
+	"io"
 	"math/rand"
+	"strconv"
 	"time"
 )
 
@@ -151,4 +154,164 @@ func (s simpleBot) NextTurn(g *Game, myIdx PlayerIndex) {
 	if err != nil {
 		panic(fmt.Sprintf("error on bot's next turn: %v", err))
 	}
+}
+
+func RatingBot(rating map[CardID]int) Bot {
+	return ratingBot{rand.New(rand.NewSource(time.Now().UnixNano())), rating}
+}
+
+type ratingBot struct {
+	rnd    *rand.Rand
+	rating map[CardID]int
+}
+
+var _ Bot = ratingBot{}
+
+func (r ratingBot) NextTurn(g *Game, myIdx PlayerIndex) {
+	var err error
+	switch g.GetState() {
+	case StateGameTurn:
+		p := g.Player(myIdx)
+
+		var ac = make([]CardID, 0, 8)
+		for _, s := range g.CardsState() {
+			if !s.Exists || s.Covered {
+				continue
+			}
+			ac = append(ac, s.ID)
+		}
+
+		if len(ac) == 0 {
+			panic("This situation is unreal: there is no available cards")
+		}
+
+		r.rnd.Shuffle(len(ac), func(i, j int) {
+			ac[i], ac[j] = ac[j], ac[i]
+		})
+
+		var isBuilt bool
+		for _, cid := range ac {
+			switch cid.Color() {
+			case Brown, Grey:
+			default:
+				continue
+			}
+
+			card := cid.card()
+
+			switch e := card.Effects[0].(type) {
+			case Resource:
+				if p.Resources[e] != 0 {
+					continue
+				}
+			default:
+				panic(fmt.Sprintf("Unknown effect: %T", e))
+			}
+
+			cost := g.CardCostCoins(cid)
+			if cost > p.Coins {
+				continue
+			}
+
+			_, err = g.ConstructBuilding(cid)
+			isBuilt = true
+			break
+		}
+		if isBuilt {
+			break
+		}
+
+		var maxCardID = ac[0]
+		var maxRating = r.rating[maxCardID]
+
+		var found bool
+		var maxAvailableRating int
+		var maxAvailableCardID CardID
+		for _, cid := range ac {
+			rt := r.rating[cid]
+			if rt > maxRating {
+				maxRating = rt
+				maxCardID = cid
+			}
+
+			cost := g.CardCostCoins(cid)
+			if cost > p.Coins {
+				continue
+			}
+			if !found || rt > maxAvailableRating {
+				found = true
+				maxAvailableRating = rt
+				maxAvailableCardID = cid
+			}
+		}
+
+		listWs := g.GetMyAvailableWonders()[myIdx]
+		var aws []WonderID
+		for _, wid := range listWs {
+			cs, tp := g.WonderCost(wid)
+			cost := cs + tp
+			if cost > p.Coins {
+				continue
+			}
+			aws = append(aws, wid)
+		}
+		if len(aws) > 0 {
+			idx := r.rnd.Intn(len(aws))
+			_, err = g.ConstructWonder(maxCardID, aws[idx])
+			break
+		}
+
+		if found {
+			_, err = g.ConstructBuilding(maxAvailableCardID)
+			break
+		}
+
+		_, err = g.DiscardCard(maxCardID)
+	default:
+		simpleBot{r.rnd}.NextTurn(g, myIdx)
+		return
+	}
+	if err != nil {
+		panic(fmt.Sprintf("error on bot's next turn: %v", err))
+	}
+}
+
+func LoadBotRating(r io.Reader) (map[CardID]int, error) {
+	out := make(map[CardID]int)
+	var rd = csv.NewReader(r)
+	for {
+		row, err := rd.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+		if len(row) < 2 {
+			continue
+		}
+		cid, err := strconv.Atoi(row[0])
+		if err != nil {
+			return nil, err
+		}
+		v, err := strconv.Atoi(row[1])
+		if err != nil {
+			return nil, err
+		}
+		out[CardID(cid)] = v
+	}
+	return out, nil
+}
+
+func SaveBotRating(w io.Writer, m map[CardID]int) error {
+	wr := csv.NewWriter(w)
+	defer wr.Flush()
+
+	for cid, v := range m {
+		err := wr.Write([]string{strconv.Itoa(int(cid)), strconv.Itoa(v)})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
