@@ -5,7 +5,7 @@ import (
 	"image/color"
 	"log"
 	"math"
-	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -61,10 +61,26 @@ var (
 var (
 	// seed = 0
 	seed int64 = int64(time.Now().Nanosecond())
+
+	rating map[core.CardID]int
 )
 
+func init() {
+	f, err := os.Open("core/stats")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	rating, err = core.LoadBotRating(f)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func newBot() core.Bot {
-	return core.SimpleBot(rand.New(rand.NewSource(seed)))
+	return core.RatingBot(rating)
+	// return core.SimpleBot(rand.New(rand.NewSource(seed)))
 }
 
 func newGame() (*core.Game, error) {
@@ -235,11 +251,23 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	// }
 
 	var nextTurn = func() {
-		for g.CurrentPlayerIndex() == 1 {
+		for g.CurrentPlayerIndex() == 1 && !g.GetState().Is(core.StateVictory) {
 			bot.NextTurn(g, 1)
 			tableCards.Cards = g.CardsState()
 			playerCards = g.BuildCards()
 			discardedCards = g.DiscardedCards()
+			ptokens = g.GetAvailablePTokens()
+
+			mws := make(map[core.WonderID]struct{})
+			for _, w := range g.GetBuiltWonders()[1] {
+				mws[w] = struct{}{}
+			}
+
+			for i := range wonderBuilt[1] {
+				if _, ok := mws[userWonders[1][i]]; ok {
+					wonderBuilt[1][i] = 1
+				}
+			}
 		}
 
 		if currentAge != g.CurrentAge() {
@@ -337,6 +365,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			wonderTaken = [8]bool{}
 			boardState = Wonders
 			wonderBuilt = [2][4]uint8{}
+			wondersBuilt = 0
 			playerCards = [2][core.CardColorSize][]core.CardID{}
 			bot = newBot()
 		}
