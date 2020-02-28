@@ -414,9 +414,10 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			if selectedCardIndex > -1 {
 				if selectedConstructWonder > -1 {
 					tableCards.Cards, err = g.ConstructWonder(tableCards.Cards[selectedCardIndex].ID, userWonders[g.CurrentPlayerIndex()][selectedConstructWonder])
-
-					wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID) + 1
-					wondersBuilt++
+					if err == nil {
+						wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID) + 1
+						wondersBuilt++
+					}
 				} else {
 					cardID := tableCards.Cards[selectedCardIndex].ID
 					tableCards.Cards, err = g.ConstructBuilding(cardID)
@@ -426,9 +427,8 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				}
 				if err != nil {
 					log.Printf("Error on build: %v", err)
-				} else {
-					selectedConstructWonder = -1
 				}
+				selectedConstructWonder = -1
 			}
 			if selectedWonderIndex > -1 {
 				if !wonderTaken[selectedWonderIndex] {
@@ -770,7 +770,7 @@ func drawCard(id core.CardID, faceUp bool, r pixel.Rect, win pixel.Target, cost 
 
 	if faceUp {
 		{
-			txt := text.New(pixel.V(r.Min.X, r.Max.Y-10), atlas)
+			txt := text.New(pixel.V(r.Min.X+2, r.Max.Y-12), atlas)
 			switch id.Color() {
 			case core.Yellow:
 				txt.Color = colornames.Black
