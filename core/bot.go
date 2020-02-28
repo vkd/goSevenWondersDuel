@@ -80,17 +80,39 @@ func (s simpleBot) NextTurn(g *Game, myIdx PlayerIndex) {
 			break
 		}
 
+		listWs := g.GetMyAvailableWonders()[myIdx]
+		var aws []WonderID
+		for _, wid := range listWs {
+			cs, tp := g.WonderCost(wid)
+			cost := cs + tp
+			if cost > p.Coins {
+				continue
+			}
+			aws = append(aws, wid)
+		}
+		if len(aws) > 0 {
+			idx := s.rnd.Intn(len(aws))
+			_, err = g.ConstructWonder(ac[s.rnd.Intn(len(ac))], aws[idx])
+			break
+		}
+
+		var found bool
+		var minPrice = p.Coins + 1
+		var minCardID CardID
 		for _, cid := range ac {
 			cost := g.CardCostCoins(cid)
 			if cost > p.Coins {
 				continue
 			}
+			if cost < minPrice {
+				found = true
+				minPrice = cost
+				minCardID = cid
+			}
 
-			_, err = g.ConstructBuilding(cid)
-			isBuilt = true
-			break
 		}
-		if isBuilt {
+		if found {
+			_, err = g.ConstructBuilding(minCardID)
 			break
 		}
 
