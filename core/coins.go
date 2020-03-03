@@ -24,15 +24,17 @@ func (c *Coins) sub(v Coins) {
 	}
 }
 
-// Mul - multiply
+// Mul - multiply.
 func (c Coins) Mul(i uint8) Coins {
 	return Coins(uint8(c) * i)
 }
 
-// Div - division
+// Div - division.
 func (c Coins) Div(i uint8) uint8 {
 	return uint8(c) / i
 }
+
+// --- TODO ---
 
 // CoinsPerWonder - The card is worth x coins per Wonder constructed in your city at the time it is constructed.
 type CoinsPerWonder Coins
