@@ -38,7 +38,7 @@ type Game struct {
 	oneFreeResMarkets [numPlayers]OneFreeResMarkets
 	endEffects        [numPlayers][]Finaler
 
-	military Military
+	military Board
 
 	vps [numPlayers][numVPTypes]VP
 
@@ -712,7 +712,7 @@ func (g *Game) gettingPToken(_ PlayerIndex) {
 	}
 }
 
-func (g *Game) Military() Military {
+func (g *Game) Military() Board {
 	return g.military
 }
 

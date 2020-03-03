@@ -19,72 +19,75 @@ func (c ConflictPawn) Position() int {
 	return pos
 }
 
+// Leader of the board by military score.
+//
+// Returns leader's PlayerIndex and leader's score.
+func (c ConflictPawn) Leader() (PlayerIndex, uint) {
+	pos := c.Position()
+	if pos > 0 {
+		return 0, uint(pos)
+	} else if pos < 0 {
+		return 1, uint(-pos)
+	}
+	return 0, 0
+}
+
 func (c *ConflictPawn) add(i PlayerIndex, s Shields) {
 	c.Shields[i] += s
 }
 
-// --- TODO ---
-
-// Military board
-type Military struct {
+// Board - The board represents the military rivalry between the two cities.
+// It is divided into zones (9) and spaces (19). The last space on each end
+// represents the player’s capital.
+type Board struct {
 	ConflictPawn ConflictPawn
 
-	// Military Tokens.
+	// The Military tokens represent the benefits a city earns when it
+	// manages to gain the upper hand, militarily, over its opponent.
 	// "true" means "is taken".
-	Tokens2 [numPlayers]bool
-	Tokens5 [numPlayers]bool
+	MilitaryTokens2 [numPlayers]bool
+	MilitaryTokens5 [numPlayers]bool
 }
 
-func (m *Military) addShields(g *Game, i PlayerIndex, s Shields) {
+func (m *Board) addShields(g *Game, i PlayerIndex, s Shields) {
 	m.ConflictPawn.add(i, s)
 
-	var pos = m.ConflictPawn.Position()
-	var lagging PlayerIndex
-	if pos > 0 {
-		lagging = 1
-	} else if pos < 0 {
-		lagging = 0
-		pos = -pos
-	}
+	var leader, val = m.ConflictPawn.Leader()
+	var lagging = leader.Next()
 
-	if pos >= 3 && !m.Tokens2[lagging] {
+	if val >= 3 && !m.MilitaryTokens2[lagging] {
 		g.player(lagging).Coins.sub(2)
-		m.Tokens2[lagging] = true
+		m.MilitaryTokens2[lagging] = true
 	}
-	if pos >= 6 && !m.Tokens5[lagging] {
+	if val >= 6 && !m.MilitaryTokens5[lagging] {
 		g.player(lagging).Coins.sub(5)
-		m.Tokens5[lagging] = true
+		m.MilitaryTokens5[lagging] = true
 	}
-	if pos >= 9 {
+	if val >= 9 {
 		g.victory(lagging.Next().winner(), MilitarySupremacy)
 	}
 }
 
-func (m Military) VP(i PlayerIndex) VP {
-	var dt = m.ConflictPawn.Position()
+func (m Board) VP(i PlayerIndex) VP {
+	var leader, val = m.ConflictPawn.Leader()
 
-	var leader PlayerIndex
-	if dt > 0 {
-		leader = 0
-	} else {
-		leader = 1
-		dt = -dt
-	}
 	if leader != i {
 		return 0
 	}
 
 	switch {
-	case dt == 0:
+	case val == 0:
 		return 0
-	case dt <= 2:
+	case val <= 2:
 		return 2
-	case dt <= 5:
+	case val <= 5:
 		return 5
 	default:
 		return 10
 	}
 }
+
+// --- TODO ---
 
 // Shields - military power
 type Shields uint8
