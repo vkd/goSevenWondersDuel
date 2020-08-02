@@ -17,14 +17,20 @@ type CardState struct {
 }
 
 // TestBuilt - card could be built
-func (c CardState) TestBuilt() bool {
-	return c.Exists && !c.Covered
+func (c CardState) TestBuilt() error {
+	if !c.Exists {
+		return fmt.Errorf("does not exist")
+	}
+	if c.Covered {
+		return fmt.Errorf("is covered")
+	}
+	return nil
 }
 
 // CardsState on the table
 type CardsState [SizeAge]CardState
 
-func (s CardsState) testBuilt(i cardIndex) bool {
+func (s CardsState) testBuilt(i cardIndex) error {
 	return s[i].TestBuilt()
 }
 
@@ -225,8 +231,12 @@ func newAgeDesk(structure *ageStructure, cards []CardID) (desk ageDesk) {
 
 func (d *ageDesk) Build(id CardID) error {
 	idx, ok := indexOfCards(id, d.cards)
-	if !ok || !d.state.testBuilt(idx) {
-		return fmt.Errorf("wrong card id = %d", id)
+	if !ok {
+		return fmt.Errorf("card not found (id = %d)", id)
+	}
+	err := d.state.testBuilt(idx)
+	if err != nil {
+		return fmt.Errorf("test build (card id = %d): %w", id, err)
 	}
 
 	d.state.take(idx)
@@ -241,9 +251,12 @@ func (d *ageDesk) Build(id CardID) error {
 	return nil
 }
 
-func (d *ageDesk) testBuild(id CardID) bool {
+func (d *ageDesk) testBuild(id CardID) error {
 	idx, ok := indexOfCards(id, d.cards)
-	return ok && d.state.testBuilt(idx)
+	if !ok {
+		return fmt.Errorf("card does not exist (id = %d)", id)
+	}
+	return d.state.testBuilt(idx)
 }
 
 func indexOfCards(id CardID, cards []CardID) (cardIndex, bool) {

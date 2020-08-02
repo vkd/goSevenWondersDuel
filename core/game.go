@@ -211,15 +211,15 @@ func (g *Game) newTradingPrice() TradingPrice {
 	)
 }
 
-func (g *Game) ConstructBuilding(id CardID) (state CardsState, err error) {
+func (g *Game) ConstructBuilding(id CardID) (state CardsState, _ error) {
 	state = g.ageDesk.state
 	if !g.state.Is(StateGameTurn) {
 		return state, ErrWrongState
 	}
 
-	ok := g.ageDesk.testBuild(id)
-	if !ok {
-		return state, fmt.Errorf("card (id = %d) cannot be built", id)
+	err := g.ageDesk.testBuild(id)
+	if err != nil {
+		return state, fmt.Errorf("card (id = %d) cannot be built: %w", id, err)
 	}
 
 	coins, trade := g.CardCost(id)
@@ -290,7 +290,7 @@ func (g *Game) GetMyAvailableWonders() [numPlayers][]WonderID {
 	return g.wondersPerPlayer
 }
 
-func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err error) {
+func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, _ error) {
 	state = g.ageDesk.state
 	if !g.state.Is(StateGameTurn) {
 		return state, ErrWrongState
@@ -313,10 +313,10 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, err 
 		return state, fmt.Errorf("wonder (id = %d) is not related to current player", wid)
 	}
 
-	ok = g.ageDesk.testBuild(cid)
+	err := g.ageDesk.testBuild(cid)
 	state = g.ageDesk.state
-	if !ok {
-		return state, fmt.Errorf("card (id = %d) cannot be taken", cid)
+	if err != nil {
+		return state, fmt.Errorf("card (id = %d) cannot be taken: %w", cid, err)
 	}
 
 	coins, trade := g.WonderCost(wid)
