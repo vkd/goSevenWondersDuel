@@ -133,15 +133,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	if err != nil {
 		return err
 	}
-	var w0 = [4]core.WonderID{0, 8, 10, 11}
-	var w1 = [4]core.WonderID{5, 6, 1, 4}
-	err = g.SelectWonders(w0, w1)
-	if err != nil {
-		log.Printf("Error on preselected wonders: %v", err)
-	} else {
-		userWonders = [2][]core.WonderID{w0[:], w1[:]}
-		boardState = Table
-	}
 
 	wonders := g.GetAvailableWonders()
 	ptokens = g.GetAvailablePTokens()
