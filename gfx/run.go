@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -68,7 +69,7 @@ var (
 func init() {
 	f, err := os.Open("core/stats")
 	if err != nil {
-		panic(err)
+		return
 	}
 	defer f.Close()
 
@@ -79,8 +80,10 @@ func init() {
 }
 
 func newBot() core.Bot {
-	return core.RatingBot(rating)
-	// return core.SimpleBot(rand.New(rand.NewSource(seed)))
+	if rating != nil {
+		core.RatingBot(rating)
+	}
+	return core.SimpleBot(rand.New(rand.NewSource(seed)))
 }
 
 func newGame() (*core.Game, error) {
