@@ -37,7 +37,8 @@ func tTest_simpleBot(t *testing.T) {
 		b2 := ratingBot{rand.New(rand.NewSource(time.Now().UnixNano())), rating}
 		g, err := NewGame()
 		require.NoError(t, err)
-		ws := g.GetAvailableWonders()
+		ws, err := g.WondersState.AvailableToChoose()
+		require.NoError(t, err)
 		var w1, w2 [4]WonderID
 		copy(w1[:], ws[:4])
 		copy(w2[:], ws[4:])

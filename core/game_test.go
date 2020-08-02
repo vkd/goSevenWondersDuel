@@ -84,8 +84,8 @@ func TestZeroGame(t *testing.T) { //nolint: funlen
 	// === End Age I ===
 	assert.Equal(t, [numPlayers]Shields{1, 3}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2, len(game.discardedCards))
-	assert.Equal(t, 2, len(game.buildWonders[0]))
-	assert.Equal(t, 0, len(game.buildWonders[1]))
+	assert.Equal(t, 2, game.WondersState.CountBuiltByPlayer(0))
+	assert.Equal(t, 0, game.WondersState.CountBuiltByPlayer(1))
 	assert.Equal(t, 7, countBuiltCards(game, 0))
 	assert.Equal(t, 9, countBuiltCards(game, 1))
 	assert.Equal(t, VP(9), countVPs(game, 0))
@@ -165,8 +165,8 @@ func TestZeroGame(t *testing.T) { //nolint: funlen
 	// === End Age II ===
 	assert.Equal(t, [numPlayers]Shields{1 + 2, 3 + 5}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2+4, len(game.discardedCards))
-	assert.Equal(t, 2+2, len(game.buildWonders[0]))
-	assert.Equal(t, 0+1, len(game.buildWonders[1]))
+	assert.Equal(t, 2+2, game.WondersState.CountBuiltByPlayer(0))
+	assert.Equal(t, 0+1, game.WondersState.CountBuiltByPlayer(1))
 	assert.Equal(t, 7+8, countBuiltCards(game, 0))
 	assert.Equal(t, 9+5, countBuiltCards(game, 1))
 	assert.Equal(t, VP(9+16), countVPs(game, 0))
@@ -252,8 +252,8 @@ func TestZeroGame(t *testing.T) { //nolint: funlen
 
 	assert.Equal(t, [numPlayers]Shields{1 + 2 + 4, 3 + 5 + 1}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2+4+8, len(game.discardedCards))
-	assert.Equal(t, 2+2, len(game.buildWonders[0]))
-	assert.Equal(t, 0+1+2, len(game.buildWonders[1]))
+	assert.Equal(t, 2+2, game.WondersState.CountBuiltByPlayer(0))
+	assert.Equal(t, 0+1+2, game.WondersState.CountBuiltByPlayer(1))
 	assert.Equal(t, 7+8+8, countBuiltCards(game, 0))
 	assert.Equal(t, 9+5+2, countBuiltCards(game, 1))
 	assert.Equal(t, VP(9+16+36), countVPs(game, 0))
@@ -357,8 +357,8 @@ func TestZeroGame_MilitarySupremacy(t *testing.T) { //nolint: funlen
 	// === End Age I ===
 	assert.Equal(t, [numPlayers]Shields{4, 0}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2, len(game.discardedCards))
-	assert.Equal(t, 2, len(game.buildWonders[0]))
-	assert.Equal(t, 0, len(game.buildWonders[1]))
+	assert.Equal(t, 2, game.WondersState.CountBuiltByPlayer(0))
+	assert.Equal(t, 0, game.WondersState.CountBuiltByPlayer(1))
 	assert.Equal(t, 9, countBuiltCards(game, 0))
 	assert.Equal(t, 7, countBuiltCards(game, 1))
 	assert.Equal(t, VP(6), countVPs(game, 0))
@@ -442,8 +442,8 @@ func TestZeroGame_MilitarySupremacy(t *testing.T) { //nolint: funlen
 
 	assert.Equal(t, [numPlayers]Shields{4 + 5, 0}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2+6, len(game.discardedCards))
-	assert.Equal(t, 2, len(game.buildWonders[0]))
-	assert.Equal(t, 0+1, len(game.buildWonders[1]))
+	assert.Equal(t, 2, game.WondersState.CountBuiltByPlayer(0))
+	assert.Equal(t, 0+1, game.WondersState.CountBuiltByPlayer(1))
 	assert.Equal(t, 9+6, countBuiltCards(game, 0))
 	assert.Equal(t, 7+5, countBuiltCards(game, 1))
 
@@ -550,8 +550,8 @@ func TestZeroGame_ScientificSupremacy(t *testing.T) { //nolint: funlen
 	// === End Age I ===
 	assert.Equal(t, [numPlayers]Shields{3, 0}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2, len(game.discardedCards))
-	assert.Equal(t, 1, len(game.buildWonders[0]))
-	assert.Equal(t, 0, len(game.buildWonders[1]))
+	assert.Equal(t, 1, game.WondersState.CountBuiltByPlayer(0))
+	assert.Equal(t, 0, game.WondersState.CountBuiltByPlayer(1))
 	assert.Equal(t, 10, countBuiltCards(game, 0))
 	assert.Equal(t, 7, countBuiltCards(game, 1))
 	assert.Equal(t, VP(3), countVPs(game, 0))
@@ -637,8 +637,8 @@ func TestZeroGame_ScientificSupremacy(t *testing.T) { //nolint: funlen
 	// === End Age II ===
 	assert.Equal(t, [numPlayers]Shields{3 + 4, 0 + 3}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2+5, len(game.discardedCards))
-	assert.Equal(t, 1+0, len(game.buildWonders[0]))
-	assert.Equal(t, 0+1, len(game.buildWonders[1]))
+	assert.Equal(t, 1+0, game.WondersState.CountBuiltByPlayer(0))
+	assert.Equal(t, 0+1, game.WondersState.CountBuiltByPlayer(1))
 	assert.Equal(t, 10+8, countBuiltCards(game, 0))
 	assert.Equal(t, 7+6, countBuiltCards(game, 1))
 	assert.Equal(t, VP(3+2), countVPs(game, 0))
@@ -670,8 +670,8 @@ func TestZeroGame_ScientificSupremacy(t *testing.T) { //nolint: funlen
 
 	assert.Equal(t, [numPlayers]Shields{3 + 4, 0 + 3}, game.Military().ConflictPawn.Shields)
 	assert.Equal(t, 2+5+1, len(game.discardedCards))
-	assert.Equal(t, 1+0, len(game.buildWonders[0]))
-	assert.Equal(t, 0+1, len(game.buildWonders[1]))
+	assert.Equal(t, 1+0, game.WondersState.CountBuiltByPlayer(0))
+	assert.Equal(t, 0+1, game.WondersState.CountBuiltByPlayer(1))
 	assert.Equal(t, 10+8+1, countBuiltCards(game, 0))
 	assert.Equal(t, 7+6+1, countBuiltCards(game, 1))
 

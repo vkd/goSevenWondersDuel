@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"math/rand"
 )
 
 const (
@@ -37,26 +36,6 @@ func wonderID(name WonderName) WonderID {
 	}
 	panic(fmt.Sprintf("cannot find %q wonder", name))
 }
-
-var (
-	wonderIDs [WondersCount]WonderID
-)
-
-func init() {
-	for i := range wonderIDs {
-		wonderIDs[i] = WonderID(i)
-	}
-}
-
-func shuffleWonders(rnd *rand.Rand) []WonderID {
-	var wonders = wonderIDs
-	rnd.Shuffle(len(wonders), func(i, j int) {
-		wonders[i], wonders[j] = wonders[j], wonders[i]
-	})
-	return wonders[:]
-}
-
-var _ = [1]struct{}{}[len(shuffleWonders(zeroRand()))-WondersCount]
 
 var (
 	allWonders = []Wonder{

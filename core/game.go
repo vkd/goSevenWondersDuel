@@ -12,11 +12,13 @@ const (
 	initialPTokens = 5
 
 	numWondersPerPlayer = 4
-	initialWonders      = numWondersPerPlayer * numPlayers
+	InitialWonders      = numWondersPerPlayer * numPlayers
 )
 
 // Game - game state
 type Game struct {
+	GameState
+
 	state       State
 	currentAge  uint8
 	winner      Winner
@@ -28,11 +30,9 @@ type Game struct {
 	currentPlayerIndex PlayerIndex
 	repeatTurn         bool
 
-	wondersPerPlayer [numPlayers][]WonderID
-	buildWonders     [numPlayers][]WonderID
-	builtCards       [numPlayers][numCardColors][]CardID
-	builtPTokens     [numPlayers][]PTokenID
-	discardedCards   []CardID
+	builtCards     [numPlayers][numCardColors][]CardID
+	builtPTokens   [numPlayers][]PTokenID
+	discardedCards []CardID
 
 	priceMarkets      [numPlayers]PriceMarkets
 	oneFreeResMarkets [numPlayers]OneFreeResMarkets
@@ -44,9 +44,6 @@ type Game struct {
 
 	availablePTokens []PTokenID
 	restPTokens      []PTokenID
-
-	availableWonders [initialWonders]WonderID
-	restWonders      []WonderID
 
 	ageDesk  ageDesk
 	ageDesk2 ageDesk
@@ -84,9 +81,11 @@ func NewGame(opts ...Option) (*Game, error) {
 	g.availablePTokens = ptokens[:initialPTokens]
 	g.restPTokens = ptokens[initialPTokens:]
 
-	wonders := shuffleWonders(g.rnd)
-	copy(g.availableWonders[:], wonders[:initialWonders])
-	g.restWonders = wonders[initialWonders:]
+	var err error
+	g.WondersState, err = InitializeWonders(g.WondersState, g.rnd)
+	if err != nil {
+		return nil, fmt.Errorf("move %d wonders into 'in_game' state: %w", InitialWonders, err)
+	}
 
 	g.ageDesk = newAgeDesk(structureAgeI, shuffleAgeI(g.rnd))
 	g.ageDesk2 = newAgeDesk(structureAgeII, shuffleAgeII(g.rnd))
@@ -119,9 +118,6 @@ var (
 	ErrWrongSelectedWonders = errors.New("wrong selected wonders")
 )
 
-func (g *Game) GetAvailableWonders() (wonders [initialWonders]WonderID) {
-	return g.availableWonders
-}
 func (g *Game) GetAvailablePTokens() (ptokens []PTokenID) {
 	return g.availablePTokens
 }
@@ -132,33 +128,19 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 		return ErrWrongState
 	}
 
-	var available [WondersCount]uint8
-	for _, w := range g.availableWonders {
-		available[w]++
-	}
-	for _, fst := range fstWonders {
-		if available[fst] > 0 {
-			available[fst]--
-		} else {
-			return ErrWrongSelectedWonders
+	for _, fw := range fstWonders {
+		err := g.GameState.WondersState.chooseByPlayer(fw, 0)
+		if err != nil {
+			return fmt.Errorf("choose wonder by player id = 0: %w", err)
 		}
 	}
-	for _, snd := range sndWonders {
-		if available[snd] > 0 {
-			available[snd]--
-		} else {
-			return ErrWrongSelectedWonders
+	for _, sw := range sndWonders {
+		err := g.GameState.WondersState.chooseByPlayer(sw, 1)
+		if err != nil {
+			return fmt.Errorf("choose wonder by player id = 1: %w", err)
 		}
 	}
 
-	for _, a := range available {
-		if a != 0 {
-			return ErrWrongSelectedWonders
-		}
-	}
-
-	g.wondersPerPlayer[0] = fstWonders[:]
-	g.wondersPerPlayer[1] = sndWonders[:]
 	g.state = g.state.Next()
 	return nil
 }
@@ -279,41 +261,18 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
 	return state, nil
 }
 
-func (g *Game) GetBuiltWonders() [numPlayers][]WonderID {
-	return g.buildWonders
-}
-
-func (g *Game) GetMyAvailableWonders() [numPlayers][]WonderID {
-	if len(g.buildWonders[0])+len(g.buildWonders[1]) >= 7 {
-		return [numPlayers][]WonderID{}
-	}
-	return g.wondersPerPlayer
-}
-
 func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, _ error) {
 	state = g.ageDesk.state
 	if !g.state.Is(StateGameTurn) {
 		return state, ErrWrongState
 	}
 
-	if len(g.buildWonders[0])+len(g.buildWonders[1]) >= 7 {
-		return state, fmt.Errorf("wonder (id = %d) cannot be built: max 7 wonders are allowed", wid)
+	err := g.GameState.WondersState.IsBuildable(wid, g.currentPlayerIndex)
+	if err != nil {
+		return state, fmt.Errorf("wonder (id = %d) cannot be built by %d player: %w", wid, g.currentPlayerIndex, err)
 	}
 
-	var ok bool
-	var newWs []WonderID
-	for _, w := range g.wondersPerPlayer[g.currentPlayerIndex] {
-		if w == wid && !ok {
-			ok = true
-			continue
-		}
-		newWs = append(newWs, w)
-	}
-	if !ok {
-		return state, fmt.Errorf("wonder (id = %d) is not related to current player", wid)
-	}
-
-	err := g.ageDesk.testBuild(cid)
+	err = g.ageDesk.testBuild(cid)
 	state = g.ageDesk.state
 	if err != nil {
 		return state, fmt.Errorf("card (id = %d) cannot be taken: %w", cid, err)
@@ -341,8 +300,8 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, _ er
 	wonder := wid.wonder()
 	wonder.Effect.applyEffect(g, g.currentPlayerIndex)
 
-	g.buildWonders[g.currentPlayerIndex] = append(g.buildWonders[g.currentPlayerIndex], wid)
-	g.wondersPerPlayer[g.currentPlayerIndex] = newWs
+	g.GameState.WondersState.built(wid, g.currentPlayerIndex)
+
 	g.nextTurn()
 
 	return state, nil

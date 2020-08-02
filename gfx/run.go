@@ -134,7 +134,10 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 		return err
 	}
 
-	wonders := g.GetAvailableWonders()
+	initialWonders, err := g.WondersState.AvailableToChoose()
+	if err != nil {
+		return fmt.Errorf("get available wonders: %w", err)
+	}
 	ptokens = g.GetAvailablePTokens()
 	currentWonder = 0
 
@@ -253,8 +256,10 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			ptokens = g.GetAvailablePTokens()
 
 			mws := make(map[core.WonderID]struct{})
-			for _, w := range g.GetBuiltWonders()[1] {
-				mws[w] = struct{}{}
+			for wid, ws := range g.WondersState.States {
+				if ws.IsBuilt && ws.PlayerIndex == 1 {
+					mws[core.WonderID(wid)] = struct{}{}
+				}
 			}
 
 			for i := range wonderBuilt[1] {
@@ -347,7 +352,10 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			if err != nil {
 				return err
 			}
-			wonders = g.GetAvailableWonders()
+			initialWonders, err = g.WondersState.AvailableToChoose()
+			if err != nil {
+				return fmt.Errorf("F12: get available wonders: %w", err)
+			}
 			ptokens = g.GetAvailablePTokens()
 			tableCards.Cards = g.CardsState()
 			tableCards.Rects = ageIRects
@@ -428,7 +436,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				if !wonderTaken[selectedWonderIndex] {
 					wonderTaken[selectedWonderIndex] = true
 					// wonderChosen[currentWonder] = wonders[selectedWonderIndex]
-					userWonders[wonderToPlayer[currentWonder]] = append(userWonders[wonderToPlayer[currentWonder]], wonders[selectedWonderIndex])
+					userWonders[wonderToPlayer[currentWonder]] = append(userWonders[wonderToPlayer[currentWonder]], initialWonders[selectedWonderIndex])
 
 					currentWonder++
 					if currentWonder >= 8 {
@@ -585,7 +593,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 					if wonderTaken[i] {
 						continue
 					}
-					drawWonder(win, true, wonders[i], r, 0, 0)
+					drawWonder(win, true, initialWonders[i], r, 0, 0)
 					if r.Contains(mouse) {
 						selectedWonderIndex = i
 					}

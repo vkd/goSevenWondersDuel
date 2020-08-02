@@ -42,7 +42,7 @@ type CoinsPerWonder Coins
 var _ Effect = CoinsPerWonder(0)
 
 func (c CoinsPerWonder) applyEffect(g *Game, i PlayerIndex) {
-	worth := Coins(c).Mul(uint8(len(g.buildWonders[i])))
+	worth := Coins(c).Mul(uint8(g.WondersState.CountBuiltByPlayer(i)))
 	g.player(i).Coins += worth
 }
 

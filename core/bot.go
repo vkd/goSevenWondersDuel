@@ -83,7 +83,7 @@ func (s simpleBot) NextTurn(g *Game, myIdx PlayerIndex) {
 			break
 		}
 
-		listWs := g.GetMyAvailableWonders()[myIdx]
+		listWs := g.WondersState.AvailableToBuild(myIdx)
 		var aws []WonderID
 		for _, wid := range listWs {
 			cs, tp := g.WonderCost(wid)
@@ -245,7 +245,7 @@ func (r ratingBot) NextTurn(g *Game, myIdx PlayerIndex) {
 			}
 		}
 
-		listWs := g.GetMyAvailableWonders()[myIdx]
+		listWs := g.WondersState.AvailableToBuild(myIdx)
 		var aws []WonderID
 		for _, wid := range listWs {
 			cs, tp := g.WonderCost(wid)

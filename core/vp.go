@@ -124,7 +124,7 @@ func (v vPsPerWonder) applyEffect(g *Game, i PlayerIndex) {
 func (v vPsPerWonder) finalVP(g *Game, i PlayerIndex) typedVP {
 	var max VP
 	for pi := range g.players {
-		vp := v.VP.Mul(uint8(len(g.buildWonders[pi])))
+		vp := v.VP.Mul(uint8(g.WondersState.CountBuiltByPlayer(PlayerIndex(pi))))
 		if vp > max {
 			max = vp
 		}
