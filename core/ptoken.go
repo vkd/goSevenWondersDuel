@@ -128,7 +128,7 @@ func (m mathematics) applyEffect(g *Game, i PlayerIndex) {
 
 func (mathematics) finalVP(g *Game, i PlayerIndex) typedVP {
 	return typedVP{
-		v: VP(3).Mul(uint8(len(g.builtPTokens[i]))),
+		v: VP(3).Mul(uint8(g.PtokensState.CountBuiltByPlayer(i))),
 		t: PTokenVP,
 	}
 }

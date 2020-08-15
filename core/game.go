@@ -31,7 +31,6 @@ type Game struct {
 	repeatTurn         bool
 
 	builtCards     [numPlayers][numCardColors][]CardID
-	builtPTokens   [numPlayers][]PTokenID
 	discardedCards []CardID
 
 	priceMarkets      [numPlayers]PriceMarkets
@@ -41,9 +40,6 @@ type Game struct {
 	military Board
 
 	vps [numPlayers][numVPTypes]VP
-
-	availablePTokens []PTokenID
-	restPTokens      []PTokenID
 
 	ageDesk  ageDesk
 	ageDesk2 ageDesk
@@ -77,9 +73,21 @@ func NewGame(opts ...Option) (*Game, error) {
 	}
 
 	// init PTokens
-	ptokens := shufflePTokens(g.rnd)
-	g.availablePTokens = ptokens[:initialPTokens]
-	g.restPTokens = ptokens[initialPTokens:]
+	// g.PtokensState.setOnBoard(5, g.rnd)
+	// g.PtokensState.setForChoose(3, g.rnd)
+
+	// TODO: replace later, it was written by reason of random
+	pts := make([]int, len(g.PtokensState.States))
+	for i := range pts {
+		pts[i] = i
+	}
+	g.rnd.Shuffle(len(pts), func(i, j int) { pts[i], pts[j] = pts[j], pts[i] })
+	for i := 0; i < 5; i++ {
+		g.PtokensState.States[pts[i]].PTokenState = PTokenOnBoard
+	}
+	for i := 5; i < 8; i++ {
+		g.PtokensState.States[pts[i]].PTokenState = PTokenChosenFromDiscarded
+	}
 
 	var err error
 	g.WondersState, err = InitializeWonders(g.WondersState, g.rnd)
@@ -119,7 +127,7 @@ var (
 )
 
 func (g *Game) GetAvailablePTokens() (ptokens []PTokenID) {
-	return g.availablePTokens
+	return g.PtokensState.GetByState(PTokenOnBoard)
 }
 
 // SelectWonders as part of an initialize of a game
@@ -312,27 +320,10 @@ func (g *Game) ChoosePToken(id PTokenID) error {
 		return ErrWrongState
 	}
 
-	var ok bool
-	for _, pt := range g.availablePTokens {
-		if pt == id {
-			ok = true
-			break
-		}
+	err := g.PtokensState.take(id, g.currentPlayerIndex)
+	if err != nil {
+		return fmt.Errorf("PToken (id=%d) cannot be taken: %w", id, err)
 	}
-	if !ok {
-		return fmt.Errorf("PToken (id=%d) cannot be taken", id)
-	}
-
-	var newPTokens = make([]PTokenID, 0, len(g.availablePTokens)-1)
-	for _, pt := range g.availablePTokens {
-		if pt == id {
-			continue
-		}
-		newPTokens = append(newPTokens, pt)
-	}
-	g.availablePTokens = newPTokens
-
-	g.builtPTokens[g.currentPlayerIndex] = append(g.builtPTokens[g.currentPlayerIndex], id)
 
 	id.pToken().Effect.applyEffect(g, g.currentPlayerIndex)
 
@@ -428,36 +419,20 @@ func (g *Game) GetDiscardedPTokens() (_ []PTokenID, err error) {
 		return nil, ErrWrongState
 	}
 
-	return g.restPTokens[:3], nil
+	return g.PtokensState.GetByState(PTokenChosenFromDiscarded), nil
 }
 
-func (g *Game) PlayDiscardedPToken(id PTokenID) (err error) {
+func (g *Game) PlayDiscardedPToken(pid PTokenID) error {
 	if !g.state.Is(StateBuildFreePToken) {
 		return ErrWrongState
 	}
 
-	var ok bool
-	for _, p := range g.restPTokens[:3] {
-		if p == id {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return fmt.Errorf("wrong PTokenID")
+	err := g.PtokensState.takeFromChosen(pid, g.currentPlayerIndex)
+	if err != nil {
+		return fmt.Errorf("take ptoken from chosen: %w", err)
 	}
 
-	g.builtPTokens[g.currentPlayerIndex] = append(g.builtPTokens[g.currentPlayerIndex], id)
-
-	var newList []PTokenID
-	for _, pi := range g.restPTokens {
-		if pi != id {
-			newList = append(newList, pi)
-		}
-	}
-	g.restPTokens = newList
-
-	id.pToken().Effect.applyEffect(g, g.currentPlayerIndex)
+	pid.pToken().Effect.applyEffect(g, g.currentPlayerIndex)
 
 	g.state = g.state.Next()
 	g.nextTurn()
@@ -665,7 +640,7 @@ var _ = [1]struct{}{}[numWinners-1-numPlayers]
 
 func (g *Game) gettingPToken(_ PlayerIndex) {
 	g.state = StateChoosePToken
-	ps := g.GetAvailablePTokens()
+	ps := g.PtokensState.GetByState(PTokenOnBoard)
 	if len(ps) == 0 {
 		g.state = g.state.Next()
 	}
@@ -833,4 +808,8 @@ var _ Effect = playDiscardedPToken{}
 
 func (playDiscardedPToken) applyEffect(g *Game, i PlayerIndex) {
 	g.state = StateBuildFreePToken
+
+	if len(g.PtokensState.GetByState(PTokenChosenFromDiscarded)) == 0 {
+		g.state = g.state.Next()
+	}
 }
