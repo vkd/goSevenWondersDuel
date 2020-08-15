@@ -22,21 +22,24 @@ import (
 )
 
 const (
+	scale = 0.77
 	// cardWidth      float64 = 264
-	cardWidth float64 = 132
+	cardWidth float64 = 132 * scale
 	// cardHeight     float64 = 400
-	cardHeight float64 = 200
+	cardHeight float64 = 200 * scale
 
-	wonderWidth  float64 = 294
-	wonderHeight float64 = 191
+	wonderWidth  float64 = 294 * scale
+	wonderHeight float64 = 191 * scale
 
-	cardTitleHeight float64 = 70
-	deltaEpoh       float64 = 30
+	cardTitleSmHeight float64 = 50 * scale
+	cardTitleHeight   float64 = 70 * scale
+	deltaEpoh         float64 = 30 * scale
 
 	windowWidth  float64 = 1200
 	windowHeight float64 = 800
 
-	progressWidth float64 = 159
+	progressWidth float64 = 159 * scale
+	ptokenWidth   float64 = progressWidth
 )
 
 var (
@@ -46,7 +49,9 @@ var (
 	wonderBuilt    [2][4]uint8
 	ptokens        []core.PTokenID
 
-	topCenter = pixel.V(windowWidth/2, windowHeight-100)
+	topTitle  float64 = 80
+	topHand   float64 = 400
+	topCenter         = pixel.V(windowWidth/2, windowHeight-topTitle)
 
 	ageIRects   = genCardRects(ageGrid.genAgeIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
 	ageIIRects  = genCardRects(ageGrid.genAgeIIVecs(topCenter.Sub(pixel.V(0, cardHeight))))
@@ -56,7 +61,7 @@ var (
 
 	userWonders [2][]core.WonderID
 
-	boardState BoardState = Wonders
+	boardState BoardState = Table
 )
 
 var (
@@ -119,12 +124,10 @@ type BoardState uint8
 const (
 	NoneState BoardState = iota
 	Table
-	Wonders
 	DiscardedCards
 	PTokensState
 	DiscardedPTokensState
 	OpponentsDestroyState
-	PlayerCardsState
 	OpponentCardsState
 )
 
@@ -214,18 +217,18 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	var userWonderRects [2][4]pixel.Rect
 	{
 		for i := 0; i < 4; i++ {
-			var y = float64(i) * wonderHeight
+			var y = windowHeight - topTitle - float64(i)*wonderHeight
 			userWonderRects[0][i] = pixel.R(
 				0,
-				y,
+				y-wonderHeight,
 				wonderWidth,
-				y+wonderHeight,
+				y,
 			)
 			userWonderRects[1][i] = pixel.R(
 				windowWidth-wonderWidth,
-				y,
+				y-wonderHeight,
 				windowWidth,
-				y+wonderHeight,
+				y,
 			)
 		}
 	}
@@ -365,16 +368,13 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			currentWonder = 0
 			userWonders = [2][]core.WonderID{}
 			wonderTaken = [8]bool{}
-			boardState = Wonders
+			boardState = Table
 			wonderBuilt = [2][4]uint8{}
 			wondersBuilt = 0
 			playerCards = [2][core.CardColorSize][]core.CardID{}
 			bot = newBot()
 		}
 
-		if win.JustPressed(pixelgl.KeyW) {
-			boardState = Wonders
-		}
 		if win.JustPressed(pixelgl.KeyT) {
 			boardState = Table
 		}
@@ -386,9 +386,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 		}
 		if win.JustPressed(pixelgl.KeyP) {
 			boardState = PTokensState
-		}
-		if win.JustPressed(pixelgl.KeyH) {
-			boardState = PlayerCardsState
 		}
 		if win.JustPressed(pixelgl.KeyO) {
 			boardState = OpponentCardsState
@@ -581,7 +578,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				}
 			}
 
-		case Wonders:
+			// case Wonders:
 			if gameState == core.StateSelectWonders {
 				// --- draft
 				var second int = 0
@@ -642,6 +639,9 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				}
 				drawBorder(r, win, color, 2)
 			}
+
+			// case PlayerCardsState:
+			drawHand(win, playerCards[pIndex])
 		case DiscardedCards:
 			for i, did := range discardedCards {
 				drawCard(did, true, discardedRects[i], win, 0)
@@ -682,8 +682,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			if selectOpponentsBuilding > -1 {
 				drawBorder(discardedRects[selectOpponentsBuilding], win, borderColor, 4)
 			}
-		case PlayerCardsState:
-			drawHand(win, playerCards[pIndex])
 		case OpponentCardsState:
 			drawHand(win, playerCards[pIndex.Next()])
 		}
@@ -723,7 +721,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 func drawHand(t pixel.Target, hand [core.CardColorSize][]core.CardID) {
 	for color, stack := range hand {
 		for i, cid := range stack {
-			drawCard(cid, true, discardedRects[color].Moved(pixel.V(0, -50*float64(i))), t, 0)
+			drawCard(cid, true, discardedRects[color].Moved(pixel.V(wonderWidth+10, -300-cardTitleSmHeight*float64(i))), t, 0)
 		}
 	}
 }
@@ -758,6 +756,9 @@ var (
 	atlas = text.NewAtlas(basicfont.Face7x13, text.ASCII)
 
 	cardIM = pixel.IM.Scaled(pixel.ZV, cardWidth/textureCardWidth) //.Moved(pixel.V(cardWidth/2, cardHeight/2))
+
+	wonderIM = pixel.IM.Scaled(pixel.ZV, wonderWidth/textureWonderWidth)
+	ptokenIM = pixel.IM.Scaled(pixel.ZV, ptokenWidth/texturePTokenWidth)
 
 	borderColor = colornames.Yellow
 )
@@ -807,7 +808,7 @@ func drawWonder(win pixel.Target, faceUp bool, id core.WonderID, rect pixel.Rect
 	if faceUp {
 		tx = wondersTx[id]
 	}
-	tx.Draw(win, pixel.IM.Scaled(pixel.ZV, 0.5).Moved(pixel.V(wonderWidth/2, wonderHeight/2)).Moved(rect.Min))
+	tx.Draw(win, wonderIM.Moved(rect.Center()))
 
 	if builtCardID > 0 {
 		var t = cardsTx[builtCardID-1]
@@ -824,7 +825,7 @@ func drawWonder(win pixel.Target, faceUp bool, id core.WonderID, rect pixel.Rect
 }
 
 func drawPToken(win pixel.Target, id core.PTokenID, c pixel.Circle) {
-	progressTx[id].Draw(win, pixel.IM.Moved(c.Center))
+	progressTx[id].Draw(win, ptokenIM.Moved(c.Center))
 }
 
 func drawSelectedBorder(c pixel.Rect, win pixel.Target) {

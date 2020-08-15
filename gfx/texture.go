@@ -96,7 +96,7 @@ func loadTextures() error { //nolint: funlen
 	for i := 0; i < 10; i++ {
 		var x = float64(159 * i)
 		var y float64 = 0
-		progressTx[i] = pixel.NewSprite(pic, pixel.R(x, y, x+159, y+159))
+		progressTx[i] = pixel.NewSprite(pic, pixel.R(x, y, x+texturePTokenWidth, y+texturePTokenWidth))
 	}
 
 	return nil
@@ -105,6 +105,11 @@ func loadTextures() error { //nolint: funlen
 const (
 	textureCardWidth  float64 = 264
 	textureCardHeight float64 = 400
+
+	textureWonderWidth  float64 = 588
+	texturewonderHeight float64 = 382
+
+	texturePTokenWidth float64 = 159
 )
 
 var (
@@ -123,14 +128,14 @@ func rectByWonder(i int) pixel.Rect {
 	i %= 8
 	x := wonderLefts[i%2]
 	y := wonderBottoms[3-(i/2)]
-	return pixel.R(x, y, x+588, y+382)
+	return pixel.R(x, y, x+textureWonderWidth, y+texturewonderHeight)
 }
 
 func rectByWonder9(i int) pixel.Rect {
 	i %= 8
 	x := wonderLefts[i%2]
 	y := []float64{57, 441}[3-(i/2)]
-	return pixel.R(x, y, x+588, y+382)
+	return pixel.R(x, y, x+textureWonderWidth, y+texturewonderHeight)
 }
 
 func loadPicture(path string) (pixel.Picture, error) {
