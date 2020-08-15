@@ -6,10 +6,13 @@ import (
 )
 
 const (
+	NumPlayers = numPlayers
+
 	MaxBuiltWonders = 7
 )
 
 type GameState struct {
+	Players      [NumPlayers]PlayerState
 	WondersState WondersState
 	PtokensState PTokensState
 }

@@ -23,7 +23,8 @@ func (i PlayerIndex) winner() Winner {
 
 // Player of a game
 type Player struct {
-	Coins     Coins
+	PlayerState
+
 	Resources Resources
 
 	Chains Chains
@@ -38,10 +39,6 @@ type Player struct {
 	IsUrbanism     bool
 }
 
-// NewPlayer of a game
-func NewPlayer() Player {
-	p := Player{
-		Coins: 7,
-	}
-	return p
+type PlayerState struct {
+	Coins Coins
 }

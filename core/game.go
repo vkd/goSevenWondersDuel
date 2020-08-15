@@ -100,7 +100,8 @@ func NewGame(opts ...Option) (*Game, error) {
 	g.ageDesk3 = newAgeDesk(structureAgeIII, shuffleAgeIII(g.rnd))
 
 	for i := 0; i < numPlayers; i++ {
-		g.players[i] = NewPlayer()
+		g.players[i] = Player{}
+		g.players[i].Coins = 7
 	}
 
 	g.state = g.state.Next()
