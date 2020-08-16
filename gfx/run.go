@@ -241,7 +241,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	defer fps.Stop()
 
 	var verbose bool = true
-	var currentAge uint8 = 1
+	var currentAge = core.AgeI
 	var wondersBuilt int = 0
 
 	// for i, idx := range [8]int{3, 0, 1, 2, 5, 4, 7, 6} {
@@ -272,17 +272,15 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			}
 		}
 
-		if currentAge != g.CurrentAge() {
-			currentAge++
+		if currentAge != g.CurrentAge {
+			currentAge = g.CurrentAge
 			switch currentAge {
-			case 2:
+			case core.AgeI:
+				tableCards.Rects = ageIRects
+			case core.AgeII:
 				tableCards.Rects = ageIIRects
-			case 3:
+			case core.AgeIII:
 				tableCards.Rects = ageIIIRects
-			case 4:
-				w, r, vps, _ := g.VictoryResult()
-				log.Printf("w: %v, r: %v, vps: %v", w, r, vps)
-				return
 			}
 			tableCards.Cards = g.CardsState()
 		}

@@ -20,7 +20,6 @@ type Game struct {
 	GameState
 
 	state       State
-	currentAge  uint8
 	winner      Winner
 	victoryType VictoryType
 
@@ -110,10 +109,6 @@ func NewGame(opts ...Option) (*Game, error) {
 
 func (g *Game) BuildCards() [numPlayers][numCardColors][]CardID {
 	return g.builtCards
-}
-
-func (g *Game) CurrentAge() uint8 {
-	return g.currentAge + 1
 }
 
 // GetState of the game
@@ -465,7 +460,7 @@ func (g *Game) nextTurn() {
 			g.currentPlayerIndex = g.currentPlayerIndex.Next()
 		}
 	} else {
-		if g.currentAge == 2 {
+		if g.CurrentAge == AgeIII {
 			g.victory(WinnerBoth, CivilianVictory)
 			g.finalVPs()
 			return
@@ -507,15 +502,14 @@ func (g *Game) nextAge() {
 		// same player starts next age
 	}
 
-	switch g.currentAge {
-	case 0:
+	g.CurrentAge = g.CurrentAge.Next()
+	switch g.CurrentAge {
+	case AgeII:
 		g.ageDesk = g.ageDesk2
-		g.currentAge++
-	case 1:
+	case AgeIII:
 		g.ageDesk = g.ageDesk3
-		g.currentAge++
-	case 2:
 	}
+
 }
 
 func (g *Game) Player(i PlayerIndex) Player {

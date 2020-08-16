@@ -15,6 +15,8 @@ type GameState struct {
 	Players      [NumPlayers]PlayerState
 	WondersState WondersState
 	PtokensState PTokensState
+
+	CurrentAge Age
 }
 
 func InitializeWonders(w WondersState, rnd *rand.Rand) (WondersState, error) {
@@ -233,3 +235,22 @@ const (
 	PTokenTakenByPlayer
 	PTokenChosenFromDiscarded
 )
+
+type Age uint8
+
+const (
+	AgeI Age = iota
+	AgeII
+	AgeIII
+)
+
+func (a Age) Next() Age {
+	switch a {
+	case AgeI:
+		return AgeII
+	case AgeII:
+		return AgeIII
+	default:
+		return a
+	}
+}

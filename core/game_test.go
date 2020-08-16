@@ -92,7 +92,7 @@ func TestZeroGame(t *testing.T) { //nolint: funlen
 	assert.Equal(t, VP(7), countVPs(game, 1))
 	assert.Equal(t, Coins(11), game.Player(0).Coins)
 	assert.Equal(t, Coins(1), game.Player(1).Coins)
-	assert.Equal(t, uint8(1), game.currentAge)
+	assert.Equal(t, AgeII, game.CurrentAge)
 	assert.Equal(t, game.GetState(), StateChooseFirstPlayer)
 
 	// === Age II ===
@@ -173,7 +173,7 @@ func TestZeroGame(t *testing.T) { //nolint: funlen
 	assert.Equal(t, VP(7+9), countVPs(game, 1))
 	assert.Equal(t, Coins(11), game.Player(0).Coins)
 	assert.Equal(t, Coins(2), game.Player(1).Coins)
-	assert.Equal(t, uint8(2), game.currentAge)
+	assert.Equal(t, AgeIII, game.CurrentAge)
 	assert.Equal(t, game.GetState(), StateChooseFirstPlayer)
 
 	// === Age III ===
@@ -365,7 +365,7 @@ func TestZeroGame_MilitarySupremacy(t *testing.T) { //nolint: funlen
 	assert.Equal(t, VP(1), countVPs(game, 1))
 	assert.Equal(t, Coins(2), game.Player(0).Coins)
 	assert.Equal(t, Coins(2), game.Player(1).Coins)
-	assert.Equal(t, uint8(1), game.currentAge)
+	assert.Equal(t, AgeII, game.CurrentAge)
 	assert.Equal(t, game.GetState(), StateChooseFirstPlayer)
 
 	// === Age II ===
@@ -558,7 +558,7 @@ func TestZeroGame_ScientificSupremacy(t *testing.T) { //nolint: funlen
 	assert.Equal(t, VP(2), countVPs(game, 1))
 	assert.Equal(t, Coins(5), game.Player(0).Coins)
 	assert.Equal(t, Coins(2), game.Player(1).Coins)
-	assert.Equal(t, uint8(1), game.currentAge)
+	assert.Equal(t, AgeII, game.CurrentAge)
 	assert.Equal(t, game.GetState(), StateChooseFirstPlayer)
 
 	// === Age II ===
@@ -645,7 +645,7 @@ func TestZeroGame_ScientificSupremacy(t *testing.T) { //nolint: funlen
 	assert.Equal(t, VP(2+8), countVPs(game, 1))
 	assert.Equal(t, Coins(9), game.Player(0).Coins)
 	assert.Equal(t, Coins(3), game.Player(1).Coins)
-	assert.Equal(t, uint8(2), game.currentAge)
+	assert.Equal(t, AgeIII, game.CurrentAge)
 	assert.Equal(t, game.GetState(), StateChooseFirstPlayer)
 
 	// === Age III ===
