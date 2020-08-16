@@ -16,6 +16,10 @@ type CardState struct {
 	ID CardID
 }
 
+func (c CardState) String() string {
+	return fmt.Sprintf("%v: faced=%t, exists=%t, covered=%t", c.ID, c.FaceUp, c.Exists, c.Covered)
+}
+
 // TestBuilt - card could be built
 func (c CardState) TestBuilt() error {
 	if !c.Exists {

@@ -17,6 +17,7 @@ type GameState struct {
 	PtokensState PTokensState
 
 	CurrentAge Age
+	CardsState CardsStatuses
 }
 
 func InitializeWonders(w WondersState, rnd *rand.Rand) (WondersState, error) {
@@ -234,6 +235,155 @@ const (
 	PTokenOnBoard
 	PTokenTakenByPlayer
 	PTokenChosenFromDiscarded
+)
+
+// ===== CardsStatuses =====
+
+type CardsStatuses struct {
+	Cards [NumCards]CardStatus
+}
+
+func (c CardsStatuses) Get(cs CardStateEnum) (out []CardID) {
+	for id, s := range c.Cards {
+		if s.CardStateEnum == cs {
+			out = append(out, CardID(id))
+		}
+	}
+	return out
+}
+
+func (c CardsStatuses) NumByColor(color CardColor, pi PlayerIndex) int {
+	var count int
+	for id, s := range c.Cards {
+		if s.CardStateEnum != CardBuilt {
+			continue
+		}
+		if s.PlayerIndex != pi {
+			continue
+		}
+		if CardID(id).Color() != color {
+			continue
+		}
+		count++
+	}
+	return count
+}
+
+func (c CardsStatuses) NumByPlayer(pi PlayerIndex) int {
+	var count int
+	for _, s := range c.Cards {
+		if s.CardStateEnum != CardBuilt {
+			continue
+		}
+		if s.PlayerIndex != pi {
+			continue
+		}
+		count++
+	}
+	return count
+}
+
+func (c CardsStatuses) ByColor(color CardColor, pi PlayerIndex) (out []CardID) {
+	for id, s := range c.Cards {
+		if s.CardStateEnum != CardBuilt {
+			continue
+		}
+		if s.PlayerIndex != pi {
+			continue
+		}
+		if CardID(id).Color() != color {
+			continue
+		}
+		out = append(out, CardID(id))
+	}
+	return out
+}
+
+func (c CardsStatuses) ByPlayer(pi PlayerIndex) (out []CardID) {
+	for id, s := range c.Cards {
+		if s.CardStateEnum != CardBuilt {
+			continue
+		}
+		if s.PlayerIndex != pi {
+			continue
+		}
+		out = append(out, CardID(id))
+	}
+	return out
+}
+
+func (c *CardsStatuses) built(id CardID, pi PlayerIndex) error {
+	if id < 0 || id >= NumCards {
+		return fmt.Errorf("card ID is out of range [0;%d)", NumCards)
+	}
+	state := c.Cards[id]
+	if state.CardStateEnum != CardOnBoard {
+		return fmt.Errorf("card %v is not on board", id)
+	}
+	c.Cards[id].CardStateEnum = CardBuilt
+	c.Cards[id].PlayerIndex = pi
+	return nil
+}
+
+func (c *CardsStatuses) discard(id CardID) error {
+	if id < 0 || id >= NumCards {
+		return fmt.Errorf("card ID is out of range [0;%d)", NumCards)
+	}
+
+	state := c.Cards[id]
+	if state.CardStateEnum != CardOnBoard {
+		return fmt.Errorf("card %v is not on board", id)
+	}
+
+	c.Cards[id].CardStateEnum = CardDiscarded
+	return nil
+}
+
+func (c *CardsStatuses) discardFromPlayer(id CardID, pi PlayerIndex) error {
+	if id < 0 || id >= NumCards {
+		return fmt.Errorf("card ID is out of range [0;%d)", NumCards)
+	}
+	state := c.Cards[id]
+	if state.CardStateEnum != CardBuilt {
+		return fmt.Errorf("card %q is not built", id)
+	}
+	if state.PlayerIndex != pi {
+		return fmt.Errorf("card %q is built by other player", pi)
+	}
+
+	c.Cards[id].CardStateEnum = CardDiscarded
+	return nil
+}
+
+func (c *CardsStatuses) builtDiscarded(id CardID, pi PlayerIndex) error {
+	if id < 0 || id >= NumCards {
+		return fmt.Errorf("card ID is out of range [0;%d)", NumCards)
+	}
+
+	state := c.Cards[id]
+	if state.CardStateEnum != CardDiscarded {
+		return fmt.Errorf("card is not discarded")
+	}
+
+	state.CardStateEnum = CardBuilt
+	state.PlayerIndex = pi
+	return nil
+}
+
+type CardStatus struct {
+	CardStateEnum
+	PlayerIndex PlayerIndex
+	WonderID    WonderID
+}
+
+type CardStateEnum uint8
+
+const (
+	CardInDesk CardStateEnum = iota
+	CardOnBoard
+	CardBuilt
+	CardDiscarded
+	CardOnWonder
 )
 
 type Age uint8

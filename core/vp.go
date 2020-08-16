@@ -94,12 +94,12 @@ func (m maxVPsPerCards) applyEffect(g *Game, i PlayerIndex) {
 	g.endEffects[i] = append(g.endEffects[i], m)
 }
 
-func (m maxVPsPerCards) finalVP(g *Game, i PlayerIndex) typedVP {
+func (m maxVPsPerCards) finalVP(g *Game, _ PlayerIndex) typedVP {
 	var max VP
 	for pi := range g.players {
 		var vp VP
 		for _, color := range m.Colors {
-			vp += m.VP.Mul(uint8(len(g.builtCards[pi][color])))
+			vp += m.VP.Mul(uint8(g.CardsState.NumByColor(color, PlayerIndex(pi))))
 		}
 		if vp > max {
 			max = vp

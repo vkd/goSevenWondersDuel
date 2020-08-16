@@ -67,8 +67,8 @@ func (c CoinsPerCardColor) applyEffect(g *Game, i PlayerIndex) {
 	}
 }
 
-func coinsPerColor(coins Coins, color CardColor, g *Game, i PlayerIndex) Coins {
-	return coins.Mul(uint8(len(g.builtCards[i][color])))
+func coinsPerColor(coins Coins, color CardColor, g *Game, pi PlayerIndex) Coins {
+	return coins.Mul(uint8(g.CardsState.NumByColor(color, pi)))
 }
 
 // MaxCoinsPerCardColor - At the time it is constructed, this card grants you 1 coin for each color card in the city which has the most there colors cards.

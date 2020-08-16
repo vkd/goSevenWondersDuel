@@ -36,7 +36,11 @@ func (c CardID) card() *Card {
 }
 
 func (c CardID) Color() CardColor {
-	return c.card().Color
+	return cards[c].Color
+}
+
+func (c CardID) String() string {
+	return fmt.Sprintf("%q(%d)", cards[c].Name, c)
 }
 
 // CardName - name of card
@@ -99,10 +103,16 @@ const (
 	numAgeIII = 20
 	numGuilds = 7
 
+	NumCardsAgeI   = numAgeI
+	NumCardsAgeII  = numAgeII
+	NumCardsAgeIII = numAgeIII
+	NumCardsGuilds = numGuilds
+
 	dropCardsFromEveryAge = 3
 	takeGuildsToAgeIII    = 3
 
 	totalNum = numAgeI + numAgeII + numAgeIII + numGuilds
+	NumCards = totalNum
 
 	SizeAge = 20
 )

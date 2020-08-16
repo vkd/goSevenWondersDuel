@@ -29,9 +29,6 @@ type Game struct {
 	currentPlayerIndex PlayerIndex
 	repeatTurn         bool
 
-	builtCards     [numPlayers][numCardColors][]CardID
-	discardedCards []CardID
-
 	priceMarkets      [numPlayers]PriceMarkets
 	oneFreeResMarkets [numPlayers]OneFreeResMarkets
 	endEffects        [numPlayers][]Finaler
@@ -95,6 +92,9 @@ func NewGame(opts ...Option) (*Game, error) {
 	}
 
 	g.ageDesk = newAgeDesk(structureAgeI, shuffleAgeI(g.rnd))
+	for _, cid := range g.ageDesk.cards {
+		g.CardsState.Cards[cid].CardStateEnum = CardOnBoard
+	}
 	g.ageDesk2 = newAgeDesk(structureAgeII, shuffleAgeII(g.rnd))
 	g.ageDesk3 = newAgeDesk(structureAgeIII, shuffleAgeIII(g.rnd))
 
@@ -105,10 +105,6 @@ func NewGame(opts ...Option) (*Game, error) {
 
 	g.state = g.state.Next()
 	return &g, nil
-}
-
-func (g *Game) BuildCards() [numPlayers][numCardColors][]CardID {
-	return g.builtCards
 }
 
 // GetState of the game
@@ -231,18 +227,21 @@ func (g *Game) ConstructBuilding(id CardID) (state CardsState, _ error) {
 		g.currentPlayer().Coins += 4
 	}
 
-	g.buildCard(id)
+	err = g.buildCard(id)
+	if err != nil {
+		return state, fmt.Errorf("build card: %w", err)
+	}
 	g.nextTurn()
 
 	return state, nil
 }
 
-func (g *Game) buildCard(id CardID) {
+func (g *Game) buildCard(id CardID) error {
 	card := id.card()
 	for _, eff := range card.Effects {
 		eff.applyEffect(g, g.currentPlayerIndex)
 	}
-	g.builtCards[g.currentPlayerIndex][card.Color] = append(g.builtCards[g.currentPlayerIndex][card.Color], id)
+	return g.CardsState.built(id, g.currentPlayerIndex)
 }
 
 func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
@@ -254,12 +253,15 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
 	err := g.ageDesk.Build(id)
 	state = g.ageDesk.state
 	if err != nil {
-		return state, err
+		return state, fmt.Errorf("build on desk: %w", err)
 	}
 
-	g.discardedCards = append(g.discardedCards, id)
+	err = g.CardsState.discard(id)
+	if err != nil {
+		return state, fmt.Errorf("discard card: %w", err)
+	}
 
-	g.currentPlayer().Coins += Coins(2) + Coins(len(g.builtCards[g.currentPlayerIndex][Yellow]))
+	g.currentPlayer().Coins += Coins(2) + Coins(g.CardsState.NumByColor(Yellow, g.currentPlayerIndex))
 
 	g.nextTurn()
 	return state, nil
@@ -329,33 +331,18 @@ func (g *Game) ChoosePToken(id PTokenID) error {
 }
 
 func (g *Game) DiscardedCards() []CardID {
-	return g.discardedCards
+	return g.CardsState.Get(CardDiscarded)
 }
 
-func (g *Game) ConstructDiscardedCard(id CardID) (err error) {
+func (g *Game) ConstructDiscardedCard(id CardID) error {
 	if !g.state.Is(StateBuildFreeDiscarded) {
 		return ErrWrongState
 	}
 
-	// TODO: check current state
-	var ok bool
-	for _, dID := range g.discardedCards {
-		if dID == id {
-			ok = true
-			break
-		}
+	err := g.CardsState.builtDiscarded(id, g.currentPlayerIndex)
+	if err != nil {
+		return fmt.Errorf("cannot construct discarded card (ID: %d): %w", id, err)
 	}
-	if !ok {
-		return fmt.Errorf("card (id=%d) is not discarded", id)
-	}
-
-	var newDiscarded []CardID
-	for _, did := range g.discardedCards {
-		if did != id {
-			newDiscarded = append(newDiscarded, did)
-		}
-	}
-	g.discardedCards = newDiscarded
 
 	g.buildCard(id)
 	g.state = g.state.Next()
@@ -367,7 +354,7 @@ func (g *Game) GetDiscardedOpponentsBuildings() ([]CardID, error) {
 	if !g.state.Is(StateDiscardOpponentBuild) {
 		return nil, ErrWrongState
 	}
-	return g.builtCards[g.CurrentPlayerIndex().Next()][g.discardOpponentBuild.color], nil
+	return g.CardsState.ByColor(g.discardOpponentBuild.color, g.CurrentPlayerIndex().Next()), nil
 }
 
 func (g *Game) DiscardOpponentBuild(id CardID) error {
@@ -383,25 +370,10 @@ func (g *Game) DiscardOpponentBuild(id CardID) error {
 
 	opponentID := g.CurrentPlayerIndex().Next()
 
-	var ok bool
-	for _, b := range g.builtCards[opponentID][card.Color] {
-		if b == id {
-			ok = true
-			break
-		}
+	err := g.CardsState.discardFromPlayer(id, opponentID)
+	if err != nil {
+		return fmt.Errorf("discard card from %d player: %w", opponentID, err)
 	}
-	if !ok {
-		return fmt.Errorf("wrong card id: %d is not built on opponent side", id)
-	}
-
-	var newBuiltCards []CardID
-	for _, b := range g.builtCards[opponentID][card.Color] {
-		if b != id {
-			newBuiltCards = append(newBuiltCards, b)
-		}
-	}
-	g.builtCards[opponentID][card.Color] = newBuiltCards
-	g.discardedCards = append(g.discardedCards, id)
 
 	card.discard(g, opponentID)
 
@@ -506,8 +478,14 @@ func (g *Game) nextAge() {
 	switch g.CurrentAge {
 	case AgeII:
 		g.ageDesk = g.ageDesk2
+		for _, cid := range g.ageDesk.cards {
+			g.CardsState.Cards[cid].CardStateEnum = CardOnBoard
+		}
 	case AgeIII:
 		g.ageDesk = g.ageDesk3
+		for _, cid := range g.ageDesk.cards {
+			g.CardsState.Cards[cid].CardStateEnum = CardOnBoard
+		}
 	}
 
 }

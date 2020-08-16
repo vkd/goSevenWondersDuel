@@ -74,25 +74,27 @@ func tTest_simpleBot(t *testing.T) {
 
 		switch w {
 		case Winner1Player:
-			for _, cs := range g.BuildCards()[0] {
-				for _, cid := range cs {
-					cardsRating[cid]++
+			for cid, state := range g.CardsState.Cards {
+				if state.CardStateEnum != CardBuilt {
+					continue
 				}
-			}
-			for _, cs := range g.BuildCards()[1] {
-				for _, cid := range cs {
-					cardsRating[cid]--
+				switch state.PlayerIndex {
+				case 0:
+					cardsRating[CardID(cid)]++
+				case 1:
+					cardsRating[CardID(cid)]--
 				}
 			}
 		case Winner2Player:
-			for _, cs := range g.BuildCards()[1] {
-				for _, cid := range cs {
-					cardsRating[cid]++
+			for cid, state := range g.CardsState.Cards {
+				if state.CardStateEnum != CardBuilt {
+					continue
 				}
-			}
-			for _, cs := range g.BuildCards()[0] {
-				for _, cid := range cs {
-					cardsRating[cid]--
+				switch state.PlayerIndex {
+				case 0:
+					cardsRating[CardID(cid)]--
+				case 1:
+					cardsRating[CardID(cid)]++
 				}
 			}
 		}

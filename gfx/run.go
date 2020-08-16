@@ -242,7 +242,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 
 	var discardedPTokens []core.PTokenID
 	var opponentsDestroyableBuildings []core.CardID
-	var playerCards [2][core.CardColorSize][]core.CardID
 
 	var fps = time.NewTicker(time.Second / 15)
 	defer fps.Stop()
@@ -261,7 +260,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 		for g.CurrentPlayerIndex() == 1 && !g.GetState().Is(core.StateVictory) {
 			bot.NextTurn(g, 1)
 			tableCards.Cards = g.DeskCardsState()
-			playerCards = g.BuildCards()
 			discardedCards = g.DiscardedCards()
 			ptokens = g.GetAvailablePTokens()
 
@@ -376,7 +374,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			boardState = Table
 			wonderBuilt = [2][4]uint8{}
 			wondersBuilt = 0
-			playerCards = [2][core.CardColorSize][]core.CardID{}
 			bot = newBot()
 		}
 
@@ -425,9 +422,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				} else {
 					cardID := tableCards.Cards[selectedCardIndex].ID
 					tableCards.Cards, err = g.ConstructBuilding(cardID)
-					if err == nil {
-						playerCards[pIndex][cardID.Color()] = append(playerCards[pIndex][cardID.Color()], cardID)
-					}
 				}
 				if err != nil {
 					log.Printf("Error on build: %v", err)
@@ -465,8 +459,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				err = g.ConstructDiscardedCard(cardID)
 				if err != nil {
 					log.Printf("Error on build discarded: %v", err)
-				} else {
-					playerCards[pIndex][cardID.Color()] = append(playerCards[pIndex][cardID.Color()], cardID)
 				}
 			}
 			if selectedUserWonderIndex > -1 {
@@ -498,13 +490,6 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				if err != nil {
 					log.Printf("Error on discard opponent building: %v", err)
 				} else {
-					var newList []core.CardID
-					for _, cid := range playerCards[(pIndex+1)%2][cardID.Color()] {
-						if cid != cardID {
-							newList = append(newList, cid)
-						}
-					}
-					playerCards[(pIndex+1)%2][cardID.Color()] = newList
 					opponentsDestroyableBuildings = nil
 					boardState = Table
 				}
@@ -646,7 +631,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			}
 
 			// case PlayerCardsState:
-			drawHand(win, playerCards[pIndex])
+			drawHand(win, g.CardsState.ByPlayer(pIndex))
 		case DiscardedCards:
 			for i, did := range discardedCards {
 				drawCard(did, true, discardedRects[i], win, 0)
@@ -688,7 +673,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				drawBorder(discardedRects[selectOpponentsBuilding], win, borderColor, 4)
 			}
 		case OpponentCardsState:
-			drawHand(win, playerCards[pIndex.Next()])
+			drawHand(win, g.CardsState.ByPlayer(pIndex.Next()))
 		}
 
 		var currectPlayer = g.CurrentPlayerIndex()
@@ -723,11 +708,11 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	return nil
 }
 
-func drawHand(t pixel.Target, hand [core.CardColorSize][]core.CardID) {
-	for color, stack := range hand {
-		for i, cid := range stack {
-			drawCard(cid, true, discardedRects[color].Moved(pixel.V(wonderWidth+10, -300-cardTitleSmHeight*float64(i))), t, 0)
-		}
+func drawHand(t pixel.Target, cards []core.CardID) {
+	stackByColor := map[core.CardColor]float64{}
+	for _, cid := range cards {
+		drawCard(cid, true, discardedRects[cid.Color()].Moved(pixel.V(wonderWidth+10, -300-cardTitleSmHeight*stackByColor[cid.Color()])), t, 0)
+		stackByColor[cid.Color()] += 1.0
 	}
 }
 
