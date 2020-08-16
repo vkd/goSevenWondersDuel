@@ -191,7 +191,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	// +------------------------------> x
 	// topCenter.Y -= cardHeight
 	var tableCards = TableCards{
-		Cards: g.CardsState(),
+		Cards: g.DeskCardsState(),
 		Rects: ageIRects,
 	}
 
@@ -260,7 +260,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	var nextTurn = func() {
 		for g.CurrentPlayerIndex() == 1 && !g.GetState().Is(core.StateVictory) {
 			bot.NextTurn(g, 1)
-			tableCards.Cards = g.CardsState()
+			tableCards.Cards = g.DeskCardsState()
 			playerCards = g.BuildCards()
 			discardedCards = g.DiscardedCards()
 			ptokens = g.GetAvailablePTokens()
@@ -289,7 +289,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			case core.AgeIII:
 				tableCards.Rects = ageIIIRects
 			}
-			tableCards.Cards = g.CardsState()
+			tableCards.Cards = g.DeskCardsState()
 		}
 
 		switch g.GetState() {
@@ -365,7 +365,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				return fmt.Errorf("F12: get available wonders: %w", err)
 			}
 			ptokens = g.GetAvailablePTokens()
-			tableCards.Cards = g.CardsState()
+			tableCards.Cards = g.DeskCardsState()
 			tableCards.Rects = ageIRects
 			discardedCards = nil
 			currentAge = 1

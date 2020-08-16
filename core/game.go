@@ -149,7 +149,7 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 	return nil
 }
 
-func (g *Game) CardsState() CardsState {
+func (g *Game) DeskCardsState() CardsState {
 	return g.ageDesk.state
 }
 

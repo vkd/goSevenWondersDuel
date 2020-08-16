@@ -34,7 +34,7 @@ func (s simpleBot) NextTurn(g *Game, myIdx PlayerIndex) {
 	case StateChooseFirstPlayer:
 		err = g.ChooseFirstPlayer(myIdx)
 	case StateGameTurn:
-		state := g.CardsState()
+		state := g.DeskCardsState()
 		var ac = make([]CardID, 0, 8)
 		for _, s := range state {
 			if !s.Exists || s.Covered {
@@ -176,7 +176,7 @@ func (r ratingBot) NextTurn(g *Game, myIdx PlayerIndex) {
 		p := g.Player(myIdx)
 
 		var ac = make([]CardID, 0, 8)
-		for _, s := range g.CardsState() {
+		for _, s := range g.DeskCardsState() {
 			if !s.Exists || s.Covered {
 				continue
 			}
