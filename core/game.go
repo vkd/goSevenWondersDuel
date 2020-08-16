@@ -85,10 +85,8 @@ func NewGame(opts ...Option) (*Game, error) {
 		g.PtokensState.States[pts[i]].PTokenState = PTokenChosenFromDiscarded
 	}
 
-	var err error
-	g.WondersState, err = InitializeWonders(g.WondersState, g.rnd)
-	if err != nil {
-		return nil, fmt.Errorf("move %d wonders into 'in_game' state: %w", InitialWonders, err)
+	for _, id := range TakeNfromM(InitialWonders, len(g.WondersState.States), g.rnd) {
+		g.WondersState.States[id].InGame = true
 	}
 
 	g.ageDesk = newAgeDesk(structureAgeI, shuffleAgeI(g.rnd))

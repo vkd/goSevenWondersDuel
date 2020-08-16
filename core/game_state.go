@@ -20,18 +20,6 @@ type GameState struct {
 	CardsState CardsStatuses
 }
 
-func InitializeWonders(w WondersState, rnd *rand.Rand) (WondersState, error) {
-	for _, ws := range w.States {
-		if ws.InGame {
-			return w, fmt.Errorf("is already initialized")
-		}
-	}
-	for _, idx := range TakeNfromM(InitialWonders, len(w.States), rnd) {
-		w.States[idx].InGame = true
-	}
-	return w, nil
-}
-
 type WonderState struct {
 	PlayerIndex
 	InGame   bool
