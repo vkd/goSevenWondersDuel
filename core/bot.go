@@ -96,7 +96,9 @@ func (s simpleBot) NextTurn(g *Game, myIdx PlayerIndex) {
 		if len(aws) > 0 {
 			idx := s.rnd.Intn(len(aws))
 			_, err = g.ConstructWonder(ac[s.rnd.Intn(len(ac))], aws[idx])
-			break
+			if err == nil {
+				break
+			}
 		}
 
 		var found bool
@@ -258,7 +260,9 @@ func (r ratingBot) NextTurn(g *Game, myIdx PlayerIndex) {
 		if len(aws) > 0 {
 			idx := r.rnd.Intn(len(aws))
 			_, err = g.ConstructWonder(maxCardID, aws[idx])
-			break
+			if err == nil {
+				break
+			}
 		}
 
 		if found {
