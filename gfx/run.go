@@ -71,23 +71,30 @@ var (
 	rating map[core.CardID]int
 )
 
-func init() {
+func initBotRating() {
 	f, err := os.Open("core/stats")
 	if err != nil {
+		log.Printf("Error on open stats file: %v", err)
 		return
 	}
 	defer f.Close()
 
+	log.Printf("Loading bot rating")
 	rating, err = core.LoadBotRating(f)
 	if err != nil {
 		panic(err)
 	}
+	log.Printf("Bot rating is loaded: is null: %t", rating == nil)
 }
 
 func newBot() core.Bot {
+	initBotRating()
+
 	if rating != nil {
-		core.RatingBot(rating)
+		log.Printf("Rating bot")
+		return core.RatingBot(rating)
 	}
+	log.Printf("Simple bot")
 	return core.SimpleBot(rand.New(rand.NewSource(seed)))
 }
 
