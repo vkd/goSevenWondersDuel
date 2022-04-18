@@ -41,6 +41,8 @@ type Game struct {
 	ageDesk2 ageDesk
 	ageDesk3 ageDesk
 
+	// ageStructure AgeStructure
+
 	rnd *rand.Rand
 }
 
@@ -89,12 +91,22 @@ func NewGame(opts ...Option) (*Game, error) {
 		g.WondersState.States[id].InGame = true
 	}
 
-	g.ageDesk = newAgeDesk(structureAgeI, shuffleAgeI(g.rnd))
+	var err error
+	g.ageDesk, err = newAgeDesk(shuffleAgeI(g.rnd), AgeI)
+	if err != nil {
+		return nil, fmt.Errorf("create age I desk: %w", err)
+	}
 	for _, cid := range g.ageDesk.cards {
 		g.CardsState.Cards[cid].CardStateEnum = CardOnBoard
 	}
-	g.ageDesk2 = newAgeDesk(structureAgeII, shuffleAgeII(g.rnd))
-	g.ageDesk3 = newAgeDesk(structureAgeIII, shuffleAgeIII(g.rnd))
+	g.ageDesk2, err = newAgeDesk(shuffleAgeII(g.rnd), AgeII)
+	if err != nil {
+		return nil, fmt.Errorf("create age II desk: %w", err)
+	}
+	g.ageDesk3, err = newAgeDesk(shuffleAgeIII(g.rnd), AgeIII)
+	if err != nil {
+		return nil, fmt.Errorf("create age III desk: %w", err)
+	}
 
 	for i := 0; i < numPlayers; i++ {
 		g.players[i] = Player{}
@@ -143,8 +155,8 @@ func (g *Game) SelectWonders(fstWonders, sndWonders [numWondersPerPlayer]WonderI
 	return nil
 }
 
-func (g *Game) DeskCardsState() CardsState {
-	return g.ageDesk.state
+func (g *Game) DeskCardsState() AgeCards {
+	return g.ageDesk.ageStructure.Cards
 }
 
 func (g *Game) CardCostCoins(id CardID) Coins {
@@ -192,7 +204,7 @@ func (g *Game) newTradingPrice() TradingPrice {
 }
 
 func (g *Game) ConstructBuilding(id CardID) (state CardsState, _ error) {
-	state = g.ageDesk.state
+	state = g.ageDesk.ageStructure.Cards
 	if !g.state.Is(StateGameTurn) {
 		return state, ErrWrongState
 	}
@@ -209,7 +221,7 @@ func (g *Game) ConstructBuilding(id CardID) (state CardsState, _ error) {
 	}
 
 	err = g.ageDesk.Build(id)
-	state = g.ageDesk.state
+	state = g.ageDesk.ageStructure.Cards
 	if err != nil {
 		return state, err
 	}
@@ -243,13 +255,13 @@ func (g *Game) buildCard(id CardID) error {
 }
 
 func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
-	state = g.ageDesk.state
+	state = g.ageDesk.ageStructure.Cards
 	if !g.state.Is(StateGameTurn) {
 		return state, ErrWrongState
 	}
 
 	err := g.ageDesk.Build(id)
-	state = g.ageDesk.state
+	state = g.ageDesk.ageStructure.Cards
 	if err != nil {
 		return state, fmt.Errorf("build on desk: %w", err)
 	}
@@ -266,7 +278,7 @@ func (g *Game) DiscardCard(id CardID) (state CardsState, _ error) {
 }
 
 func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, _ error) {
-	state = g.ageDesk.state
+	state = g.ageDesk.ageStructure.Cards
 	if !g.state.Is(StateGameTurn) {
 		return state, ErrWrongState
 	}
@@ -277,7 +289,7 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, _ er
 	}
 
 	err = g.ageDesk.testBuild(cid)
-	state = g.ageDesk.state
+	state = g.ageDesk.ageStructure.Cards
 	if err != nil {
 		return state, fmt.Errorf("card (id = %d) cannot be taken: %w", cid, err)
 	}
@@ -289,7 +301,7 @@ func (g *Game) ConstructWonder(cid CardID, wid WonderID) (state CardsState, _ er
 	}
 
 	err = g.ageDesk.Build(cid)
-	state = g.ageDesk.state
+	state = g.ageDesk.ageStructure.Cards
 	if err != nil {
 		return state, err
 	}
@@ -423,7 +435,7 @@ func (g *Game) nextTurn() {
 		}
 		return
 	}
-	if g.ageDesk.state.anyExists() {
+	if !g.ageDesk.ageStructure.IsEmpty() {
 		if g.repeatTurn {
 			g.repeatTurn = false
 		} else {

@@ -5,15 +5,15 @@ import (
 	"fmt"
 )
 
-func GetUncovered(a AgeStructure) []CardID {
+func GetUncovered(ac AgeCards, coverby CoverageByAgeStructure) []CardID {
 	out := make([]CardID, 0, 6)
-	for i, s := range a.Cards {
+	for i, s := range ac {
 		if !s.Exists {
 			continue
 		}
 		var covered bool
-		for _, byID := range CoverageByForAge(a.age)[StructureID(i)] {
-			if a.Cards[byID].Exists {
+		for _, byID := range coverby[StructureID(i)] {
+			if ac[byID].Exists {
 				covered = true
 				break
 			}
@@ -25,25 +25,30 @@ func GetUncovered(a AgeStructure) []CardID {
 	return out
 }
 
-type AgeStructure struct {
-	Cards [SizeAge]StructureCard
+type AgeCards [SizeAge]StructureCard
 
-	age      Age
-	shuffler CardShuffler
+func (a AgeCards) IsCovered(id StructureID, coverby CoverageByAgeStructure) error {
+	for _, byID := range coverby[id] {
+		if a[byID].Exists {
+			return fmt.Errorf("by card id = %d", byID)
+		}
+	}
+	return nil
+}
+
+type AgeStructure struct {
+	Cards AgeCards
 }
 
 type CardShuffler interface {
 	Next() (CardID, error)
 }
 
-func NewAgeStructure(age Age, shuffler CardShuffler) (AgeStructure, error) {
-	a := AgeStructure{
-		age:      age,
-		shuffler: shuffler,
-	}
+func NewAgeStructure(shuffler CardShuffler, coverby CoverageByAgeStructure, hiddens HiddenCardsAgeStructure) (AgeStructure, error) {
+	var a AgeStructure
 
 	var isHidden [len(a.Cards)]bool
-	for _, hid := range HiddenCardsForAge(age) {
+	for _, hid := range hiddens {
 		isHidden[hid] = true
 	}
 
@@ -54,7 +59,7 @@ func NewAgeStructure(age Age, shuffler CardShuffler) (AgeStructure, error) {
 		if isHidden[i] {
 			continue
 		}
-		err := a.Cards[i].Open(a.shuffler)
+		err := a.Cards[i].Open(shuffler)
 		if err != nil {
 			return a, fmt.Errorf("cannot open card: %w", err)
 		}
@@ -66,7 +71,7 @@ func NewAgeStructure(age Age, shuffler CardShuffler) (AgeStructure, error) {
 		}
 
 		id := StructureID(i)
-		err := a.IsCovered(id)
+		err := a.Cards.IsCovered(id, coverby)
 		if err == nil {
 			return a, fmt.Errorf("uncorrect hiddens: %d card is not covered", id)
 		}
@@ -74,12 +79,12 @@ func NewAgeStructure(age Age, shuffler CardShuffler) (AgeStructure, error) {
 	return a, nil
 }
 
-func (a AgeStructure) Take(id StructureID) (AgeStructure, error) {
+func (a AgeStructure) Take(id StructureID, shuffler CardShuffler, coverby CoverageByAgeStructure, covereds CoveredsAgeStructure) (AgeStructure, error) {
 	if id < 0 || int(id) >= len(a.Cards) {
 		return a, fmt.Errorf("id is out of range [0:%d)", len(a.Cards))
 	}
 
-	err := a.IsCovered(id)
+	err := a.Cards.IsCovered(id, coverby)
 	if err != nil {
 		return a, fmt.Errorf("card is covered: %w", err)
 	}
@@ -89,16 +94,16 @@ func (a AgeStructure) Take(id StructureID) (AgeStructure, error) {
 		return a, fmt.Errorf("card is not buildable: %w", err)
 	}
 
-	for _, coveredID := range CoveredsForAge(a.age)[id] {
+	for _, coveredID := range covereds[id] {
 		if !a.Cards[coveredID].Exists {
 			continue
 		}
 
-		err = a.IsCovered(coveredID)
+		err = a.Cards.IsCovered(coveredID, coverby)
 		if err != nil {
 			continue
 		}
-		err = a.Cards[coveredID].Open(a.shuffler)
+		err = a.Cards[coveredID].Open(shuffler)
 		if err != nil {
 			return a, fmt.Errorf("cannot open card ID %d: %w", coveredID, err)
 		}
@@ -107,13 +112,13 @@ func (a AgeStructure) Take(id StructureID) (AgeStructure, error) {
 	return a, nil
 }
 
-func (a AgeStructure) IsCovered(id StructureID) error {
-	for _, byID := range CoverageByForAge(a.age)[id] {
-		if a.Cards[byID].Exists {
-			return fmt.Errorf("by card id = %d", byID)
+func (a AgeStructure) IsEmpty() bool {
+	for _, c := range a.Cards {
+		if c.Exists {
+			return false
 		}
 	}
-	return nil
+	return true
 }
 
 type StructureCard struct {

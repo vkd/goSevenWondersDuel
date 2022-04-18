@@ -191,7 +191,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	// +------------------------------> x
 	// topCenter.Y -= cardHeight
 	var tableCards = TableCards{
-		Cards: g.DeskCardsState(),
+		Cards: newTableAgeCards(g.DeskCardsState(), g.CurrentAge),
 		Rects: ageIRects,
 	}
 
@@ -259,7 +259,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 	var nextTurn = func() {
 		for g.CurrentPlayerIndex() == 1 && !g.GetState().Is(core.StateVictory) {
 			bot.NextTurn(g, 1)
-			tableCards.Cards = g.DeskCardsState()
+			tableCards.Cards = newTableAgeCards(g.DeskCardsState(), g.CurrentAge)
 			discardedCards = g.DiscardedCards()
 			ptokens = g.GetAvailablePTokens()
 
@@ -287,7 +287,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			case core.AgeIII:
 				tableCards.Rects = ageIIIRects
 			}
-			tableCards.Cards = g.DeskCardsState()
+			tableCards.Cards = newTableAgeCards(g.DeskCardsState(), g.CurrentAge)
 		}
 
 		switch g.GetState() {
@@ -363,7 +363,7 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 				return fmt.Errorf("F12: get available wonders: %w", err)
 			}
 			ptokens = g.GetAvailablePTokens()
-			tableCards.Cards = g.DeskCardsState()
+			tableCards.Cards = newTableAgeCards(g.DeskCardsState(), g.CurrentAge)
 			tableCards.Rects = ageIRects
 			discardedCards = nil
 			currentAge = 1
@@ -413,15 +413,18 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 
 		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			if selectedCardIndex > -1 {
+				var tempState core.AgeCards
 				if selectedConstructWonder > -1 {
-					tableCards.Cards, err = g.ConstructWonder(tableCards.Cards[selectedCardIndex].ID, userWonders[g.CurrentPlayerIndex()][selectedConstructWonder])
+					tempState, err = g.ConstructWonder(tableCards.Cards.Cards[selectedCardIndex].CardID, userWonders[g.CurrentPlayerIndex()][selectedConstructWonder])
 					if err == nil {
-						wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards[selectedCardIndex].ID) + 1
+						tableCards.Cards = newTableAgeCards(tempState, g.CurrentAge)
+						wonderBuilt[pIndex][selectedConstructWonder] = uint8(tableCards.Cards.Cards[selectedCardIndex].CardID) + 1
 						wondersBuilt++
 					}
 				} else {
-					cardID := tableCards.Cards[selectedCardIndex].ID
-					tableCards.Cards, err = g.ConstructBuilding(cardID)
+					cardID := tableCards.Cards.Cards[selectedCardIndex].CardID
+					tempState, err = g.ConstructBuilding(cardID)
+					tableCards.Cards = newTableAgeCards(tempState, g.CurrentAge)
 				}
 				if err != nil {
 					log.Printf("Error on build: %v", err)
@@ -497,14 +500,14 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 			nextTurn()
 		} else if win.JustPressed(pixelgl.MouseButtonRight) {
 			if selectedCardIndex > -1 {
-				var err error
-				var id = tableCards.Cards[selectedCardIndex].ID
-				tableCards.Cards, err = g.DiscardCard(id)
+				var id = tableCards.Cards.Cards[selectedCardIndex].CardID
+				tempState, err := g.DiscardCard(id)
 				if err != nil {
 					log.Printf("Card %d is not discarded: %v", id, err)
 				} else {
 					discardedCards = append(discardedCards, id)
 				}
+				tableCards.Cards = newTableAgeCards(tempState, g.CurrentAge)
 			}
 			nextTurn()
 		}
@@ -542,24 +545,26 @@ func run() error { //nolint: gocognit, funlen, gocyclo
 
 		switch boardState {
 		case Table:
-			for i, c := range tableCards.Cards {
+			for i, c := range tableCards.Cards.Cards {
 				if !c.Exists {
 					continue
 				}
-				if !c.Covered && tableCards.Rects[i].Contains(mouse) {
+				isOpen := tableCards.Cards.Opens[i]
+				if isOpen && tableCards.Rects[i].Contains(mouse) {
 					selectedCardIndex = i
 				}
 			}
-			for i, c := range tableCards.Cards {
+			for i, c := range tableCards.Cards.Cards {
 				if !c.Exists {
 					continue
 				}
-				cost := g.CardCostCoins(tableCards.Cards[i].ID)
-				drawCard(c.ID, c.FaceUp, tableCards.Rects[i], win, cost)
+				cost := g.CardCostCoins(tableCards.Cards.Cards[i].CardID)
+				drawCard(c.CardID, c.FaceUp, tableCards.Rects[i], win, cost)
 				if i == selectedCardIndex {
 					drawSelectedBorder(tableCards.Rects[i], win)
 				}
-				if !c.Covered {
+				isOpen := tableCards.Cards.Opens[i]
+				if isOpen {
 					var color = colornames.Red
 					if g.CurrentPlayer().Coins >= cost {
 						color = colornames.Green
@@ -739,7 +744,28 @@ func debugPlayerInfo(p core.Player, isActive bool) string {
 
 type TableCards struct {
 	Rects []pixel.Rect
-	Cards core.CardsState
+	Cards tableAgeCards
+}
+
+type tableAgeCards struct {
+	Cards core.AgeCards
+	Opens [len(core.AgeCards{})]bool
+}
+
+func newTableAgeCards(cards core.AgeCards, age core.Age) tableAgeCards {
+	t := tableAgeCards{
+		Cards: cards,
+	}
+	coverBy := core.CoverageByForAge(age)
+	for i, c := range cards {
+		err := cards.IsCovered(core.StructureID(i), coverBy)
+		isCovered := err != nil
+		if !isCovered {
+			log.Printf("%d card ID is open", c.CardID)
+			t.Opens[i] = true
+		}
+	}
+	return t
 }
 
 var (

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -32,56 +33,56 @@ func (c CardState) TestBuilt() error {
 }
 
 // CardsState on the table
-type CardsState [SizeAge]CardState
+type CardsState = AgeCards // [SizeAge]CardState
 
-func (s CardsState) testBuilt(i cardIndex) error {
-	return s[i].TestBuilt()
-}
+// func (s CardsState) testBuilt(i cardIndex) error {
+// 	return s[i].TestBuilt()
+// }
 
-func (s *CardsState) set(i cardIndex, id CardID, covered bool) {
-	s[i].FaceUp = true
-	s[i].Exists = true
-	s[i].Covered = covered
-	s[i].ID = id
-}
+// func (s *CardsState) set(i cardIndex, id CardID, covered bool) {
+// 	s[i].FaceUp = true
+// 	s[i].Exists = true
+// 	s[i].Covered = covered
+// 	s[i].ID = id
+// }
 
-func (s *CardsState) take(i cardIndex) {
-	s[i].Exists = false
-}
+// func (s *CardsState) take(i cardIndex) {
+// 	s[i].Exists = false
+// }
 
-func (s *CardsState) open(i cardIndex, cards []CardID) {
-	s[i].FaceUp = true
-	s[i].ID = cards[i]
-}
+// func (s *CardsState) open(i cardIndex, cards []CardID) {
+// 	s[i].FaceUp = true
+// 	s[i].ID = cards[i]
+// }
 
-func (s *CardsState) free(i cardIndex) {
-	s[i].Covered = false
-}
+// func (s *CardsState) free(i cardIndex) {
+// 	s[i].Covered = false
+// }
 
-func (s *CardsState) hide(i cardIndex) {
-	if s[i].Covered {
-		s[i].ID = 0
-		s[i].FaceUp = false
-	}
-}
+// func (s *CardsState) hide(i cardIndex) {
+// 	if s[i].Covered {
+// 		s[i].ID = 0
+// 		s[i].FaceUp = false
+// 	}
+// }
 
-func (s CardsState) anyExists() bool {
-	for _, cs := range s {
-		if cs.Exists {
-			return true
-		}
-	}
-	return false
-}
+// func (s CardsState) anyExists() bool {
+// 	for _, cs := range s {
+// 		if cs.Exists {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
-func (s CardsState) isAnyExists(idxs []cardIndex) bool {
-	for _, idx := range idxs {
-		if s[idx].Exists {
-			return true
-		}
-	}
-	return false
-}
+// func (s CardsState) isAnyExists(idxs []cardIndex) bool {
+// 	for _, idx := range idxs {
+// 		if s[idx].Exists {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 var (
 	structureAgeI   = newAgeStructure(ageICoveredBy, ageIHiddenCards)
@@ -108,27 +109,41 @@ func newAgeStructure(coveredBy cardRelations, hiddenCards HiddenCardsAgeStructur
 	return &age
 }
 
-type ageDesk struct {
-	structure *ageStructure
-	cards     []CardID
-	state     CardsState
+type shuffledCards struct {
+	cards []CardID
+	index int
 }
 
-func newAgeDesk(structure *ageStructure, cards []CardID) (desk ageDesk) {
-	desk.structure = structure
+func (s *shuffledCards) Next() (CardID, error) {
+	if s.index < 0 || s.index >= len(s.cards) {
+		return 0, errors.New("wrong index")
+	}
+	cid := s.cards[s.index]
+	s.index++
+	return cid, nil
+}
+
+type ageDesk struct {
+	cards    []CardID
+	age      Age
+	shuffler CardShuffler
+
+	ageStructure AgeStructure
+}
+
+func newAgeDesk(cards []CardID, age Age) (ageDesk, error) {
+	var desk ageDesk
 	desk.cards = cards
+	desk.age = age
+	desk.shuffler = &shuffledCards{cards: cards}
 
-	for i, id := range cards {
-		coveredBy, ok := structure.coveredBy[cardIndex(i)]
-		covered := ok && len(coveredBy) > 0
-		desk.state.set(cardIndex(i), id, covered)
+	var err error
+	desk.ageStructure, err = NewAgeStructure(desk.shuffler, CoverageByForAge(age), HiddenCardsForAge(age))
+	if err != nil {
+		return desk, err
 	}
 
-	// hide cards
-	for _, i := range structure.hiddenCards {
-		desk.state.hide(i)
-	}
-	return desk
+	return desk, nil
 }
 
 func (d *ageDesk) Build(id CardID) error {
@@ -136,20 +151,13 @@ func (d *ageDesk) Build(id CardID) error {
 	if !ok {
 		return fmt.Errorf("card not found (id = %d)", id)
 	}
-	err := d.state.testBuilt(idx)
+
+	nextAs, err := d.ageStructure.Take(idx, d.shuffler, CoverageByForAge(d.age), CoveredsForAge(d.age))
 	if err != nil {
-		return fmt.Errorf("test build (card id = %d): %w", id, err)
+		return fmt.Errorf("cannot take card on structure: %w", err)
 	}
 
-	d.state.take(idx)
-
-	for _, cover := range d.structure.covers[idx] {
-		isCovered := d.state.isAnyExists(d.structure.coveredBy[cover])
-		if !isCovered {
-			d.state.free(cover)
-			d.state.open(cover, d.cards)
-		}
-	}
+	d.ageStructure = nextAs
 	return nil
 }
 
@@ -158,7 +166,12 @@ func (d *ageDesk) testBuild(id CardID) error {
 	if !ok {
 		return fmt.Errorf("card does not exist (id = %d)", id)
 	}
-	return d.state.testBuilt(idx)
+	as := d.ageStructure
+	_, err := as.Take(idx, d.shuffler, CoverageByForAge(d.age), CoveredsForAge(d.age))
+	if err != nil {
+		return fmt.Errorf("cannot take card [%d] on structure: %w", idx, err)
+	}
+	return nil
 }
 
 func indexOfCards(id CardID, cards []CardID) (cardIndex, bool) {

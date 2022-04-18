@@ -35,13 +35,7 @@ func (s simpleBot) NextTurn(g *Game, myIdx PlayerIndex) {
 		err = g.ChooseFirstPlayer(myIdx)
 	case StateGameTurn:
 		state := g.DeskCardsState()
-		var ac = make([]CardID, 0, 8)
-		for _, s := range state {
-			if !s.Exists || s.Covered {
-				continue
-			}
-			ac = append(ac, s.ID)
-		}
+		ac := GetUncovered(state, CoverageByForAge(g.CurrentAge))
 
 		if len(ac) == 0 {
 			panic("This situation is unreal: there is no available cards")
@@ -175,13 +169,7 @@ func (r ratingBot) NextTurn(g *Game, myIdx PlayerIndex) {
 	case StateGameTurn:
 		p := g.Player(myIdx)
 
-		var ac = make([]CardID, 0, 8)
-		for _, s := range g.DeskCardsState() {
-			if !s.Exists || s.Covered {
-				continue
-			}
-			ac = append(ac, s.ID)
-		}
+		ac := GetUncovered(g.DeskCardsState(), CoverageByForAge(g.CurrentAge))
 
 		if len(ac) == 0 {
 			panic("This situation is unreal: there is no available cards")

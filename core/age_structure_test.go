@@ -12,13 +12,15 @@ func TestAgeStructure(t *testing.T) {
 	cardSource := &singleCardSource{
 		cards: []CardID{0, 1, 5, 6, 7, 8, 14, 15, 16, 17, 18, 19},
 	}
+	coverby := CoverageByForAge(AgeI)
+	covereds := CoveredsForAge(AgeI)
 
 	//      0  1
 	//     2  3  4
 	//    5  6  7  8
 	//   9 10 11 12 13
 	// 14 15 16 17 18 19
-	as, err := NewAgeStructure(AgeI, cardSource)
+	as, err := NewAgeStructure(cardSource, coverby, HiddenCardsForAge(AgeI))
 	require.NoError(t, err)
 
 	//      0  1
@@ -26,7 +28,7 @@ func TestAgeStructure(t *testing.T) {
 	//    5  6  7  8
 	//   * ** ** ** **
 	// 14 15 16 17 __ 19
-	as, err = as.Take(18)
+	as, err = as.Take(18, cardSource, coverby, covereds)
 	require.NoError(t, err)
 
 	//      0  1
@@ -35,7 +37,7 @@ func TestAgeStructure(t *testing.T) {
 	//   * ** ** ** 13
 	// 14 15 16 17 __ __
 	cardSource.cards = append(cardSource.cards, 13)
-	as, err = as.Take(19)
+	as, err = as.Take(19, cardSource, coverby, covereds)
 	require.NoError(t, err)
 
 	//      0  1
@@ -43,7 +45,7 @@ func TestAgeStructure(t *testing.T) {
 	//    5  6  7  8
 	//   * ** ** ** __
 	// 14 15 16 17 __ __
-	as, err = as.Take(13)
+	as, err = as.Take(13, cardSource, coverby, covereds)
 	require.NoError(t, err)
 
 	//      0  1
@@ -52,7 +54,7 @@ func TestAgeStructure(t *testing.T) {
 	//   * ** ** 12 __
 	// 14 15 16 __ __ __
 	cardSource.cards = append(cardSource.cards, 12)
-	as, err = as.Take(17)
+	as, err = as.Take(17, cardSource, coverby, covereds)
 	require.NoError(t, err)
 
 	//      0  1
@@ -60,7 +62,7 @@ func TestAgeStructure(t *testing.T) {
 	//    5  6  7  8
 	//   * ** ** __ __
 	// 14 15 16 __ __ __
-	as, err = as.Take(12)
+	as, err = as.Take(12, cardSource, coverby, covereds)
 	require.NoError(t, err)
 
 	//      0  1
@@ -68,7 +70,7 @@ func TestAgeStructure(t *testing.T) {
 	//    5  6  7  _
 	//   * ** ** __ __
 	// 14 15 16 __ __ __
-	as, err = as.Take(8)
+	as, err = as.Take(8, cardSource, coverby, covereds)
 	require.NoError(t, err)
 }
 
@@ -76,13 +78,15 @@ var errTest = errors.New("test error")
 
 func TestAgeStructure_errors(t *testing.T) {
 	cardSource := &singleCardSource{err: errTest}
+	coverby := CoverageByForAge(AgeI)
+	covereds := CoveredsForAge(AgeI)
 
 	//      0  1
 	//     2  3  4
 	//    5  6  7  8
 	//   9 10 11 12 13
 	// 14 15 16 17 18 19
-	_, err := NewAgeStructure(AgeI, cardSource)
+	_, err := NewAgeStructure(cardSource, coverby, HiddenCardsForAge(AgeI))
 	require.Error(t, err)
 
 	cardSource = &singleCardSource{
@@ -93,15 +97,15 @@ func TestAgeStructure_errors(t *testing.T) {
 	//    5  6  7  8
 	//   9 10 11 12 13
 	// 14 15 16 17 18 19
-	as, err := NewAgeStructure(AgeI, cardSource)
+	as, err := NewAgeStructure(cardSource, coverby, HiddenCardsForAge(AgeI))
 	require.NoError(t, err)
 
 	// id is out of range
-	_, err = as.Take(20)
+	_, err = as.Take(20, cardSource, coverby, covereds)
 	assert.Error(t, err)
 
 	// covered card
-	_, err = as.Take(13)
+	_, err = as.Take(13, cardSource, coverby, covereds)
 	assert.Error(t, err)
 
 	//      0  1
@@ -109,16 +113,16 @@ func TestAgeStructure_errors(t *testing.T) {
 	//    5  6  7  8
 	//   * ** ** ** **
 	// 14 15 16 17 __ 19
-	as, err = as.Take(18)
+	as, err = as.Take(18, cardSource, coverby, covereds)
 	require.NoError(t, err)
 
 	// card is not exist
-	_, err = as.Take(18)
+	_, err = as.Take(18, cardSource, coverby, covereds)
 	assert.Error(t, err)
 
 	// cannot get next card
 	cardSource.err = errTest
-	_, err = as.Take(19)
+	_, err = as.Take(19, cardSource, coverby, covereds)
 	assert.Error(t, err)
 }
 
